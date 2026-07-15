@@ -62,6 +62,8 @@ Email Worker ──────┘         │
 ```
 
 - Article extraction: Readability-style parse at save time (extension sends both URL and captured DOM to survive paywalls/login walls).
+- **Reading mode — `packages/reader` (built 2026-07-15)**: `@dtd/reader` normalizes every save into a small "digest HTML" tag vocabulary the print stylesheet can style exhaustively. Extractors: generic (Mozilla Readability), Substack (incl. custom domains via substackcdn fingerprint), Twitter/X threads (DOM capture; keeps author tweets only), LinkedIn (/pulse/ articles + feed posts), email newsletters (layout-table unwrapping, preheader/tracking-pixel stripping). Output: `{title, byline, siteName, publishedAt, excerpt, contentHtml, links, images, wordCount, estimatedPages, needsReview}` — `estimatedPages` feeds the 100pp cap; `links` are endnote candidates for print. Workers-compatible (linkedom, no Node APIs). Try it: `node packages/reader/cli.mjs <url>`.
+- **Save preview + bad-parse feedback (decided 2026-07-15)**: every save shows a reader-mode preview; a "this didn't parse right" action flags the item `needs_review`. `needsReview` is also auto-set when a source extractor falls back to generic, content is suspiciously thin, or a paywall is detected. Raw captured HTML is retained (R2) so flagged items can be re-parsed after extractor fixes without re-saving.
 - Email ingestion: Cloudflare Email Routing -> Email Worker; match `from` to account; if body contains a link, extract the article; otherwise typeset the email itself (newsletters).
 - PDF rendering is the one serverless-hostile piece: use Cloudflare Browser Rendering with Paged.js, or fall back to an external render service.
 

@@ -1,0 +1,17 @@
+{
+  "name": "@dtd/reader",
+  "version": "0.1.0",
+  "description": "Reading-mode normalizer: raw saved HTML (extension DOM capture or inbound email) -> clean digest HTML for typesetting",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "linkedom": "^0.18.5"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.1"
+  }
+}
