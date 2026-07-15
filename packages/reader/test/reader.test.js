@@ -107,7 +107,19 @@ describe("sanitize", () => {
       '<div><h1>Big</h1><h6>Tiny</h6><span data-x="1">text</span><script>evil()</script></div>',
       null
     );
-    expect(html).toBe("<h2>Big</h2><h4>Tiny</h4>text");
+    expect(html).toBe("<h2>Big</h2><h4>Tiny</h4><p>text</p>");
+  });
+
+  it("wraps loose inline content between paragraphs (stalls Paged.js otherwise)", () => {
+    const { html } = sanitize('<p>one</p>[<a href="https://x.com/#f1">1</a>]<p>two</p>', "https://x.com");
+    expect(html).toBe('<p>one</p><p>[<a href="https://x.com/#f1">1</a>]</p><p>two</p>');
+  });
+
+  it("unwraps orphaned table fragments but keeps real tables", () => {
+    const orphan = sanitize("<tr><td><p>essay</p></td></tr>", null);
+    expect(orphan.html).toBe("<p>essay</p>");
+    const real = sanitize("<table><tbody><tr><td>cell</td></tr></tbody></table>", null);
+    expect(real.html).toBe("<table><tbody><tr><td>cell</td></tr></tbody></table>");
   });
 
   it("resolves relative URLs against the article URL", () => {

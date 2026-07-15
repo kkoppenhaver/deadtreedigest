@@ -28,6 +28,8 @@ const EMBED = new Set(["iframe", "video", "audio", "embed"]);
 
 const VOID_TAGS = new Set(["img", "hr", "br"]);
 
+const TABLE_PARTS = new Set(["thead", "tbody", "tr", "th", "td"]);
+
 const escape = (s) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -86,6 +88,12 @@ export function sanitize(html, baseUrl) {
 
     if (!ALLOWED.has(tag)) return children; // unwrap unknown elements
 
+    // Table fragments without a surviving <table> ancestor (Readability
+    // sometimes strips layout tables but keeps rows/cells) parse as invalid
+    // HTML downstream — the browser discards the orphan <tr>/<td> and hoists
+    // their children loose, which stalls Paged.js. Unwrap them instead.
+    if (TABLE_PARTS.has(tag) && !node.closest("table")) return children;
+
     let attrs = "";
     if (tag === "a") {
       const href = absolute(node.getAttribute("href") ?? "", baseUrl);
@@ -113,7 +121,39 @@ export function sanitize(html, baseUrl) {
     .replace(/\s{2,}/g, " ")
     .trim();
 
+  out = blockify(out);
+
   return { html: out, links, images: [...new Set(images)] };
+}
+
+// Digest HTML's root must contain only block elements. Loose inline content
+// between paragraphs (e.g. Paul Graham's footnote markers: `</p>[<a …>18</a>]<p>`)
+// stalls Paged.js fragmentation when it lands on a page boundary — the
+// paginator hits its "Layout repeated" guard and silently truncates the issue.
+const BLOCK = new Set([
+  "p", "h2", "h3", "h4", "blockquote", "ul", "ol", "figure", "pre", "hr", "table",
+]);
+
+function blockify(html) {
+  const { document } = parseFragment(html);
+  const parts = [];
+  let run = "";
+  const flush = () => {
+    if (run.replace(/&nbsp;|<br>|\s/g, "") !== "") parts.push(`<p>${run.trim()}</p>`);
+    run = "";
+  };
+  for (const node of document.body.childNodes) {
+    if (node.nodeType === 1 && BLOCK.has(node.localName)) {
+      flush();
+      parts.push(node.outerHTML);
+    } else if (node.nodeType === 1) {
+      run += node.outerHTML;
+    } else if (node.nodeType === 3) {
+      run += escape(node.textContent);
+    }
+  }
+  flush();
+  return parts.join("");
 }
 
 export function textOf(html) {

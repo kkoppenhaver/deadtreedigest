@@ -1,0 +1,12 @@
+{
+  "name": "@dtd/typeset",
+  "version": "0.1.0",
+  "description": "Issue typesetting: normalized articles -> paginated print-ready PDF (Paged.js + Chrome)",
+  "type": "module",
+  "main": "src/template.js",
+  "dependencies": {
+    "@cloudflare/puppeteer": "^1.1.0",
+    "pagedjs": "^0.4.3",
+    "puppeteer-core": "^23.5.0"
+  }
+}
