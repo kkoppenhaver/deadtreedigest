@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+    width: 360px; padding: 16px; background: #f1e6cf; color: #2b2419;
+    font-family: Georgia, serif; font-size: 13px;
+  }
+  h1 {
+    font-family: Helvetica, Arial, sans-serif; font-size: 13px; letter-spacing: 0.14em;
+    text-transform: uppercase; border-bottom: 2px solid #2b2419; padding-bottom: 6px;
+  }
+  label { display: block; margin-top: 14px; font-weight: bold; font-size: 12px; }
+  input {
+    width: 100%; margin-top: 4px; padding: 7px; font-family: "Courier New", monospace;
+    font-size: 12px; border: 1.5px solid #2b2419; background: #faf3e3; box-sizing: border-box;
+  }
+  button {
+    margin-top: 14px; font-family: Helvetica, Arial, sans-serif; font-size: 11px;
+    letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 14px;
+    border: 1.5px solid #2b2419; background: #1f4d38; color: #f1e6cf; cursor: pointer;
+  }
+  #status { margin-left: 10px; font-style: italic; color: #1f4d38; }
+</style>
+</head>
+<body>
+  <h1>Dead Tree Digest — Settings</h1>
+  <label>Save token
+    <input type="password" id="token" placeholder="your save_token">
+  </label>
+  <label>API base
+    <input type="text" id="apiBase" placeholder="https://dtd-api.keanan-75b.workers.dev">
+  </label>
+  <button id="save">Save settings</button><span id="status"></span>
+  <script src="options.js"></script>
+</body>
+</html>
