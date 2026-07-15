@@ -1,0 +1,10 @@
+{
+  "name": "@dtd/api",
+  "version": "0.1.0",
+  "description": "Library core: save API over D1 + R2, running @dtd/reader at the edge",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@dtd/reader": "*"
+  }
+}

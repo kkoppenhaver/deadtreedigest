@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "dtd-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dtd-library",
+      "database_id": "e473914a-bb65-47ae-a352-ec4078e018bf",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "RAW", "bucket_name": "dtd-raw" }],
+  "observability": { "enabled": true }
+}
