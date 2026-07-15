@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dead Tree Digest — Your reading, printed &amp; shipped</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Alfa+Slab+One&family=Lora:ital,wght@0,400;0,500;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f1e6cf;
+    --paper-dark: #e6d7b8;
+    --ink: #2b2419;
+    --pine: #1f4d38;
+    --pine-deep: #14352a;
+    --rust: #bf4e24;
+    --ochre: #d9a13b;
+    --sky: #e8c579;
+    --cream-line: #cdb98f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Lora', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* paper grain over everything */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.48 0 0 0 0 0.36 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, .display {
+    font-family: 'Fjalla One', 'Arial Narrow', sans-serif;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 1.05;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+  /* ---------- top department bar ---------- */
+  .dept-bar {
+    background: var(--pine-deep);
+    color: var(--paper);
+    font-family: 'Courier Prime', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 9px 16px;
+  }
+  .dept-bar .diamond { color: var(--ochre); padding: 0 10px; }
+
+  /* ---------- header ---------- */
+  header {
+    border-bottom: 3px double var(--ink);
+    background: var(--paper);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+  }
+  .wordmark {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .wordmark svg { display: block; }
+  nav { display: flex; gap: 28px; align-items: center; }
+  nav a {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 2px;
+  }
+  nav a:hover { border-bottom-color: var(--rust); color: var(--rust); }
+  .nav-cta {
+    background: var(--rust);
+    color: var(--paper) !important;
+    padding: 10px 20px 9px !important;
+    border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .nav-cta:hover { transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--ink); border-bottom-color: var(--ink) !important; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 64px;
+    align-items: center;
+    padding: 72px 0 88px;
+    position: relative;
+  }
+  .hero-copy { position: relative; }
+
+  .kicker {
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .kicker::before { content: ""; width: 40px; height: 2px; background: var(--rust); display: inline-block; }
+
+  .hero h1 {
+    font-size: clamp(48px, 6.5vw, 84px);
+    letter-spacing: 0.01em;
+    color: var(--pine-deep);
+    margin-bottom: 8px;
+  }
+  .hero h1 .rust { color: var(--rust); }
+
+  .tagline {
+    font-size: clamp(19px, 2vw, 23px);
+    font-style: italic;
+    margin: 22px 0 12px;
+    max-width: 30ch;
+  }
+  .tagline strong { color: var(--pine); font-style: normal; }
+
+  .hero-sub {
+    font-size: 16.5px;
+    max-width: 48ch;
+    color: #4a4032;
+    margin-bottom: 34px;
+  }
+
+  .cta-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 15px 28px 13px;
+    border: 2.5px solid var(--ink);
+    display: inline-block;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: var(--pine);
+    color: var(--paper);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .btn-primary:hover { transform: translate(2px,2px); box-shadow: 3px 3px 0 var(--ink); background: var(--pine-deep); }
+  .btn-ghost { background: transparent; color: var(--ink); box-shadow: 5px 5px 0 rgba(43,36,25,0.18); }
+  .btn-ghost:hover { background: var(--paper-dark); }
+
+  /* staggered load-in */
+  .hero-copy > * { opacity: 0; transform: translateY(18px); animation: rise 0.7s cubic-bezier(.22,1,.36,1) forwards; }
+  .hero-copy > *:nth-child(1) { animation-delay: 0.05s; }
+  .hero-copy > *:nth-child(2) { animation-delay: 0.15s; }
+  .hero-copy > *:nth-child(3) { animation-delay: 0.25s; }
+  .hero-copy > *:nth-child(4) { animation-delay: 0.35s; }
+  .hero-copy > *:nth-child(5) { animation-delay: 0.45s; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* ---------- the poster ---------- */
+  .poster-wrap { position: relative; opacity: 0; transform: rotate(1.5deg) translateY(20px); animation: posterIn 0.9s 0.3s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes posterIn { to { opacity: 1; transform: rotate(1.5deg); } }
+  .poster {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    padding: 14px;
+    box-shadow: 10px 12px 0 rgba(31,77,56,0.25), 0 24px 48px rgba(43,36,25,0.25);
+  }
+  .poster-inner { border: 1.5px solid var(--ink); }
+  .poster svg { display: block; width: 100%; height: auto; }
+  .poster-caption {
+    border-top: 1.5px solid var(--ink);
+    text-align: center;
+    padding: 14px 10px 10px;
+  }
+  .poster-caption .big {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 26px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pine-deep);
+  }
+  .poster-caption .small {
+    font-family: 'Courier Prime', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-top: 4px;
+  }
+
+  /* badge stamp overlapping the poster */
+  .badge {
+    position: absolute;
+    top: -46px;
+    left: -52px;
+    width: 150px;
+    height: 150px;
+    animation: spin 40s linear infinite;
+    filter: drop-shadow(3px 4px 0 rgba(43,36,25,0.3));
+    z-index: 2;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- marquee strip ---------- */
+  .strip {
+    background: var(--rust);
+    color: var(--paper);
+    border-top: 3px solid var(--ink);
+    border-bottom: 3px solid var(--ink);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 12px 0;
+  }
+  .strip-track {
+    display: inline-block;
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 17px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: scroll 30s linear infinite;
+  }
+  .strip-track .sep { color: var(--ochre); padding: 0 22px; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ---------- section scaffolding ---------- */
+  section { padding: 88px 0; }
+  .section-head { text-align: center; margin-bottom: 60px; }
+  .section-head .overline {
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--rust);
+  }
+  .section-head h2 {
+    font-size: clamp(34px, 4vw, 52px);
+    color: var(--pine-deep);
+    margin-top: 10px;
+  }
+  .section-head .rule {
+    width: 90px; height: 4px; background: var(--ochre);
+    margin: 18px auto 0;
+    box-shadow: 0 7px 0 var(--pine);
+  }
+
+  /* ---------- how it works: trail signs ---------- */
+  .trail {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 26px;
+  }
+  .trail-sign {
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    box-shadow: 6px 6px 0 rgba(31,77,56,0.22);
+    padding: 28px 24px 26px;
+    position: relative;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .trail-sign:hover { transform: translateY(-5px); box-shadow: 8px 11px 0 rgba(31,77,56,0.28); }
+  .trail-sign:nth-child(odd) { transform: rotate(-0.6deg); }
+  .trail-sign:nth-child(even) { transform: rotate(0.5deg); }
+  .trail-sign:nth-child(odd):hover, .trail-sign:nth-child(even):hover { transform: translateY(-5px) rotate(0deg); }
+  .marker {
+    font-family: 'Alfa Slab One', serif;
+    font-size: 15px;
+    color: var(--paper);
+    background: var(--pine);
+    border: 2px solid var(--ink);
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    position: absolute;
+    top: -22px; left: 22px;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+  .trail-sign h3 { font-size: 20px; letter-spacing: 0.05em; margin: 10px 0 10px; color: var(--pine-deep); }
+  .trail-sign p { font-size: 15px; color: #4a4032; }
+  .trail-sign .mi {
+    font-family: 'Courier Prime', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--rust);
+    display: block;
+    margin-top: 14px;
+    border-top: 1px dashed var(--cream-line);
+    padding-top: 10px;
+  }
+
+  /* ---------- ledger ---------- */
+  .ledger-section { background: var(--pine-deep); border-top: 3px solid var(--ink); border-bottom: 3px solid var(--ink); position: relative; }
+  .ledger-section .section-head h2, .ledger-section .section-head { color: var(--paper); }
+  .ledger-section .overline { color: var(--ochre); }
+  .ledger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .ledger-copy { color: #e9dfc8; font-size: 17px; }
+  .ledger-copy h2 { color: var(--paper); font-size: clamp(30px, 3.4vw, 44px); margin-bottom: 20px; }
+  .ledger-copy h2 .ochre { color: var(--ochre); }
+  .ledger-copy p { margin-bottom: 16px; }
+  .ledger-copy .fine { font-size: 14px; color: #b9ab8d; font-style: italic; }
+
+  .receipt {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Courier Prime', monospace;
+    padding: 34px 34px 26px;
+    transform: rotate(-1.2deg);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+    position: relative;
+    /* perforated top & bottom */
+    -webkit-mask:
+      linear-gradient(#000 0 0) padding-box,
+      radial-gradient(circle 7px at 10px 0, transparent 96%, #000) top / 20px 10px repeat-x border-box,
+      radial-gradient(circle 7px at 10px 10px, transparent 96%, #000) bottom / 20px 10px repeat-x border-box;
+    -webkit-mask-composite: destination-in;
+            mask:
+      radial-gradient(circle 7px at 10px 0px, transparent 97%, #000 100%) top / 20px 100% repeat-x;
+  }
+  .receipt-head { text-align: center; border-bottom: 2px dashed var(--ink); padding-bottom: 14px; margin-bottom: 18px; }
+  .receipt-head .rh-title { font-weight: 700; font-size: 17px; letter-spacing: 0.16em; }
+  .receipt-head .rh-sub { font-size: 12px; letter-spacing: 0.1em; margin-top: 4px; }
+  .receipt-row { display: flex; justify-content: space-between; font-size: 14.5px; padding: 6px 0; }
+  .receipt-row .dots { flex: 1; border-bottom: 2px dotted rgba(43,36,25,0.35); margin: 0 8px 4px; }
+  .receipt-row.total {
+    border-top: 2px dashed var(--ink);
+    margin-top: 12px; padding-top: 14px;
+    font-weight: 700; font-size: 17px;
+  }
+  .receipt-row.total .val { color: var(--pine); }
+  .receipt-stamp {
+    margin: 20px auto 4px;
+    width: fit-content;
+    font-family: 'Fjalla One', sans-serif;
+    color: var(--rust);
+    border: 3px solid var(--rust);
+    border-radius: 6px;
+    padding: 6px 16px 4px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-size: 15px;
+    transform: rotate(-4deg);
+    opacity: 0.85;
+  }
+
+  /* ---------- spec / field notes ---------- */
+  .specs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 2.5px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 rgba(191,78,36,0.25); }
+  .spec { padding: 30px 26px; border-right: 1.5px solid var(--ink); }
+  .spec:last-child { border-right: none; }
+  .spec .num { font-family: 'Alfa Slab One', serif; font-size: 34px; color: var(--rust); line-height: 1; }
+  .spec .num small { font-family: 'Fjalla One', sans-serif; font-size: 16px; color: var(--pine); letter-spacing: 0.06em; }
+  .spec .lbl { font-family: 'Fjalla One', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 14px; margin-top: 8px; color: var(--pine-deep); }
+  .spec p { font-size: 13.5px; color: #4a4032; margin-top: 6px; }
+
+  /* ---------- signup ---------- */
+  .signup { text-align: center; position: relative; }
+  .signup .pines-divider { margin-bottom: 28px; }
+  .signup h2 { font-size: clamp(32px, 4vw, 50px); color: var(--pine-deep); margin-bottom: 14px; }
+  .signup p { max-width: 52ch; margin: 0 auto 34px; color: #4a4032; }
+  .signup-form { display: flex; gap: 0; max-width: 520px; margin: 0 auto; }
+  .signup-form input {
+    flex: 1;
+    font-family: 'Courier Prime', monospace;
+    font-size: 16px;
+    padding: 16px 18px;
+    border: 2.5px solid var(--ink);
+    border-right: none;
+    background: #faf3e3;
+    color: var(--ink);
+    outline: none;
+  }
+  .signup-form input:focus { background: #fff; }
+  .signup-form button {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--rust);
+    color: var(--paper);
+    border: 2.5px solid var(--ink);
+    padding: 0 30px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .signup-form button:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
+  .signup .psa {
+    margin-top: 30px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--pine);
+  }
+
+  /* ---------- footer ---------- */
+  footer {
+    background: var(--pine-deep);
+    color: #cbbf9f;
+    border-top: 3px solid var(--ink);
+    padding: 48px 0 36px;
+    font-size: 14px;
+  }
+  .footer-grid { display: flex; justify-content: space-between; gap: 40px; align-items: flex-start; flex-wrap: wrap; }
+  footer .colophon { max-width: 46ch; font-style: italic; }
+  footer .fmark { font-family: 'Fjalla One', sans-serif; color: var(--paper); text-transform: uppercase; letter-spacing: 0.1em; font-size: 18px; margin-bottom: 10px; }
+  footer .legal { font-family: 'Courier Prime', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 30px; text-align: center; color: #8d8168; width: 100%; border-top: 1px solid rgba(233,223,200,0.15); padding-top: 22px; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; gap: 72px; padding-top: 48px; }
+    .poster-wrap { max-width: 440px; margin: 0 auto; }
+    .badge { left: -20px; }
+    .trail { grid-template-columns: 1fr 1fr; row-gap: 40px; }
+    .ledger-grid { grid-template-columns: 1fr; }
+    .specs { grid-template-columns: 1fr 1fr; }
+    .spec:nth-child(2) { border-right: none; }
+    .spec:nth-child(1), .spec:nth-child(2) { border-bottom: 1.5px solid var(--ink); }
+  }
+  @media (max-width: 600px) {
+    .trail { grid-template-columns: 1fr; }
+    .specs { grid-template-columns: 1fr; }
+    .spec { border-right: none; border-bottom: 1.5px solid var(--ink); }
+    .spec:last-child { border-bottom: none; }
+    .signup-form { flex-direction: column; }
+    .signup-form input { border-right: 2.5px solid var(--ink); border-bottom: none; }
+    .signup-form button { padding: 16px; }
+    nav a:not(.nav-cta) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="dept-bar">
+    Dept. of the Printed Word <span class="diamond">◆</span> Biweekly Dispatch <span class="diamond">◆</span> Ten Trees Planted for Every One Consumed
+  </div>
+
+  <header>
+    <div class="container header-inner">
+      <a class="wordmark" href="#">
+        <svg width="34" height="38" viewBox="0 0 34 38" aria-hidden="true">
+          <polygon points="17,2 30,22 4,22" fill="#1f4d38"/>
+          <polygon points="17,12 32,32 2,32" fill="#2b6248"/>
+          <rect x="14.5" y="32" width="5" height="6" fill="#bf4e24"/>
+        </svg>
+        Dead Tree Digest
+      </a>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#ledger">The ledger</a>
+        <a href="#specs">Field notes</a>
+        <a href="#join" class="nav-cta">Join the waitlist</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <div class="container">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="kicker">Save all week · Printed every two weeks</div>
+          <h1>Your reading,<br>on <span class="rust">paper</span>.<br>At last.</h1>
+          <p class="tagline">“We killed a tree for this. <strong>We planted ten to apologize.</strong>”</p>
+          <p class="hero-sub">Save articles as you read them. Every two weeks, they arrive at your door as a beautifully typeset, honest-to-goodness printed magazine. No screen, no tabs, no feed — just your best finds, on dead tree.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#join">Reserve your subscription</a>
+            <a class="btn btn-ghost" href="#how">See the trail map</a>
+          </div>
+        </div>
+
+        <div class="poster-wrap">
+          <!-- rotating ranger badge -->
+          <svg class="badge" viewBox="0 0 150 150" aria-hidden="true">
+            <circle cx="75" cy="75" r="72" fill="#d9a13b" stroke="#2b2419" stroke-width="3"/>
+            <circle cx="75" cy="75" r="54" fill="#1f4d38" stroke="#2b2419" stroke-width="2"/>
+            <defs><path id="circ" d="M 75,75 m -62,0 a 62,62 0 1,1 124,0 a 62,62 0 1,1 -124,0"/></defs>
+            <text font-family="Fjalla One, sans-serif" font-size="12.5" letter-spacing="2.5" fill="#2b2419">
+              <textPath href="#circ" startOffset="2%">DEAD TREE DIGEST ★ EST. 2026 ★ TEN FOR ONE ★ READ RESPONSIBLY ★</textPath>
+            </text>
+            <polygon points="75,44 89,66 61,66" fill="#f1e6cf"/>
+            <polygon points="75,56 93,80 57,80" fill="#d9a13b"/>
+            <rect x="72" y="80" width="6" height="8" fill="#bf4e24"/>
+            <text x="75" y="103" text-anchor="middle" font-family="Fjalla One, sans-serif" font-size="11" letter-spacing="1.5" fill="#f1e6cf">10:1</text>
+          </svg>
+
+          <!-- WPA-style poster -->
+          <div class="poster">
+            <div class="poster-inner">
+              <svg viewBox="0 0 460 520" role="img" aria-label="WPA-style poster of a forest with one stump and ten saplings">
+                <!-- sky bands -->
+                <rect width="460" height="520" fill="#e8c579"/>
+                <rect y="40" width="460" height="30" fill="#e3ba62"/>
+                <rect y="100" width="460" height="30" fill="#dfb04e"/>
+                <!-- sun + rays -->
+                <g fill="#bf4e24">
+                  <circle cx="340" cy="98" r="46"/>
+                  <g stroke="#bf4e24" stroke-width="7" opacity="0.75">
+                    <line x1="340" y1="20" x2="340" y2="40"/>
+                    <line x1="279" y1="42" x2="293" y2="56"/>
+                    <line x1="401" y1="42" x2="387" y2="56"/>
+                    <line x1="258" y1="98" x2="280" y2="98"/>
+                    <line x1="422" y1="98" x2="400" y2="98"/>
+                  </g>
+                </g>
+                <!-- far ridge -->
+                <path d="M0 240 L90 160 L170 230 L260 150 L350 235 L460 170 L460 320 L0 320 Z" fill="#8f9e6b"/>
+                <!-- near ridge -->
+                <path d="M0 300 L120 210 L230 300 L330 220 L460 310 L460 400 L0 400 Z" fill="#4f7a53"/>
+                <!-- big pines -->
+                <g>
+                  <g transform="translate(60,205)">
+                    <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
+                    <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
+                    <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
+                    <rect x="25" y="135" width="10" height="22" fill="#5b3a25"/>
+                  </g>
+                  <g transform="translate(150,240) scale(0.8)">
+                    <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
+                    <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
+                    <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
+                    <rect x="25" y="135" width="10" height="22" fill="#5b3a25"/>
+                  </g>
+                  <g transform="translate(355,215) scale(0.95)">
+                    <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
+                    <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
+                    <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
+                    <rect x="25" y="135" width="10" height="22" fill="#5b3a25"/>
+                  </g>
+                </g>
+                <!-- foreground meadow -->
+                <path d="M0 395 Q 120 370 240 392 Q 360 412 460 388 L460 520 L0 520 Z" fill="#c9a94f"/>
+                <path d="M0 430 Q 150 408 300 430 Q 400 444 460 432 L460 520 L0 520 Z" fill="#b98f3c"/>
+                <!-- the stump (the dead tree) -->
+                <g transform="translate(210,398)">
+                  <ellipse cx="22" cy="34" rx="30" ry="9" fill="#8a5a33" opacity="0.35"/>
+                  <path d="M4 6 Q 2 26 6 32 L38 32 Q 42 24 40 6 Z" fill="#7a4a2a"/>
+                  <ellipse cx="22" cy="6" rx="18" ry="7" fill="#c99e6a"/>
+                  <ellipse cx="22" cy="6" rx="11" ry="4.2" fill="none" stroke="#7a4a2a" stroke-width="1.6"/>
+                  <ellipse cx="22" cy="6" rx="5" ry="2" fill="none" stroke="#7a4a2a" stroke-width="1.4"/>
+                </g>
+                <!-- ten saplings -->
+                <g fill="#2b6248">
+                  <g transform="translate(40,436)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(78,452) scale(0.9)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(120,442)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(160,458) scale(1.1)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(280,452)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(316,440) scale(0.9)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(352,456)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(392,444) scale(1.1)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(428,458) scale(0.85)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                  <g transform="translate(244,462) scale(0.95)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+                </g>
+              </svg>
+            </div>
+            <div class="poster-caption">
+              <div class="big">One falls. Ten rise.</div>
+              <div class="small">Dead Tree Digest · Conservation Series № 1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="strip" aria-hidden="true">
+      <div class="strip-track">
+        <span>Save as you read</span><span class="sep">✦</span><span>Printed every two weeks</span><span class="sep">✦</span><span>Ten trees planted for one</span><span class="sep">✦</span><span>No thin issues, ever</span><span class="sep">✦</span><span>Save as you read</span><span class="sep">✦</span><span>Printed every two weeks</span><span class="sep">✦</span><span>Ten trees planted for one</span><span class="sep">✦</span><span>No thin issues, ever</span><span class="sep">✦</span>
+      </div>
+    </div>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section id="how">
+      <div class="container">
+        <div class="section-head">
+          <div class="overline">Trail map</div>
+          <h2>From tab to mailbox</h2>
+          <div class="rule"></div>
+        </div>
+        <div class="trail">
+          <div class="trail-sign">
+            <div class="marker">1</div>
+            <h3>Save as you read</h3>
+            <p>One click in the browser, or forward any article or newsletter to your save address. It lands in your library.</p>
+            <span class="mi">Trailhead · 0.0 mi</span>
+          </div>
+          <div class="trail-sign">
+            <div class="marker">2</div>
+            <h3>The issue closes</h3>
+            <p>Every other Sunday, your saves are gathered into an issue — 60 to 100 pages of your own curation. Fewer than five saves? We skip it and roll over. No thin issues.</p>
+            <span class="mi">Ridge line · 1.2 mi</span>
+          </div>
+          <div class="trail-sign">
+            <div class="marker">3</div>
+            <h3>Typeset &amp; printed</h3>
+            <p>Clean, readable layouts. Black &amp; white interior, color cover, recycled or FSC-certified stock. You get a preview to approve — or it ships itself Monday morning.</p>
+            <span class="mi">Print shop · 2.6 mi</span>
+          </div>
+          <div class="trail-sign">
+            <div class="marker">4</div>
+            <h3>Ships to your door</h3>
+            <p>A real magazine in your real mailbox, every two weeks. Read it in the tub. Leave it on the train. It's paper — it can take it.</p>
+            <span class="mi">Summit · 3.9 mi</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LEDGER ============ -->
+    <section class="ledger-section" id="ledger">
+      <div class="container">
+        <div class="ledger-grid">
+          <div class="ledger-copy">
+            <div class="overline" style="font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:0.3em;text-transform:uppercase;color:var(--ochre);margin-bottom:14px;">The ledger · printed in every issue</div>
+            <h2>We publish the math.<br><span class="ochre">In the magazine.</span></h2>
+            <p>A year of Dead Tree Digest consumes roughly 5–8% of one tree. For every subscriber, every year, we fund the planting of ten whole trees — a 100&times; overcorrection, on purpose.</p>
+            <p>Every issue carries a ledger page: subscribers, sheets printed, trees consumed, trees planted. The magazine in your hands is the receipt.</p>
+            <p class="fine">Trees, not carbon credits — ten trees is a claim you can picture, audit, and hold us to. Planting via established reforestation partners.</p>
+          </div>
+          <div class="receipt" role="figure" aria-label="Sample ledger page">
+            <div class="receipt-head">
+              <div class="rh-title">★ THE LEDGER ★</div>
+              <div class="rh-sub">Issue № 001 — running totals</div>
+            </div>
+            <div class="receipt-row"><span>Subscribers</span><span class="dots"></span><span>1</span></div>
+            <div class="receipt-row"><span>Issues shipped</span><span class="dots"></span><span>1</span></div>
+            <div class="receipt-row"><span>Sheets printed</span><span class="dots"></span><span>23</span></div>
+            <div class="receipt-row"><span>Trees consumed</span><span class="dots"></span><span>0.003</span></div>
+            <div class="receipt-row total"><span>Trees planted</span><span class="dots"></span><span class="val">10</span></div>
+            <div class="receipt-stamp">Overcorrected ✓</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FIELD NOTES / SPECS ============ -->
+    <section id="specs">
+      <div class="container">
+        <div class="section-head">
+          <div class="overline">Field notes</div>
+          <h2>The vitals</h2>
+          <div class="rule"></div>
+        </div>
+        <div class="specs">
+          <div class="spec">
+            <div class="num">14 <small>days</small></div>
+            <div class="lbl">Biweekly cadence</div>
+            <p>An issue every other week. Enough to anticipate, never a pile of guilt.</p>
+          </div>
+          <div class="spec">
+            <div class="num">60–100 <small>pp</small></div>
+            <div class="lbl">Per issue</div>
+            <p>Your 10–20 best saves, typeset like a real magazine — because it is one.</p>
+          </div>
+          <div class="spec">
+            <div class="num">B/W <small>+ color cover</small></div>
+            <div class="lbl">Print spec</div>
+            <p>Crisp black &amp; white interior on recycled or FSC-certified stock.</p>
+          </div>
+          <div class="spec">
+            <div class="num">10:1</div>
+            <div class="lbl">Trees planted : consumed</div>
+            <p>Published in every issue's ledger page. Hold us to it.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SIGNUP ============ -->
+    <section class="signup" id="join">
+      <div class="container">
+        <svg class="pines-divider" width="120" height="30" viewBox="0 0 120 30" aria-hidden="true">
+          <polygon points="20,4 32,26 8,26" fill="#1f4d38"/>
+          <polygon points="60,0 75,26 45,26" fill="#bf4e24"/>
+          <polygon points="100,4 112,26 88,26" fill="#1f4d38"/>
+        </svg>
+        <h2>Claim your campsite</h2>
+        <p>Dead Tree Digest is being built in the open, one subscriber at a time — starting with subscriber № 1. Join the waitlist and be there when the presses start.</p>
+        <form class="signup-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='You\'re in ✓';">
+          <input type="email" placeholder="ranger@example.com" aria-label="Email address" required>
+          <button type="submit">Sign me up</button>
+        </form>
+        <div class="psa">— Read responsibly. Print deliberately. Plant excessively. —</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div>
+        <div class="fmark">🌲 Dead Tree Digest</div>
+        <div>Biweekly. Personal. Printed.</div>
+      </div>
+      <div class="colophon">
+        Colophon: printed on 100% recycled or FSC-certified paper where available — so the dead tree is, we confess, partly fiction. The ten new trees are not.
+      </div>
+      <div class="legal">
+        © 2026 Dead Tree Digest · deadtreedigest.com · No feeds were harmed in the making of this magazine
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
