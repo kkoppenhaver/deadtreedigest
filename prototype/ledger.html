@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger — Dead Tree Digest</title>
+<meta name="description" content="The running math on Dead Tree Digest's paper use and tree planting, down to the sheet.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Lora:ital@0;1&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper: #f1e6cf; --ink: #2b2419; --pine: #1f4d38; --pine-deep: #14352a; --rust: #bf4e24; --ochre: #d9a13b; --rule: #767676; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Lora', Georgia, serif; font-size: 17px; line-height: 1.6; padding: 48px 24px; display: flex; flex-direction: column; align-items: center; }
+  a { color: var(--rust); }
+  .back { font-family: 'Fjalla One', sans-serif; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; margin-bottom: 40px; }
+  h1 { font-family: 'Fjalla One', sans-serif; text-transform: uppercase; font-size: clamp(30px, 5vw, 44px); color: var(--pine-deep); text-align: center; }
+  .sub { font-style: italic; color: #6b5f4d; margin: 10px 0 40px; text-align: center; max-width: 44ch; }
+  .receipt { background: #faf3e3; color: var(--ink); font-family: 'Courier Prime', monospace; padding: 34px 34px 26px; width: 100%; max-width: 380px; transform: rotate(-1.2deg); box-shadow: 8px 10px 0 rgba(31,77,56,0.2); border: 2px solid var(--ink); }
+  .receipt-head { text-align: center; border-bottom: 2px dashed var(--ink); padding-bottom: 14px; margin-bottom: 18px; }
+  .rh-title { font-weight: 700; font-size: 17px; letter-spacing: 0.16em; }
+  .rh-sub { font-size: 12px; letter-spacing: 0.1em; margin-top: 4px; }
+  .row { display: flex; justify-content: space-between; font-size: 14.5px; padding: 6px 0; }
+  .row .dots { flex: 1; border-bottom: 2px dotted rgba(43,36,25,0.35); margin: 0 8px 4px; }
+  .row.total { border-top: 2px dashed var(--ink); margin-top: 12px; padding-top: 14px; font-weight: 700; font-size: 17px; }
+  .row.total .val { color: var(--pine); }
+  .method { max-width: 52ch; margin-top: 44px; font-size: 15px; color: #4a4032; }
+  .method h2 { font-family: 'Fjalla One', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px; color: var(--pine-deep); margin-bottom: 10px; }
+  .method p { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Dead Tree Digest</a>
+  <h1>The Ledger</h1>
+  <p class="sub">The running math on our paper use and tree planting, updated with every issue. This page is also printed in the back of every copy.</p>
+
+  <div class="receipt">
+    <div class="receipt-head">
+      <div class="rh-title">★ THE LEDGER ★</div>
+      <div class="rh-sub">Running totals to date</div>
+    </div>
+    <div class="row"><span>Subscribers</span><span class="dots"></span><span>1</span></div>
+    <div class="row"><span>Issues shipped</span><span class="dots"></span><span>1</span></div>
+    <div class="row"><span>Sheets printed</span><span class="dots"></span><span>23</span></div>
+    <div class="row"><span>Trees consumed</span><span class="dots"></span><span>0.003</span></div>
+    <div class="row total"><span>Trees planted</span><span class="dots"></span><span class="val">10</span></div>
+  </div>
+
+  <div class="method">
+    <h2>How we count</h2>
+    <p>A tree yields roughly 8,000 sheets of paper. Each issue runs 50 to 60 sheets, so a year of issues uses a small fraction of one tree per subscriber. We plant ten trees per printed issue through established reforestation partners.</p>
+    <p>We print on recycled or FSC-certified stock, so some of the "trees consumed" figure is bookkeeping fiction. The planted trees are not.</p>
+  </div>
+</body>
+</html>

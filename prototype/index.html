@@ -289,49 +289,6 @@
   .ledger-copy p { margin-bottom: 16px; }
   .ledger-copy .fine { font-size: 14px; color: #b9ab8d; font-style: italic; }
 
-  .receipt {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: 'Courier Prime', monospace;
-    padding: 34px 34px 26px;
-    transform: rotate(-1.2deg);
-    box-shadow: 0 18px 40px rgba(0,0,0,0.4);
-    position: relative;
-    /* perforated top & bottom */
-    -webkit-mask:
-      linear-gradient(#000 0 0) padding-box,
-      radial-gradient(circle 7px at 10px 0, transparent 96%, #000) top / 20px 10px repeat-x border-box,
-      radial-gradient(circle 7px at 10px 10px, transparent 96%, #000) bottom / 20px 10px repeat-x border-box;
-    -webkit-mask-composite: destination-in;
-            mask:
-      radial-gradient(circle 7px at 10px 0px, transparent 97%, #000 100%) top / 20px 100% repeat-x;
-  }
-  .receipt-head { text-align: center; border-bottom: 2px dashed var(--ink); padding-bottom: 14px; margin-bottom: 18px; }
-  .receipt-head .rh-title { font-weight: 700; font-size: 17px; letter-spacing: 0.16em; }
-  .receipt-head .rh-sub { font-size: 12px; letter-spacing: 0.1em; margin-top: 4px; }
-  .receipt-row { display: flex; justify-content: space-between; font-size: 14.5px; padding: 6px 0; }
-  .receipt-row .dots { flex: 1; border-bottom: 2px dotted rgba(43,36,25,0.35); margin: 0 8px 4px; }
-  .receipt-row.total {
-    border-top: 2px dashed var(--ink);
-    margin-top: 12px; padding-top: 14px;
-    font-weight: 700; font-size: 17px;
-  }
-  .receipt-row.total .val { color: var(--pine); }
-  .receipt-stamp {
-    margin: 20px auto 4px;
-    width: fit-content;
-    font-family: 'Fjalla One', sans-serif;
-    color: var(--rust);
-    border: 3px solid var(--rust);
-    border-radius: 6px;
-    padding: 6px 16px 4px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    font-size: 15px;
-    transform: rotate(-4deg);
-    opacity: 0.85;
-  }
-
   /* ---------- faq ---------- */
   .faq-wrap { max-width: 620px; margin: 0 auto; }
   .faq-q { font-family: 'Fjalla One', sans-serif; font-size: 17px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pine-deep); margin-bottom: 8px; }
@@ -391,7 +348,10 @@
   footer .legal { font-family: 'Courier Prime', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 30px; text-align: center; color: #8d8168; width: 100%; border-top: 1px solid rgba(233,223,200,0.15); padding-top: 22px; }
 
   /* ---------- responsive ---------- */
+  .trees-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 64px; align-items: center; }
+
   @media (max-width: 960px) {
+    .trees-grid { grid-template-columns: 1fr; gap: 40px; }
     .hero { grid-template-columns: 1fr; gap: 72px; padding-top: 48px; }
     .poster-wrap { max-width: 440px; margin: 0 auto; }
     .badge { left: -20px; }
@@ -615,24 +575,47 @@
     <!-- ============ TREES ============ -->
     <section id="trees">
       <div class="container">
-        <div class="section-head">
-          <div class="overline">The fine print</div>
-          <h2>Ten trees per issue</h2>
-          <div class="rule"></div>
-        </div>
-        <p style="max-width:54ch;margin:-24px auto 0;text-align:center;color:#4a4032;">Yes, we print on real paper (recycled or FSC-certified stock). And for every issue we print, we plant ten trees, which is roughly a hundred times the paper we use. Want to check our math? The running tally is printed in every copy.</p>
-        <div style="max-width:360px;margin:44px auto 0;">
-          <div class="receipt" role="figure" aria-label="Sample ledger page">
-            <div class="receipt-head">
-              <div class="rh-title">★ THE LEDGER ★</div>
-              <div class="rh-sub">Issue № 001 — running totals</div>
+        <div class="trees-grid">
+          <div style="background:var(--paper);border:3px solid var(--ink);padding:12px;transform:rotate(-1deg);box-shadow:8px 10px 0 rgba(31,77,56,0.2);">
+            <div style="border:1.5px solid var(--ink);">
+              <svg viewBox="0 0 460 340" role="img" aria-label="A replanted hillside with rows of young trees, in WPA poster style">
+                <rect width="460" height="340" fill="#e8c579"/>
+                <rect y="30" width="460" height="20" fill="#e3ba62"/>
+                <circle cx="86" cy="58" r="30" fill="#bf4e24"/>
+                <path d="M0 175 L120 110 L250 180 L370 120 L460 170 L460 340 L0 340 Z" fill="#8f9e6b"/>
+                <path d="M0 225 Q 150 185 300 225 Q 400 250 460 230 L460 340 L0 340 Z" fill="#4f7a53"/>
+                <g transform="translate(378,96) scale(1.05)">
+                  <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
+                  <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
+                  <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
+                  <rect x="25" y="135" width="10" height="24" fill="#5b3a25"/>
+                </g>
+                <path d="M0 285 Q 140 262 300 285 Q 400 298 460 288 L460 340 L0 340 Z" fill="#c9a94f"/>
+                <g fill="#2b6248">
+                  <g transform="translate(40,238)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(104,246)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(168,240)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(232,250)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(296,244)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(70,282) scale(0.85)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(140,290) scale(0.85)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(210,286) scale(0.85)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(280,294) scale(0.85)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                  <g transform="translate(350,288) scale(0.85)"><polygon points="9,0 17,18 1,18"/><rect x="7.5" y="18" width="3" height="7" fill="#5b3a25"/></g>
+                </g>
+              </svg>
             </div>
-            <div class="receipt-row"><span>Subscribers</span><span class="dots"></span><span>1</span></div>
-            <div class="receipt-row"><span>Issues shipped</span><span class="dots"></span><span>1</span></div>
-            <div class="receipt-row"><span>Sheets printed</span><span class="dots"></span><span>23</span></div>
-            <div class="receipt-row"><span>Trees consumed</span><span class="dots"></span><span>0.003</span></div>
-            <div class="receipt-row total"><span>Trees planted</span><span class="dots"></span><span class="val">10</span></div>
-            <div class="receipt-stamp">Overcorrected ✓</div>
+            <div style="border-top:1.5px solid var(--ink);text-align:center;padding:12px 8px 8px;">
+              <div style="font-family:'Fjalla One',sans-serif;font-size:20px;letter-spacing:0.06em;text-transform:uppercase;color:var(--pine-deep);">Replanting in progress</div>
+              <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--rust);margin-top:3px;">Dead Tree Digest · Conservation Series № 3</div>
+            </div>
+          </div>
+          <div>
+            <div class="overline" style="font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:0.3em;text-transform:uppercase;color:var(--rust);margin-bottom:14px;">The fine print</div>
+            <h2 style="font-size:clamp(30px,3.4vw,44px);color:var(--pine-deep);margin-bottom:20px;">Ten trees<br>per issue</h2>
+            <p style="margin-bottom:16px;color:#4a4032;">We print on real paper, recycled or FSC-certified, because we think it's the ideal way to read the things you've saved.</p>
+            <p style="margin-bottom:16px;color:#4a4032;">We also want to be honest about what that costs, so we do more than our part to replant. For every issue we print, we plant ten trees. That's roughly a hundred times the paper an issue uses.</p>
+            <p style="font-size:14px;font-style:italic;color:#6b5f4d;">We keep the running math, down to the sheet, on <a href="ledger.html" style="color:var(--rust);">the ledger</a>.</p>
           </div>
         </div>
       </div>
