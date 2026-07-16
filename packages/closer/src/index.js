@@ -236,11 +236,17 @@ async function sendEmail(env, to, subject, text, html) {
 }
 
 function sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver }) {
+  // No login exists — email is the interface. If we don't have a shipping
+  // address, the emailed magic link is how we get one.
+  const needsAddress = !(user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode);
+  const addressUrl = `${env.API_URL}/address?key=${user.address_key}`;
+
   const titles = picked.map((i) => `  • ${i.title}${i.byline ? ` — ${i.byline}` : ""}`).join("\n");
   const text =
     `You filled Issue № ${number}. ${pageCount ?? "?"} pages, ${picked.length} articles — typeset and ready.\n\n` +
     `${titles}\n\n` +
     `${rolledOver ? `${rolledOver} save(s) rolled over to start Issue № ${number + 1}.\n\n` : ""}` +
+    `${needsAddress ? `⚠ We don't have a shipping address for you yet — add one here so this issue can ship:\n${addressUrl}\n\n` : ""}` +
     `— Dead Tree Digest`;
   const html = `
     <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
@@ -248,6 +254,7 @@ function sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver }
       <p><strong>${pageCount ?? "?"}</strong> pages · <strong>${picked.length}</strong> articles — typeset and ready.</p>
       <ul>${picked.map((i) => `<li>${escapeHtml(i.title)}${i.byline ? ` — ${escapeHtml(i.byline)}` : ""}</li>`).join("")}</ul>
       ${rolledOver ? `<p style="color:#4a4032;">${rolledOver} save(s) rolled over to start Issue № ${number + 1}.</p>` : ""}
+      ${needsAddress ? `<p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><strong>We don't have a shipping address for you yet.</strong><br><a href="${addressUrl}" style="color:#bf4e24;">Add your address</a> so this issue can ship.</p>` : ""}
       <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
     </div>`;
   return sendEmail(env, user.email, `You filled Issue № ${number} — ${pageCount ?? "?"} pages`, text, html);

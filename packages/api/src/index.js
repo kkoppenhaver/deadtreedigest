@@ -23,6 +23,12 @@ export default {
 
     if (pathname === "/health") return json({ ok: true });
 
+    // Magic-link address page: key-authed (emailed URL), browser-facing,
+    // handled before the bearer gate. The key is scoped to the address only.
+    if (pathname === "/address") {
+      return addressPage(request, env);
+    }
+
     const user = await authedUser(request, env);
     if (!user) return json({ error: "missing or invalid bearer token" }, 401);
 
@@ -31,6 +37,12 @@ export default {
     }
     if (request.method === "GET" && pathname === "/library") {
       return library(env, user);
+    }
+    if (request.method === "GET" && pathname === "/me") {
+      return json(profile(user));
+    }
+    if (request.method === "PATCH" && pathname === "/me") {
+      return updateMe(request, env, user);
     }
     if (request.method === "POST" && pathname.match(/^\/items\/[\w-]+\/flag$/)) {
       return flag(env, user, pathname.split("/")[2]);
@@ -113,6 +125,176 @@ async function library(env, user) {
     queuedPages: Math.round(queuedPages * 10) / 10,
     capRemaining: Math.round((user.page_cap - queuedPages) * 10) / 10,
   });
+}
+
+const US_STATES = {
+  alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
+  colorado: "CO", connecticut: "CT", delaware: "DE", florida: "FL", georgia: "GA",
+  hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA",
+  kansas: "KS", kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD",
+  massachusetts: "MA", michigan: "MI", minnesota: "MN", mississippi: "MS",
+  missouri: "MO", montana: "MT", nebraska: "NE", nevada: "NV",
+  "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+  "north carolina": "NC", "north dakota": "ND", ohio: "OH", oklahoma: "OK",
+  oregon: "OR", pennsylvania: "PA", "rhode island": "RI", "south carolina": "SC",
+  "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT", vermont: "VT",
+  virginia: "VA", washington: "WA", "west virginia": "WV", wisconsin: "WI",
+  wyoming: "WY", "district of columbia": "DC",
+};
+
+function profile(user) {
+  return {
+    email: user.email,
+    pageCap: user.page_cap,
+    minIntervalDays: user.min_interval_days,
+    address: {
+      name: user.ship_name,
+      street1: user.ship_street1,
+      street2: user.ship_street2,
+      city: user.ship_city,
+      state: user.ship_state,
+      postcode: user.ship_postcode,
+      country: user.ship_country,
+      phone: user.ship_phone,
+    },
+    addressComplete: !!(user.ship_name && user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode),
+  };
+}
+
+// Normalizes to Lulu's picky formats: 2-letter state, "+1 XXX XXX XXXX" phone.
+// Returns { error } or { updated } (column map ready to persist).
+function validateAddress(a) {
+  if (!a || typeof a !== "object") return { error: "address object is required" };
+
+  let state = (a.state ?? "").trim();
+  state = state.length === 2 ? state.toUpperCase() : US_STATES[state.toLowerCase()] ?? null;
+  if (!state || !Object.values(US_STATES).includes(state))
+    return { error: "state must be a US state (2-letter code or full name)" };
+
+  const phoneDigits = (a.phone ?? "").replace(/\D/g, "").replace(/^1/, "");
+  if (phoneDigits.length !== 10) return { error: "phone must be a 10-digit US number" };
+  const phone = `+1 ${phoneDigits.slice(0, 3)} ${phoneDigits.slice(3, 6)} ${phoneDigits.slice(6)}`;
+
+  for (const field of ["name", "street1", "city", "postcode"]) {
+    if (!a[field]?.trim()) return { error: `${field} is required` };
+  }
+
+  return {
+    updated: {
+      ship_name: a.name.trim(),
+      ship_street1: a.street1.trim(),
+      ship_street2: a.street2?.trim() || null,
+      ship_city: a.city.trim(),
+      ship_state: state,
+      ship_postcode: a.postcode.trim(),
+      ship_country: "US",
+      ship_phone: phone,
+    },
+  };
+}
+
+async function persistAddress(env, userId, updated) {
+  await env.DB.prepare(
+    `UPDATE users SET ship_name=?, ship_street1=?, ship_street2=?, ship_city=?,
+       ship_state=?, ship_postcode=?, ship_country=?, ship_phone=? WHERE id=?`
+  )
+    .bind(...Object.values(updated), userId)
+    .run();
+}
+
+// PATCH /me — currently only the shipping address is user-editable.
+async function updateMe(request, env, user) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "body must be JSON" }, 400);
+  }
+  const { error, updated } = validateAddress(body.address);
+  if (error) return json({ error }, 400);
+  await persistAddress(env, user.id, updated);
+  return json(profile({ ...user, ...updated }));
+}
+
+// GET/POST /address?key=… — the emailed magic-link page. No login; the key
+// is the credential, and it can only touch the shipping address.
+async function addressPage(request, env) {
+  const key = new URL(request.url).searchParams.get("key");
+  const user = key
+    ? await env.DB.prepare("SELECT * FROM users WHERE address_key = ?").bind(key).first()
+    : null;
+  if (!user) return htmlResponse(addressShell("<p class='err'>This link isn't valid. Check the URL from your email.</p>"), 404);
+
+  if (request.method === "POST") {
+    const form = await request.formData();
+    const a = Object.fromEntries(["name", "street1", "street2", "city", "state", "postcode", "phone"].map((f) => [f, form.get(f) ?? ""]));
+    const { error, updated } = validateAddress(a);
+    if (error) return htmlResponse(addressShell(addressForm(key, a, error)));
+    await persistAddress(env, user.id, updated);
+    return htmlResponse(
+      addressShell(
+        `<p class="ok">✓ Address saved. Your issues will ship to:</p>
+         <p class="addr">${escapeHtml(updated.ship_name)}<br>${escapeHtml(updated.ship_street1)}${updated.ship_street2 ? `<br>${escapeHtml(updated.ship_street2)}` : ""}<br>${escapeHtml(updated.ship_city)}, ${updated.ship_state} ${escapeHtml(updated.ship_postcode)}</p>`
+      )
+    );
+  }
+
+  const current = {
+    name: user.ship_name, street1: user.ship_street1, street2: user.ship_street2,
+    city: user.ship_city, state: user.ship_state, postcode: user.ship_postcode, phone: user.ship_phone,
+  };
+  return htmlResponse(addressShell(addressForm(key, current)));
+}
+
+const escapeHtml = (s) =>
+  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const htmlResponse = (html, status = 200) =>
+  new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
+
+function addressForm(key, a = {}, error = null) {
+  const v = (f) => escapeHtml(a[f] ?? "");
+  return `
+    ${error ? `<p class="err">${escapeHtml(error)}</p>` : ""}
+    <form method="POST" action="/address?key=${escapeHtml(key)}">
+      <label>Full name <input name="name" value="${v("name")}" required></label>
+      <label>Street <input name="street1" value="${v("street1")}" required></label>
+      <label>Apt / unit (optional) <input name="street2" value="${v("street2")}"></label>
+      <div class="row">
+        <label>City <input name="city" value="${v("city")}" required></label>
+        <label>State <input name="state" value="${v("state")}" placeholder="IL" required></label>
+      </div>
+      <div class="row">
+        <label>ZIP <input name="postcode" value="${v("postcode")}" required></label>
+        <label>Phone <input name="phone" type="tel" value="${v("phone")}" placeholder="847 555 0100" required></label>
+      </div>
+      <button type="submit">Save address</button>
+    </form>`;
+}
+
+function addressShell(inner) {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dead Tree Digest — Shipping address</title>
+<style>
+  body { background: #f1e6cf; color: #2b2419; font-family: Georgia, serif; margin: 0; padding: 24px; display: flex; justify-content: center; }
+  .card { max-width: 420px; width: 100%; background: #faf3e3; border: 2.5px solid #2b2419; box-shadow: 6px 6px 0 rgba(31,77,56,0.25); padding: 24px; }
+  h1 { font-family: Helvetica, Arial, sans-serif; font-size: 15px; letter-spacing: 0.14em; text-transform: uppercase; border-bottom: 2px solid #2b2419; padding-bottom: 8px; margin: 0 0 6px; }
+  .sub { font-style: italic; font-size: 13px; color: #6b5f4d; margin-bottom: 10px; }
+  label { display: block; margin-top: 12px; font-weight: bold; font-size: 13px; }
+  input { width: 100%; margin-top: 4px; padding: 8px; font-family: "Courier New", monospace; font-size: 13px; border: 1.5px solid #2b2419; background: #fff; box-sizing: border-box; }
+  .row { display: flex; gap: 10px; } .row label { flex: 1; }
+  button { margin-top: 16px; font-family: Helvetica, Arial, sans-serif; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; padding: 10px 16px; border: 2px solid #2b2419; background: #1f4d38; color: #f1e6cf; cursor: pointer; box-shadow: 3px 3px 0 #2b2419; }
+  .err { color: #bf4e24; font-style: italic; }
+  .ok { color: #1f4d38; font-weight: bold; }
+  .addr { font-family: "Courier New", monospace; border: 1.5px solid #2b2419; padding: 12px; background: #fff; }
+</style></head>
+<body><div class="card">
+  <h1>🌲 Dead Tree Digest</h1>
+  <div class="sub">Where should your printed issues go?</div>
+  ${inner}
+</div></body></html>`;
 }
 
 // The "this didn't parse right" button.
