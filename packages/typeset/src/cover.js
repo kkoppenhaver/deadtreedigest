@@ -81,7 +81,7 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 <body>
 
 <div class="back">
-  <div class="tagline">“We killed a tree for this.<br><strong>We planted ten to apologize.</strong>”</div>
+  <div class="tagline">The articles you saved,<br><strong>finally read.</strong></div>
   <div class="ledger">
     <div class="h">★ THE LEDGER ★</div>
     <div class="row"><span>This issue</span><span>${pageCount} pages · ${articleCount} article${articleCount === 1 ? "" : "s"}</span></div>

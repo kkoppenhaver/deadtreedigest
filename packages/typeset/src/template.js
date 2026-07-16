@@ -184,7 +184,7 @@ export function issueHtml(issue, { pagedJs }) {
   <div class="mast">Dead Tree<br>Digest</div>
   <div class="issue-no">Issue № ${escape(number)}${dateLabel ? ` — ${escape(dateLabel)}` : ""}</div>
   <div class="rule"></div>
-  <div class="motto">We killed a tree for this.<br>We planted ten to apologize.</div>
+  <div class="motto">The articles you saved,<br>finally read.</div>
 </div>
 
 <nav class="toc">
