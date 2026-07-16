@@ -81,7 +81,7 @@ Quoted via `spike/lulu-public-quote.mjs` (Lulu's public `api.lulu.com/graphql/` 
 
 Product-scale notes:
 
-- POD has near-zero volume discount; margins come from pricing, not scale, until you can move to a print broker / short-run offset (~100+ copies of shared layouts, which personalized mags mostly can't share except covers/recommended sections).
+- POD has near-zero volume discount; margins come from pricing, not scale, until you can move to a print broker / short-run offset (~100+ copies of shared layouts — which fully personalized mags can't share except covers).
 - At ~$11 COGS per issue (~$22/mo), the $49/mo target price gives ~50% gross margin after payment processing and tree planting — healthy for a premium personalized print product.
 - Cost structure insight: $8.43 of every issue is fixed (shipping $5.69 + print base $1.99 + fulfillment $0.75); pages are 2.5¢ each. The lever is shipment count, not page count — e.g. a monthly 200pp edition costs $13.43/mo all-in (vs $21.86 biweekly), enabling a cheaper ~$25/mo tier at similar margins.
 - At real scale, USPS Periodicals-class mail (requires permit) is the structural shipping advantage real magazines have.
@@ -96,4 +96,4 @@ Product-scale notes:
 5. **Print integration**: Lulu Print API sandbox -> first real printed issue shipped to the apartment.
 6. **Email ingestion**: Email Routing + Email Worker (forward-to-save).
 7. **Ledger + trees**: tree-planting donation integration (One Tree Planted / Eden) and the auto-generated ledger page in every issue's layout.
-8. **Productization**: multi-tenant auth, billing, recommendations ("Librarian").
+8. **Productization**: multi-tenant auth, billing. ~~Recommendations ("Librarian")~~ — **cut 2026-07-16**: every issue contains only content the user themselves saved. This is a copyright-posture decision, not just scope: user-initiated single copies to the saving user (Cablevision-style volition) is the defensible architecture, and a feature where WE select and distribute third-party content would forfeit it. Any future discovery feature must be licensing-based or excerpt/link-only.
