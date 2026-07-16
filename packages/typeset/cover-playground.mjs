@@ -17,10 +17,15 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Inline the template + fonts as plain scripts (file:// blocks module imports).
-const fonts = readFileSync(resolve(here, "src/fonts.css.js"), "utf8").replace(/^export /m, "");
-const cover = readFileSync(resolve(here, "src/cover.js"), "utf8")
-  .replace(/^import [^\n]+\n/m, "")
-  .replace(/^export /gm, "");
+// NB: cover.js's output contains a literal </script> tag — escape it or the
+// browser terminates the playground's script block mid-source.
+const deScript = (s) => s.replace(/<\/script>/g, "<\\/script>");
+const fonts = deScript(readFileSync(resolve(here, "src/fonts.css.js"), "utf8").replace(/^export /m, ""));
+const cover = deScript(
+  readFileSync(resolve(here, "src/cover.js"), "utf8")
+    .replace(/^import [^\n]+\n/m, "")
+    .replace(/^export /gm, "")
+);
 
 const page = `<!DOCTYPE html>
 <html lang="en">
