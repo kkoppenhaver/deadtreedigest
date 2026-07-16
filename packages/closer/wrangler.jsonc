@@ -16,7 +16,7 @@
   "send_email": [{ "name": "EMAIL" }],
   "services": [{ "binding": "RENDER", "service": "dtd-render-spike" }],
   "vars": {
-    "FROM_EMAIL": "press@deadtreedigest.com",
+    "FROM_EMAIL": "press@mail.deadtreedigest.com",
     "FROM_NAME": "Dead Tree Digest",
     "API_URL": "https://dtd-api.keanan-75b.workers.dev",
     "LULU_BASE": "https://api.lulu.com"
