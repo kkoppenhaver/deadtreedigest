@@ -17,6 +17,8 @@ export function spineWidthIn(pageCount) {
   return pageCount / PAGES_PER_INCH;
 }
 
+import { FONTS_CSS } from "./fonts.css.js";
+
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10 }) {
   const spine = spineWidthIn(pageCount);
   const W = (BLEED + TRIM_W + spine + TRIM_W + BLEED).toFixed(4);
@@ -29,30 +31,31 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 <meta charset="utf-8">
 <title>DTD Cover — Issue ${number}</title>
 <style>
+  ${FONTS_CSS}
   :root {
     --paper: #f1e6cf; --ink: #2b2419; --pine: #1f4d38; --pine-deep: #14352a;
     --rust: #bf4e24; --ochre: #d9a13b; --sky: #e8c579;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   @page { size: ${W}in ${H}in; margin: 0; }
-  body { width: ${W}in; height: ${H}in; font-family: Georgia, serif; color: var(--ink); display: flex; }
+  body { width: ${W}in; height: ${H}in; font-family: 'Lora', Georgia, serif; color: var(--ink); display: flex; }
 
   .back  { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: var(--pine-deep); color: var(--paper); padding: ${BLEED + 0.55}in ${BLEED + 0.45}in; padding-left: ${0.45 + BLEED}in; display: flex; flex-direction: column; justify-content: space-between; }
   .spine { width: ${spine.toFixed(4)}in; height: 100%; background: var(--rust); color: var(--paper); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .front { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: var(--sky); position: relative; overflow: hidden; }
 
-  .spine .txt { transform: rotate(90deg); white-space: nowrap; font-family: Helvetica, Arial, sans-serif; font-weight: bold; font-size: ${Math.min(11, spine * 44)}pt; letter-spacing: 0.14em; text-transform: uppercase; }
+  .spine .txt { transform: rotate(90deg); white-space: nowrap; font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: bold; font-size: ${Math.min(11, spine * 44)}pt; letter-spacing: 0.14em; text-transform: uppercase; }
 
   /* front */
   .front svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
   .front .mast {
     position: absolute; top: ${BLEED + 0.5}in; left: 0; right: 0; text-align: center;
-    font-family: Helvetica, Arial, sans-serif; font-weight: 900; font-size: 34pt; line-height: 1.02;
+    font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: normal; font-size: 38pt; line-height: 1.02;
     letter-spacing: 0.02em; text-transform: uppercase; color: var(--pine-deep);
   }
   .front .issue-strip {
     position: absolute; top: ${BLEED + 1.62}in; left: 0; right: 0; text-align: center;
-    font-family: "Courier New", monospace; font-size: 9.5pt; letter-spacing: 0.28em; text-transform: uppercase; color: var(--rust);
+    font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9.5pt; letter-spacing: 0.28em; text-transform: uppercase; color: var(--rust);
   }
   /* paper chip so the strip survives crossing the sun */
   .front .issue-strip span { background: var(--paper); border: 1.5pt solid var(--ink); padding: 3pt 10pt; }
@@ -60,18 +63,18 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
     position: absolute; bottom: ${BLEED + 0.42}in; left: ${BLEED + 0.5}in; right: ${BLEED + 0.5}in;
     background: var(--paper); border: 2.5pt solid var(--ink); padding: 8pt 12pt; text-align: center;
   }
-  .front .caption .big { font-family: Helvetica, Arial, sans-serif; font-weight: bold; font-size: 13pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pine-deep); }
-  .front .caption .small { font-family: "Courier New", monospace; font-size: 7.5pt; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rust); margin-top: 3pt; }
+  .front .caption .big { font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: bold; font-size: 13pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pine-deep); }
+  .front .caption .small { font-family: 'Courier Prime', 'Courier New', monospace; font-size: 7.5pt; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rust); margin-top: 3pt; }
 
   /* back */
   .back .tagline { font-style: italic; font-size: 13pt; line-height: 1.5; }
   .back .tagline strong { color: var(--ochre); font-style: normal; }
-  .back .ledger { border: 2pt solid var(--paper); padding: 12pt 14pt; font-family: "Courier New", monospace; font-size: 9pt; }
+  .back .ledger { border: 2pt solid var(--paper); padding: 12pt 14pt; font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9pt; }
   .back .ledger .h { text-align: center; font-weight: bold; letter-spacing: 0.2em; margin-bottom: 8pt; }
   .back .ledger .row { display: flex; justify-content: space-between; padding: 3pt 0; border-bottom: 0.5pt dotted rgba(241,230,207,0.4); }
   .back .ledger .row:last-child { border-bottom: none; font-weight: bold; }
   .back .foot { font-size: 8pt; font-style: italic; color: #cbbf9f; text-align: center; }
-  .back .foot .url { font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 9.5pt; letter-spacing: 0.12em; color: var(--paper); margin-top: 6pt; text-transform: lowercase; }
+  .back .foot .url { font-family: 'Fjalla One', Helvetica, sans-serif; font-style: normal; font-size: 9.5pt; letter-spacing: 0.12em; color: var(--paper); margin-top: 6pt; text-transform: lowercase; }
 </style>
 <script>window.__pagedDone = 1;</script>
 </head>
