@@ -234,27 +234,6 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ---------- marquee strip ---------- */
-  .strip {
-    background: var(--rust);
-    color: var(--paper);
-    border-top: 3px solid var(--ink);
-    border-bottom: 3px solid var(--ink);
-    overflow: hidden;
-    white-space: nowrap;
-    padding: 12px 0;
-  }
-  .strip-track {
-    display: inline-block;
-    font-family: 'Fjalla One', sans-serif;
-    font-size: 17px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    animation: scroll 30s linear infinite;
-  }
-  .strip-track .sep { color: var(--ochre); padding: 0 22px; }
-  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
   /* ---------- section scaffolding ---------- */
   section { padding: 88px 0; }
   .section-head { text-align: center; margin-bottom: 60px; }
@@ -590,13 +569,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ============ MARQUEE ============ -->
-    <div class="strip" aria-hidden="true">
-      <div class="strip-track">
-        <span>Save it, close the tab</span><span class="sep">✦</span><span>It prints when it's full</span><span class="sep">✦</span><span>You never know the day</span><span class="sep">✦</span><span>Ten trees per issue</span><span class="sep">✦</span><span>Save it, close the tab</span><span class="sep">✦</span><span>It prints when it's full</span><span class="sep">✦</span><span>You never know the day</span><span class="sep">✦</span><span>Ten trees per issue</span><span class="sep">✦</span>
       </div>
     </div>
 
