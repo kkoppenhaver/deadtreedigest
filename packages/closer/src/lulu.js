@@ -18,6 +18,16 @@ export async function luluToken(env) {
   return (await res.json()).access_token;
 }
 
+export async function getPrintJob(env, jobId) {
+  const token = await luluToken(env);
+  const res = await fetch(`${env.LULU_BASE}/print-jobs/${jobId}/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`get print job ${jobId} failed (${res.status})`);
+  return json; // { id, status: { name, message }, line_items: [{ tracking_urls, ... }], ... }
+}
+
 export async function createPrintJob(env, { issue, user, interiorUrl, coverUrl }) {
   const token = await luluToken(env);
   const body = {

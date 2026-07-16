@@ -14,7 +14,7 @@
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
-import { createPrintJob } from "./lulu.js";
+import { createPrintJob, getPrintJob } from "./lulu.js";
 import { signedFileUrl } from "../../api/src/sign.js";
 import pagedJs from "./paged.polyfill.txt";
 
@@ -64,6 +64,17 @@ export default {
       if (request.method === "POST" && pathname === "/rerender") {
         const number = Number(new URL(request.url).searchParams.get("issue"));
         return json(await rerenderIssue(user, env, number));
+      }
+      if (request.method === "POST" && pathname === "/poll-status") {
+        const { results: users } = await env.DB.prepare("SELECT * FROM users").all();
+        const { results: before } = await env.DB.prepare(
+          "SELECT number, lulu_status FROM issues WHERE status = 'sent_to_print'"
+        ).all();
+        await pollPrintJobs(env, users);
+        const { results: after } = await env.DB.prepare(
+          "SELECT number, status, lulu_status, tracking_url FROM issues WHERE lulu_job_id IS NOT NULL"
+        ).all();
+        return json({ polled: before.length, jobs: after });
       }
       if (request.method === "POST" && pathname === "/email-test") {
         const sent = await sendEmail(
@@ -183,6 +194,80 @@ async function sweep(env) {
       console.error(`auto-print retry failed for issue ${issue.number}: ${err.message}`);
     }
   }
+
+  await pollPrintJobs(env, users);
+}
+
+// Lulu jobs fail asynchronously (file validation, payment, production) —
+// and in the full-surprise model, a silently dead job looks identical to a
+// magazine in transit. Poll active jobs daily; alert the OPERATOR (never the
+// user) on bad or stuck states; record SHIPPED quietly.
+const BAD_LULU_STATUSES = new Set(["REJECTED", "CANCELED", "ERROR"]);
+const STUCK_AFTER_HOURS = 24; // UNPAID/PAYMENT_IN_PROGRESS longer than this = payment problem
+
+async function pollPrintJobs(env, users) {
+  const { results: active } = await env.DB.prepare(
+    "SELECT * FROM issues WHERE status = 'sent_to_print' AND lulu_job_id IS NOT NULL"
+  ).all();
+
+  for (const issue of active) {
+    const user = users.find((u) => u.id === issue.user_id);
+    try {
+      const job = await getPrintJob(env, issue.lulu_job_id);
+      const status = job.status?.name ?? "UNKNOWN";
+      const message = job.status?.message ?? "";
+      const now = new Date().toISOString();
+      const tracking = job.line_items?.flatMap((li) => li.tracking_urls ?? [])[0] ?? null;
+
+      if (status !== issue.lulu_status) {
+        await env.DB.prepare(
+          "UPDATE issues SET lulu_status = ?, lulu_status_at = ?, tracking_url = COALESCE(?, tracking_url) WHERE id = ?"
+        )
+          .bind(status, now, tracking, issue.id)
+          .run();
+      }
+
+      if (status === "SHIPPED") {
+        await env.DB.prepare("UPDATE issues SET status = 'shipped', shipped_at = ? WHERE id = ?")
+          .bind(now, issue.id)
+          .run();
+        console.log(`issue ${issue.number} shipped (job ${issue.lulu_job_id})`);
+        continue;
+      }
+
+      const stuckUnpaid =
+        ["UNPAID", "PAYMENT_IN_PROGRESS"].includes(status) &&
+        (Date.now() - new Date(issue.approved_at ?? issue.closed_at).valueOf()) / 3_600_000 > STUCK_AFTER_HOURS;
+
+      if ((BAD_LULU_STATUSES.has(status) || stuckUnpaid) && issue.alerted_status !== status) {
+        if (BAD_LULU_STATUSES.has(status)) {
+          await env.DB.prepare("UPDATE issues SET status = 'print_failed' WHERE id = ?").bind(issue.id).run();
+        }
+        await sendStatusAlert(env, user, issue, { status, message, stuckUnpaid });
+        await env.DB.prepare("UPDATE issues SET alerted_status = ? WHERE id = ?").bind(status, issue.id).run();
+      }
+    } catch (err) {
+      console.error(`status poll failed for issue ${issue.number}: ${err.message}`);
+    }
+  }
+}
+
+function sendStatusAlert(env, user, issue, { status, message, stuckUnpaid }) {
+  const headline = stuckUnpaid
+    ? `stuck in ${status} for ${STUCK_AFTER_HOURS}h+ — check the payment method on the Lulu account`
+    : `entered ${status}`;
+  const text =
+    `Lulu job ${issue.lulu_job_id} (issue № ${issue.number}, ${user?.email ?? issue.user_id}) ${headline}.\n\n` +
+    `${message ? `Lulu says: ${message}\n\n` : ""}` +
+    `Dashboard: https://developers.lulu.com\n\n— dtd-closer`;
+  const html = `
+    <div style="font-family: 'Courier New', monospace; color: #2b2419; max-width: 40em; font-size: 13px;">
+      <p><strong>⚠ Print job ${escapeHtml(status)}</strong> — issue № ${issue.number} for ${escapeHtml(user?.email ?? issue.user_id)} (job ${escapeHtml(String(issue.lulu_job_id))})</p>
+      ${stuckUnpaid ? `<p>Stuck ${STUCK_AFTER_HOURS}h+ — likely no payment method on the Lulu account.</p>` : ""}
+      ${message ? `<p style="background:#f1e6cf;border:1px solid #bf4e24;padding:8px 12px;">${escapeHtml(message)}</p>` : ""}
+      <p><a href="https://developers.lulu.com">Lulu dashboard</a></p>
+    </div>`;
+  return sendEmail(env, env.ADMIN_EMAIL, `[DTD] print job ${status}: issue ${issue.number}`, text, html);
 }
 
 async function checkUser(user, env) {
