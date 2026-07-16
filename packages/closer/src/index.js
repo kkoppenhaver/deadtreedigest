@@ -63,6 +63,20 @@ export default {
         const number = Number(new URL(request.url).searchParams.get("issue"));
         return json(await rerenderIssue(user, env, number));
       }
+      if (request.method === "POST" && pathname === "/email-test") {
+        const sent = await sendEmail(
+          env,
+          user.email,
+          "Dead Tree Digest — the presses have a voice",
+          "This is the email pipeline's first breath. If you're reading this on paper, something has gone wonderfully wrong.\n\n— Dead Tree Digest",
+          `<div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
+             <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">The presses have a voice</h2>
+             <p>This is the email pipeline's first breath. If you're reading this on paper, something has gone wonderfully wrong.</p>
+             <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
+           </div>`
+        );
+        return json({ sent, to: user.email, from: env.FROM_EMAIL });
+      }
     } catch (err) {
       return json({ error: err.message }, 500);
     }
