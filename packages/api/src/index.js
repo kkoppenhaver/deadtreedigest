@@ -18,7 +18,7 @@ async function authedUser(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
 
     if (pathname === "/health") return json({ ok: true });
@@ -27,7 +27,7 @@ export default {
     if (!user) return json({ error: "missing or invalid bearer token" }, 401);
 
     if (request.method === "POST" && pathname === "/save") {
-      return save(request, env, user);
+      return save(request, env, user, ctx);
     }
     if (request.method === "GET" && pathname === "/library") {
       return library(env, user);
@@ -39,7 +39,7 @@ export default {
   },
 };
 
-async function save(request, env, user) {
+async function save(request, env, user, ctx) {
   let body;
   try {
     body = await request.json();
@@ -74,6 +74,16 @@ async function save(request, env, user) {
       article.wordCount, article.estimatedPages, article.needsReview ? 1 : 0, rawKey
     )
     .run();
+
+  // Print-when-full: every save may be the one that fills the issue. The
+  // closer decides (threshold + interval guard); fire-and-forget so the
+  // popup isn't held hostage by a 10s render.
+  ctx.waitUntil(
+    env.CLOSER.fetch("https://closer/check", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${user.save_token}` },
+    }).catch((err) => console.error(`closer check failed: ${err.message}`))
+  );
 
   return json({
     id,

@@ -13,5 +13,6 @@
     }
   ],
   "r2_buckets": [{ "binding": "RAW", "bucket_name": "dtd-raw" }],
+  "services": [{ "binding": "CLOSER", "service": "dtd-closer" }],
   "observability": { "enabled": true }
 }
