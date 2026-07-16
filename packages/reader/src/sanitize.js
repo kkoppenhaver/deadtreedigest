@@ -160,3 +160,74 @@ export function textOf(html) {
   const { document } = parseFragment(html);
   return document.body.textContent.replace(/\s+/g, " ").trim();
 }
+
+const normText = (s) =>
+  String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+const BARE_DATE =
+  /^(?:[A-Z][a-z]+ \d{4}|[A-Z][a-z]+ \d{1,2},? \d{4}|\d{1,2} [A-Z][a-z]+ \d{4})$/;
+
+// Old-web pages open their body with a repeat of the title (sometimes as an
+// image — paulgraham.com renders its titles as GIFs) and a bare date line.
+// The article header already carries both, so strip the duplicates from the
+// lead and promote a found date to publishedAt if we don't have one.
+export function dedupeLead(html, { title, publishedAt = null }) {
+  const { document } = parseFragment(html);
+  const t = normText(title);
+  let published = publishedAt;
+
+  const leads = [...document.body.children].slice(0, 3);
+  for (const el of leads) {
+    if (t) {
+      for (const img of el.querySelectorAll?.("img") ?? []) {
+        if (normText(img.getAttribute("alt")) === t) img.remove();
+      }
+    }
+    const text = el.textContent.trim();
+    if (t && normText(text) === t) {
+      el.remove();
+    } else if (BARE_DATE.test(text)) {
+      const d = new Date(text);
+      if (!Number.isNaN(d.valueOf())) {
+        if (!published) published = d.toISOString().slice(0, 10);
+        el.remove();
+      }
+    } else if (!text && !el.querySelector?.("img")) {
+      el.remove(); // hollowed out by the title-image removal
+    } else if (text) {
+      break; // real content begins; stop sniffing
+    }
+  }
+
+  return { html: document.body.innerHTML, publishedAt: published };
+}
+
+// Footnote markers that arrive as their own blocks (`<p>[1]</p>` — Paul
+// Graham's essays, older blogs) typeset as stranded one-line paragraphs.
+// Fold them into the tail of the preceding paragraph as a superscript.
+export function foldFootnoteMarkers(html) {
+  const { document } = parseFragment(html);
+  for (const el of [...document.body.children]) {
+    if (el.localName !== "p") continue;
+    const text = el.textContent.trim();
+    if (!/^\[\d+\]$/.test(text)) continue;
+    const prev = el.previousElementSibling;
+    if (prev?.localName === "p") {
+      const sup = document.createElement("sup");
+      // keep the link if the marker had one
+      sup.innerHTML = el.querySelector("a") ? el.innerHTML.trim() : escape(text);
+      prev.append(sup);
+      el.remove();
+    }
+  }
+  return document.body.innerHTML;
+}
+
+// og:description is often just the article's opening sentences; printing it
+// as a standfirst duplicates the first paragraph verbatim.
+export function excerptDuplicatesLead(excerpt, contentHtml) {
+  if (!excerpt) return false;
+  const e = normText(excerpt).replace(/\s*(…|\.\.\.)$/, "");
+  if (e.length < 20) return false;
+  return normText(textOf(contentHtml)).startsWith(e.slice(0, Math.min(e.length, 160)));
+}

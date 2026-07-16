@@ -18,7 +18,7 @@ import { substack } from "./extractors/substack.js";
 import { twitter } from "./extractors/twitter.js";
 import { linkedin } from "./extractors/linkedin.js";
 import { email } from "./extractors/email.js";
-import { sanitize, textOf } from "./sanitize.js";
+import { sanitize, textOf, dedupeLead, excerptDuplicatesLead, foldFootnoteMarkers } from "./sanitize.js";
 import { estimatePages } from "./estimate.js";
 
 const EXTRACTORS = { generic, substack, twitter, linkedin, email };
@@ -39,14 +39,42 @@ export function parseArticle({ html, url = null, source = null, email: emailMeta
   }
   if (!extracted?.contentHtml) return null;
 
-  const { html: contentHtml, links, images } = sanitize(extracted.contentHtml, url);
+  const sanitized = sanitize(extracted.contentHtml, url);
+  const { links } = sanitized;
+
+  let title = extracted.title?.trim() || null;
+  const deduped = dedupeLead(sanitized.html, {
+    title,
+    publishedAt: extracted.publishedAt ?? null,
+  });
+  const contentHtml = foldFootnoteMarkers(deduped.html);
+  // The lead cleanup may have removed images; keep the inventory honest.
+  const images = sanitized.images.filter((src) => contentHtml.includes(src));
+
   const text = textOf(contentHtml);
   const wordCount = text ? text.split(/\s+/).length : 0;
   if (wordCount < 20) needsReview = true;
 
-  let title = extracted.title?.trim() || null;
   if (!title) {
     title = text.slice(0, 80).trimEnd() + (text.length > 80 ? "…" : "");
+  }
+
+  // Excerpts need enough substance to earn standfirst treatment: not empty
+  // punctuation, not a stray date line (< 4 words), not a copy of the lead.
+  let excerpt = extracted.excerpt?.trim() || null;
+  if (excerpt && (excerpt.replace(/[.…\s]/g, "").length === 0 || excerpt.split(/\s+/).length < 4)) {
+    excerpt = null;
+  }
+  if (excerptDuplicatesLead(excerpt, contentHtml)) excerpt = null;
+
+  // A bare hostname beats an empty kicker when the page declares no site name.
+  let siteName = extracted.siteName ?? null;
+  if (!siteName && url) {
+    try {
+      siteName = new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      /* keep null */
+    }
   }
 
   return {
@@ -55,9 +83,9 @@ export function parseArticle({ html, url = null, source = null, email: emailMeta
     canonicalUrl: extracted.canonicalUrl ?? url,
     title,
     byline: extracted.byline ?? null,
-    siteName: extracted.siteName ?? null,
-    publishedAt: extracted.publishedAt ?? null,
-    excerpt: extracted.excerpt && extracted.excerpt.replace(/[.…\s]/g, "").length > 0 ? extracted.excerpt : null,
+    siteName,
+    publishedAt: deduped.publishedAt,
+    excerpt,
     contentHtml,
     links,
     images,

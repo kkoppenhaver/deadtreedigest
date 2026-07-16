@@ -149,6 +149,36 @@ describe("sanitize", () => {
   });
 });
 
+describe("lead cleanup (old-web pages)", () => {
+  const html = `<html><head><title>How to Do Great Work</title></head><body><article>
+    <p><img src="https://example.com/how-to-do-great-work-2.gif" alt="How to Do Great Work">July 2023</p>
+    <p>If you collected lists of techniques for doing great work in a lot of different fields, what would the intersection look like? I decided to find out by making it. This opening paragraph continues with plenty of words so extraction is confident.</p>
+    <p>Partly my goal was to create a guide that could be followed without deep context.</p>
+  </article></body></html>`;
+
+  const article = parseArticle({ html, url: "https://paulgraham.com/greatwork.html" });
+
+  it("strips the title-image + bare-date lead block", () => {
+    expect(article.contentHtml).not.toContain("great-work-2.gif");
+    expect(article.contentHtml).not.toContain("July 2023");
+    expect(article.contentHtml).toContain("If you collected lists");
+    expect(article.images).toHaveLength(0);
+  });
+
+  it("promotes the stripped date to publishedAt", () => {
+    expect(article.publishedAt).toBe("2023-07-01");
+  });
+
+  it("falls back to the hostname for siteName", () => {
+    expect(article.siteName).toBe("paulgraham.com");
+  });
+
+  it("drops an excerpt that duplicates the opening paragraph", () => {
+    // og:description commonly IS the first paragraph
+    expect(article.excerpt).toBeNull();
+  });
+});
+
 describe("page estimation", () => {
   it("estimates pages from word count for the 100pp cap", () => {
     const words = Array.from({ length: 2000 }, (_, i) => `word${i}`).join(" ");

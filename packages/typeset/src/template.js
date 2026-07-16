@@ -17,7 +17,9 @@ const fmtDate = (iso) => {
   const d = new Date(iso);
   return Number.isNaN(d.valueOf())
     ? null
-    : d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    : // timeZone UTC: date-only strings parse as UTC midnight, and rendering
+      // them in a western local zone walks them back a day
+      d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 };
 
 const STYLES = `
