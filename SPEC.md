@@ -75,6 +75,7 @@ Quoted via `spike/lulu-public-quote.mjs` (Lulu's public `api.lulu.com/graphql/` 
 - Print, perfect-bound: **$3.49 (60pp) / $3.99 (80pp) / $4.49 (100pp)** — ≈ $1.99 base + $0.025/page
 - Fulfillment fee: $0.75/order; Mail shipping (US): **$5.69**, 11–14 day transit
 - **All-in: $9.93–10.93/issue → ~$20–22/mo** — mid-range of the old estimate, well under the $40/mo ceiling
+- **Tax-inclusive (authenticated quote, real IL address, 2026-07-16)**: PB 60/80/100pp = **$10.95 / $11.51 / $12.06 all-in per issue** (IL sales tax adds ~10%). Worst case at print-when-full (2.2 issues/mo at 100pp) = **~$26.5/mo COGS** → ~45% gross margin at $49/mo after Stripe + trees. Full table in `spike/lulu-quotes-2026-07-16.json`.
 - **Binding decision is settled: always perfect-bound.** PB is cheaper than saddle stitch even at 40pp ($3.0x vs $4.78) and coil is ~2× PB ($7.86–8.86). The per-issue binding knob is unnecessary; PB min page count (~32pp) is covered by the ≥5-item gate.
 - ⚠️ **Transit lag**: Mail takes 11–14 days — each issue arrives around the time the next one closes. Acceptable as a steady-state rolling pipeline (an issue is always in the mail), but the "fresh off the press" framing should account for it. Faster shipping starts at $13.74 (Ground) and blows the budget.
 
