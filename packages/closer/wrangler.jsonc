@@ -18,6 +18,7 @@
   "vars": {
     "FROM_EMAIL": "press@mail.deadtreedigest.com",
     "FROM_NAME": "Dead Tree Digest",
+    "ADMIN_EMAIL": "k.koppenhaver@gmail.com",
     "API_URL": "https://dtd-api.keanan-75b.workers.dev",
     "LULU_BASE": "https://api.lulu.com"
   },

@@ -277,10 +277,13 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
   }
   await env.DB.prepare("UPDATE users SET last_closed_at = ? WHERE id = ?").bind(now, user.id).run();
 
-  // Auto-approve (decided 2026-07-16): the issue goes to the press the moment
-  // it's rendered. Failures fall back to the daily cron retry; a missing
-  // address holds it until the emailed magic link gets filled in.
+  // Auto-approve + full surprise (decided 2026-07-16): the issue goes to the
+  // press the moment it's rendered, and when everything works NOBODY gets an
+  // email — the magazine's arrival is the notification. Email exists only for
+  // exceptions: the user when we can't print without their address, the
+  // operator when the print run fails.
   let job = null;
+  let emailed = false;
   if (autoPrint && coverKey && hasAddress(user)) {
     try {
       job = await printIssue(
@@ -290,19 +293,11 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
       );
     } catch (err) {
       console.error(`auto-print failed for issue ${number}: ${err.message}`);
+      emailed = await sendPrintFailureAlert(env, user, { number, pageCount, approveKey, error: err.message });
     }
+  } else if (autoPrint && !hasAddress(user)) {
+    emailed = await sendAddressNeededEmail(env, user, { number });
   }
-
-  const emailed = await sendIssueEmail(env, user, {
-    number,
-    pageCount,
-    picked,
-    rolledOver,
-    approveKey,
-    printed: !!job,
-    previewUrl: await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, pdfKey),
-    coverUrl: coverKey ? await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, coverKey) : null,
-  });
 
   return {
     action: "closed",
@@ -419,50 +414,39 @@ async function sendEmail(env, to, subject, text, html) {
   }
 }
 
-function sendIssueEmail(env, user, { number, pageCount, picked, rolledOver, approveKey, printed, previewUrl, coverUrl }) {
-  // Auto-approve world: this email is informational. Three shapes —
-  // printed (the normal case), waiting-on-address (magic link; prints
-  // automatically once filled), or print-hiccup (cron retries; manual lever
-  // included just in case).
-  const needsAddress = !hasAddress(user);
+// The one routine-adjacent user email: we literally cannot ship without an
+// address. Deliberately says nothing about the issue's contents — the
+// magazine itself is the reveal.
+function sendAddressNeededEmail(env, user, { number }) {
   const addressUrl = `${env.API_URL}/address?key=${user.address_key}`;
-  const approveUrl = `https://dtd-closer.keanan-75b.workers.dev/approve?key=${approveKey}`;
-
-  const titles = picked.map((i) => `  • ${i.title}${i.byline ? ` — ${i.byline}` : ""}`).join("\n");
-  const subject = printed
-    ? `Issue № ${number} is at the press — ${pageCount ?? "?"} pages`
-    : needsAddress
-      ? `Issue № ${number} is ready — we need your shipping address`
-      : `Issue № ${number} is ready — heading to press shortly`;
-
-  const statusText = printed
-    ? "It's at the printer and will simply show up in your mailbox — no tracking emails, no spoilers on timing."
-    : needsAddress
-      ? `We need a shipping address before it can print: ${addressUrl}\nIt goes to the press automatically once that's filled in.`
-      : `The print run hit a snag; we'll retry automatically. You can also send it manually: ${approveUrl}`;
-
   const text =
-    `You filled Issue № ${number}. ${pageCount ?? "?"} pages, ${picked.length} articles.\n\n${titles}\n\n` +
-    `${rolledOver ? `${rolledOver} save(s) rolled over to start Issue № ${number + 1}.\n\n` : ""}` +
-    `Preview: ${previewUrl}\n${coverUrl ? `Cover: ${coverUrl}\n` : ""}\n${statusText}\n\n— Dead Tree Digest`;
-
-  const statusHtml = printed
-    ? `<p>It's at the printer and will simply show up in your mailbox — no tracking emails, no spoilers on timing.</p>`
-    : needsAddress
-      ? `<p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><strong>We need a shipping address before it can print.</strong><br><a href="${addressUrl}" style="color:#bf4e24;">Add your address</a> — it goes to the press automatically once that's in.</p>`
-      : `<p style="background:#f1e6cf;border:2px solid #d9a13b;padding:10px 14px;">The print run hit a snag; we'll retry automatically. You can also <a href="${approveUrl}" style="color:#bf4e24;">send it manually</a>.</p>`;
-
+    `Issue № ${number} is printed and ready to ship — we just don't know where to send it.\n\n` +
+    `Add your shipping address here: ${addressUrl}\n\n` +
+    `It heads to the press automatically the moment that's filled in.\n\n— Dead Tree Digest`;
   const html = `
     <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
-      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">${printed ? `Issue № ${number} is at the press` : `You filled Issue № ${number}`}</h2>
-      <p><strong>${pageCount ?? "?"}</strong> pages · <strong>${picked.length}</strong> articles</p>
-      <ul>${picked.map((i) => `<li>${escapeHtml(i.title)}${i.byline ? ` — ${escapeHtml(i.byline)}` : ""}</li>`).join("")}</ul>
-      ${rolledOver ? `<p style="color:#4a4032;">${rolledOver} save(s) rolled over to start Issue № ${number + 1}.</p>` : ""}
-      <p><a href="${previewUrl}" style="color:#1f4d38;">Preview the issue (PDF)</a>${coverUrl ? ` · <a href="${coverUrl}" style="color:#1f4d38;">the cover</a>` : ""}</p>
-      ${statusHtml}
+      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">Where should Issue № ${number} go?</h2>
+      <p>Your issue is typeset and ready — we just don't know where to send it.</p>
+      <p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><a href="${addressUrl}" style="color:#bf4e24;"><strong>Add your shipping address</strong></a> — it heads to the press automatically the moment that's in.</p>
       <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
     </div>`;
-  return sendEmail(env, user.email, subject, text, html);
+  return sendEmail(env, user.email, `Where should Issue № ${number} go?`, text, html);
+}
+
+// Operator alert, not a user email: print failures go to ADMIN_EMAIL with
+// the details and the manual print lever. The cron retries daily regardless.
+function sendPrintFailureAlert(env, user, { number, pageCount, approveKey, error }) {
+  const approveUrl = `https://dtd-closer.keanan-75b.workers.dev/approve?key=${approveKey}`;
+  const text =
+    `Print job failed for ${user.email}, issue № ${number} (${pageCount ?? "?"}pp).\n\n` +
+    `Error: ${error}\n\nThe daily cron will retry. Manual trigger: ${approveUrl}\n\n— dtd-closer`;
+  const html = `
+    <div style="font-family: 'Courier New', monospace; color: #2b2419; max-width: 40em; font-size: 13px;">
+      <p><strong>⚠ Print job failed</strong> — ${escapeHtml(user.email)}, issue № ${number} (${pageCount ?? "?"}pp)</p>
+      <p style="background:#f1e6cf;border:1px solid #bf4e24;padding:8px 12px;">${escapeHtml(error)}</p>
+      <p>The daily cron will retry. <a href="${approveUrl}">Manual trigger</a>.</p>
+    </div>`;
+  return sendEmail(env, env.ADMIN_EMAIL, `[DTD] print failed: issue ${number} for ${user.email}`, text, html);
 }
 
 const escapeHtml = (s) =>
