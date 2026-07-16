@@ -781,5 +781,37 @@
     </div>
   </footer>
 
+
+  <!-- dtd-design-mode: open with ?design to edit text in place; inert otherwise -->
+  <script>
+  (function () {
+    if (!location.search.includes("design")) return;
+    document.designMode = "on";
+
+    const bar = document.createElement("div");
+    bar.id = "design-bar";
+    bar.setAttribute("contenteditable", "false");
+    bar.innerHTML =
+      '<span style="font-family:Courier Prime,monospace;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;">✏️ Design mode: click any text and type</span>' +
+      '<button id="design-save" style="font-family:Fjalla One,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;padding:9px 16px;border:2px solid #2b2419;background:#bf4e24;color:#f1e6cf;cursor:pointer;box-shadow:3px 3px 0 #2b2419;">Download my edits</button>';
+    bar.style.cssText =
+      "position:fixed;bottom:18px;right:18px;z-index:2147483647;display:flex;gap:14px;align-items:center;" +
+      "background:#f1e6cf;color:#2b2419;border:2.5px solid #2b2419;box-shadow:6px 6px 0 rgba(31,77,56,0.3);padding:12px 16px;";
+    document.body.appendChild(bar);
+
+    document.getElementById("design-save").addEventListener("click", function () {
+      const clone = document.documentElement.cloneNode(true);
+      clone.querySelector("#design-bar")?.remove();
+      const html = "<!DOCTYPE html>\n" + clone.outerHTML;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+      a.download = "dtd-homepage-edited.html";
+      a.click();
+      const btn = document.getElementById("design-save");
+      btn.textContent = "Downloaded ✓ (hand it to Claude)";
+      setTimeout(() => (btn.textContent = "Download my edits"), 3000);
+    });
+  })();
+  </script>
 </body>
 </html>
