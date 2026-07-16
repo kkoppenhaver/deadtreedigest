@@ -17,8 +17,11 @@ export default {
     const html = await request.text();
     const t0 = Date.now();
 
-    const browser = await puppeteer.launch(env.BROWSER);
+    let browser;
     try {
+      // launch inside the try: a rate-limited launch (free tier: 1 new
+      // browser / 20s) must surface as a 500, not an uncaught crash
+      browser = await puppeteer.launch(env.BROWSER);
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });
 
@@ -39,7 +42,7 @@ export default {
     } catch (err) {
       return new Response(`render failed: ${err.message}`, { status: 500 });
     } finally {
-      await browser.close();
+      await browser?.close();
     }
   },
 };

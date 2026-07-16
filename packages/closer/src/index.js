@@ -13,7 +13,7 @@
 //     while nobody saves), plus the nudge.
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
-import { issueHtml } from "@dtd/typeset";
+import { issueHtml, coverHtml } from "@dtd/typeset";
 import pagedJs from "./paged.polyfill.txt";
 
 // The page estimator runs ~15% under real renders (measured in the render spike).
@@ -117,19 +117,9 @@ async function closeForUser(user, env, queued = null) {
   const number =
     ((await env.DB.prepare("SELECT MAX(number) AS n FROM issues WHERE user_id = ?").bind(user.id).first())
       ?.n ?? 0) + 1;
-  const issueId = crypto.randomUUID();
-  const now = new Date().toISOString();
-  await env.DB.prepare(
-    "INSERT INTO issues (id, user_id, number, status, closed_at) VALUES (?, ?, ?, 'closed', ?)"
-  )
-    .bind(issueId, user.id, number, now)
-    .run();
-  for (const item of picked) {
-    await env.DB.prepare("UPDATE items SET issue_id = ?, status = 'assigned' WHERE id = ?")
-      .bind(issueId, item.id)
-      .run();
-  }
 
+  // Render EVERYTHING before touching the database: a failed render must
+  // leave no orphaned issue rows or assigned items behind.
   const articles = picked.map((i) => ({
     title: i.title,
     byline: i.byline,
@@ -140,24 +130,45 @@ async function closeForUser(user, env, queued = null) {
     estimatedPages: i.estimated_pages,
   }));
   const dateLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const html = issueHtml({ number, dateLabel, articles, ledger: { issuesShipped: number } }, { pagedJs });
 
-  // Service binding: same-account workers.dev URLs can't be fetched directly.
-  const renderRes = await env.RENDER.fetch("https://render/", { method: "POST", body: html });
-  if (!renderRes.ok) {
-    await env.DB.prepare("UPDATE issues SET status = 'render_failed' WHERE id = ?").bind(issueId).run();
-    throw new Error(`render failed: ${renderRes.status} ${await renderRes.text()}`);
+  const interior = await renderPdf(
+    env,
+    issueHtml({ number, dateLabel, articles, ledger: { issuesShipped: number } }, { pagedJs })
+  );
+  const pageCount = interior.pages;
+
+  let cover = null;
+  if (pageCount) {
+    try {
+      cover = await renderPdf(
+        env,
+        coverHtml({ number, dateLabel, pageCount, articleCount: picked.length })
+      );
+    } catch (err) {
+      console.error(`cover render failed: ${err.message}`); // interior still ships to review
+    }
   }
-  const pdf = await renderRes.arrayBuffer();
-  const pageCount = Number(renderRes.headers.get("x-pages")) || null;
 
   const pdfKey = `issues/${user.id}/issue-${number}.pdf`;
-  await env.RAW.put(pdfKey, pdf, { httpMetadata: { contentType: "application/pdf" } });
+  await env.RAW.put(pdfKey, interior.pdf, { httpMetadata: { contentType: "application/pdf" } });
+  let coverKey = null;
+  if (cover) {
+    coverKey = `issues/${user.id}/issue-${number}-cover.pdf`;
+    await env.RAW.put(coverKey, cover.pdf, { httpMetadata: { contentType: "application/pdf" } });
+  }
+
+  const issueId = crypto.randomUUID();
+  const now = new Date().toISOString();
   await env.DB.prepare(
-    "UPDATE issues SET status = 'rendered', page_count = ?, pdf_key = ? WHERE id = ?"
+    "INSERT INTO issues (id, user_id, number, status, page_count, pdf_key, closed_at) VALUES (?, ?, ?, 'rendered', ?, ?, ?)"
   )
-    .bind(pageCount, pdfKey, issueId)
+    .bind(issueId, user.id, number, pageCount, pdfKey, now)
     .run();
+  for (const item of picked) {
+    await env.DB.prepare("UPDATE items SET issue_id = ?, status = 'assigned' WHERE id = ?")
+      .bind(issueId, item.id)
+      .run();
+  }
   await env.DB.prepare("UPDATE users SET last_closed_at = ? WHERE id = ?").bind(now, user.id).run();
 
   const emailed = await sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver });
@@ -170,8 +181,29 @@ async function closeForUser(user, env, queued = null) {
     estimatedPages: round1(est),
     renderedPages: pageCount,
     pdfKey,
+    coverKey,
     emailed,
   };
+}
+
+// Render via service binding (same-account workers.dev URLs can't be fetched
+// directly). Browser Rendering's free tier allows one new browser per 20s, and
+// a close needs two renders (interior + cover), so retry across the window.
+async function renderPdf(env, html, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 22_000));
+    try {
+      const res = await env.RENDER.fetch("https://render/", { method: "POST", body: html });
+      if (res.ok) {
+        return { pdf: await res.arrayBuffer(), pages: Number(res.headers.get("x-pages")) || null };
+      }
+      lastErr = new Error(`render failed: ${res.status} ${(await res.text()).slice(0, 200)}`);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 async function queuedItems(user, env) {

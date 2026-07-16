@@ -6,6 +6,8 @@
 // B&W interior per spec: everything is ink-on-paper monochrome; images are
 // forced grayscale.
 
+export { coverHtml, spineWidthIn } from "./cover.js";
+
 const escape = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
