@@ -2,15 +2,15 @@
 // queue's estimated pages reach the user's page_cap — but never sooner than
 // min_interval_days after the last close (the cost guard: at the default 14
 // days, worst-case COGS equals the modeled biweekly economics). No thin
-// issues, no skip cycles: an unfilled queue just keeps filling. If nothing
-// has shipped in a while, a gentle nudge email reports queue progress.
+// issues, no skip cycles, no nudges: an unfilled queue just keeps filling
+// quietly until it is full.
 //
 // Triggers:
 //   - POST /check (bearer save_token): close if full + eligible. Called by
 //     dtd-api after every save — this is what makes "you filled your issue"
 //     land the moment it happens.
 //   - daily cron: same check for every user (catches interval windows opening
-//     while nobody saves), plus the nudge.
+//     while nobody saves).
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
@@ -20,7 +20,6 @@ import pagedJs from "./paged.polyfill.txt";
 
 // The page estimator runs ~15% under real renders (measured in the render spike).
 const ESTIMATE_MARGIN = 1.15;
-const NUDGE_AFTER_DAYS = 28;
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data, null, 2), {
@@ -163,20 +162,6 @@ async function checkUser(user, env) {
   const eligible = sinceClose >= user.min_interval_days;
 
   if (full && eligible) return closeForUser(user, env, queued);
-
-  // Long-quiet queue: reassure, don't ship thin.
-  if (
-    queued.length > 0 &&
-    !full &&
-    sinceClose >= NUDGE_AFTER_DAYS &&
-    daysSince(user.last_nudge_at) >= NUDGE_AFTER_DAYS
-  ) {
-    const emailed = await sendNudgeEmail(env, user, queued, est);
-    await env.DB.prepare("UPDATE users SET last_nudge_at = ? WHERE id = ?")
-      .bind(new Date().toISOString(), user.id)
-      .run();
-    return { action: "nudged", queuedPages: round1(est), cap: user.page_cap, emailed };
-  }
 
   return {
     action: "waiting",
@@ -412,24 +397,6 @@ function sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver, 
       <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
     </div>`;
   return sendEmail(env, user.email, `You filled Issue № ${number} — ${pageCount ?? "?"} pages`, text, html);
-}
-
-function sendNudgeEmail(env, user, queued, est) {
-  const pct = Math.min(100, Math.round((est / user.page_cap) * 100));
-  const titles = queued.map((q) => `  • ${q.title}`).join("\n");
-  const text =
-    `Your next issue is ${pct}% full (${round1(est)} of ${user.page_cap} pages).\n\n` +
-    `Everything you've saved is safe and waiting:\n${titles}\n\n` +
-    `Keep saving — the moment it's full, it prints.\n\n— Dead Tree Digest`;
-  const html = `
-    <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
-      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">Your next issue is ${pct}% full</h2>
-      <p>${round1(est)} of ${user.page_cap} pages. Everything you've saved is safe and waiting:</p>
-      <ul>${queued.map((q) => `<li>${escapeHtml(q.title)}</li>`).join("")}</ul>
-      <p>Keep saving — the moment it's full, it prints.</p>
-      <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
-    </div>`;
-  return sendEmail(env, user.email, `Your next issue is ${pct}% full`, text, html);
 }
 
 const escapeHtml = (s) =>
