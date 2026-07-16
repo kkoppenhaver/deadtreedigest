@@ -116,7 +116,8 @@ const STYLES = `
 `;
 
 function articleSection(a, i) {
-  const meta = [a.siteName, a.byline, fmtDate(a.publishedAt)].filter(Boolean).join(" · ");
+  // The kicker owns the source; the byline row carries only author + date.
+  const meta = [a.byline, fmtDate(a.publishedAt)].filter(Boolean).join(" · ");
   return `
   <section class="article" id="a${i}">
     <header class="article-head">
