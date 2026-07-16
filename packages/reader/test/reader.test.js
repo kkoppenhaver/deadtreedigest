@@ -179,6 +179,29 @@ describe("lead cleanup (old-web pages)", () => {
   });
 });
 
+describe("footnote sections", () => {
+  const body = `
+    <p>Main text of the essay with enough words to be an article opener paragraph here.</p>
+    <p>[</p><p><a href="https://x.com/#f5n">5</a>] First note text explaining something.</p>
+    <p>[6] Second note text with more detail.</p>
+    <p>[7] Third note.</p>`;
+  const article = parseArticle({
+    html: `<html><body><article><h1>Notes Test</h1>${body}</article></body></html>`,
+    url: "https://example.com/notes",
+  });
+
+  it("repairs bracket/number splits from br-chain conversion", () => {
+    expect(article.contentHtml).not.toContain("<p>[</p>");
+  });
+
+  it("wraps note runs in a notes section with superscript markers", () => {
+    expect(article.contentHtml).toContain('<section class="notes">');
+    expect(article.contentHtml).toContain("<sup>5</sup> First note text");
+    expect(article.contentHtml).toContain("<sup>7</sup> Third note.");
+    expect(article.contentHtml).not.toContain("[6]");
+  });
+});
+
 describe("page estimation", () => {
   it("estimates pages from word count for the 100pp cap", () => {
     const words = Array.from({ length: 2000 }, (_, i) => `word${i}`).join(" ");

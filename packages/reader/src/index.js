@@ -18,7 +18,7 @@ import { substack } from "./extractors/substack.js";
 import { twitter } from "./extractors/twitter.js";
 import { linkedin } from "./extractors/linkedin.js";
 import { email } from "./extractors/email.js";
-import { sanitize, textOf, dedupeLead, excerptDuplicatesLead, foldFootnoteMarkers } from "./sanitize.js";
+import { sanitize, textOf, dedupeLead, excerptDuplicatesLead, foldFootnoteMarkers, repairSplitFootnotes, wrapNotesSections, markNoIndent } from "./sanitize.js";
 import { estimatePages } from "./estimate.js";
 
 const EXTRACTORS = { generic, substack, twitter, linkedin, email };
@@ -47,7 +47,7 @@ export function parseArticle({ html, url = null, source = null, email: emailMeta
     title,
     publishedAt: extracted.publishedAt ?? null,
   });
-  const contentHtml = foldFootnoteMarkers(deduped.html);
+  const contentHtml = markNoIndent(wrapNotesSections(foldFootnoteMarkers(repairSplitFootnotes(deduped.html))));
   // The lead cleanup may have removed images; keep the inventory honest.
   const images = sanitized.images.filter((src) => contentHtml.includes(src));
 

@@ -223,6 +223,71 @@ export function foldFootnoteMarkers(html) {
   return document.body.innerHTML;
 }
 
+// Readability's br-chain conversion sometimes splits a footnote entry between
+// the bracket and the number (`<p>…[</p><p>5] text…</p>` — Paul Graham's
+// footnote sections). Rejoin them before any marker handling.
+export function repairSplitFootnotes(html) {
+  const { document } = parseFragment(html);
+  for (const el of [...document.body.children]) {
+    if (el.localName !== "p" || !el.textContent.trim().endsWith("[")) continue;
+    const next = el.nextElementSibling;
+    if (next?.localName === "p" && /^\d+\]/.test(next.textContent.trim())) {
+      next.insertBefore(document.createTextNode(el.textContent.trim()), next.firstChild);
+      el.remove();
+    }
+  }
+  return document.body.innerHTML;
+}
+
+// Endnote sections: a run of 2+ paragraphs shaped like "[5] text…" gets
+// wrapped in <section class="notes"> with the marker converted to a
+// superscript number — the typesetter styles these smaller, tighter, with
+// hanging indents (standard back-matter treatment).
+export function wrapNotesSections(html) {
+  const { document } = parseFragment(html);
+  const isNote = (el) => el?.localName === "p" && /^\[\d+\]\s+\S/.test(el.textContent.trim());
+
+  let cursor = document.body.firstElementChild;
+  while (cursor) {
+    if (!isNote(cursor)) {
+      cursor = cursor.nextElementSibling;
+      continue;
+    }
+    const run = [cursor];
+    while (isNote(run.at(-1).nextElementSibling)) run.push(run.at(-1).nextElementSibling);
+    cursor = run.at(-1).nextElementSibling;
+    if (run.length < 2) continue;
+
+    const section = document.createElement("section");
+    section.setAttribute("class", "notes");
+    run[0].before(section);
+    for (const p of run) {
+      // "[5] text" -> "<sup>5</sup> text"; drop any marker-internal links
+      const m = p.innerHTML.match(/^\s*\[(?:<a[^>]*>)?(\d+)(?:<\/a>)?\]\s*/);
+      if (m) {
+        p.innerHTML = `<sup>${m[1]}</sup> ${p.innerHTML.slice(m[0].length)}`;
+      }
+      section.append(p);
+    }
+  }
+  return document.body.innerHTML;
+}
+
+// Book convention: paragraphs are first-line-indented EXCEPT after a heading,
+// figure, list, blockquote, or break. Encoded as a class in the markup
+// because adjacent-sibling selectors (h2 + p) crash Paged.js's fragmenter
+// ("item doesn't belong to list") when the siblings split across pages.
+const NO_INDENT_AFTER = new Set(["h2", "h3", "h4", "figure", "blockquote", "ul", "ol", "pre", "hr", "table", "section"]);
+
+export function markNoIndent(html) {
+  const { document } = parseFragment(html);
+  for (const p of document.querySelectorAll("p")) {
+    const prev = p.previousElementSibling;
+    if (prev && NO_INDENT_AFTER.has(prev.localName)) p.setAttribute("class", "ni");
+  }
+  return document.body.innerHTML;
+}
+
 // og:description is often just the article's opening sentences; printing it
 // as a standfirst duplicates the first paragraph verbatim.
 export function excerptDuplicatesLead(excerpt, contentHtml) {

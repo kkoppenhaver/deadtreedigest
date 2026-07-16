@@ -82,7 +82,11 @@ const STYLES = `
   .article-head .byline { font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 7.5pt; letter-spacing: 0.06em; margin-top: 8pt; color: #333; text-transform: uppercase; }
 
   .content p { text-align: justify; hyphens: auto; -webkit-hyphens: auto; orphans: 2; widows: 2; margin-bottom: 0; text-indent: 1.2em; }
-  .content p:first-of-type { text-indent: 0; }
+  /* Book convention: no indent on openers or after headings/figures/breaks.
+     The .ni class comes from the reader — adjacent-sibling selectors (h2 + p)
+     crash Paged.js fragmentation, so the rule lives in markup. */
+  .content p:first-of-type, .content p.ni { text-indent: 0; }
+  .content sup { font-size: 0.7em; line-height: 0; }
   .content h2, .content h3, .content h4 { font-family: 'Fjalla One', Helvetica, sans-serif; break-after: avoid; margin: 13pt 0 5pt; line-height: 1.2; }
   .content h2 { font-size: 11.5pt; }
   .content h3 { font-size: 10pt; }
@@ -101,6 +105,14 @@ const STYLES = `
   .content a { color: inherit; text-decoration: none; } /* endnotes come later; ink stays quiet */
   .content table { border-collapse: collapse; font-size: 8pt; margin: 9pt 0; width: 100%; }
   .content th, .content td { border: 0.5pt solid var(--rule); padding: 3pt 5pt; text-align: left; }
+
+  /* Endnotes: ~2pt down from body, tighter leading, thin rule, hanging
+     indents — standard back-matter treatment. */
+  .content .notes { margin-top: 14pt; border-top: 0.75pt solid var(--rule); padding-top: 7pt; }
+  /* Hanging indent via negative text-indent — NOT float: floated markers
+     crossing a page boundary stall Paged.js's fragmenter. */
+  .content .notes p { font-size: 7.75pt; line-height: 1.4; padding-left: 11pt; text-indent: -11pt; margin-bottom: 3.5pt; }
+  .content .notes p sup { font-weight: bold; }
 
   .article-end { text-align: center; font-size: 9pt; letter-spacing: 0.3em; margin-top: 12pt; }
 
