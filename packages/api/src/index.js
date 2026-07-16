@@ -4,6 +4,7 @@
 // items can be re-parsed after extractor fixes without re-saving.
 
 import { parseArticle } from "@dtd/reader";
+import { verifyKey } from "./sign.js";
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data, null, 2), {
@@ -27,6 +28,24 @@ export default {
     // handled before the bearer gate. The key is scoped to the address only.
     if (pathname === "/address") {
       return addressPage(request, env);
+    }
+
+    // HMAC-signed R2 file serving: how Lulu fetches printables and how the
+    // review email's preview links work. Signature covers exactly one key.
+    if (request.method === "GET" && pathname.startsWith("/files/")) {
+      const r2Key = decodeURIComponent(pathname.slice("/files/".length));
+      const sig = new URL(request.url).searchParams.get("sig");
+      if (!(await verifyKey(env.FILE_SIGNING_SECRET, r2Key, sig))) {
+        return json({ error: "bad signature" }, 403);
+      }
+      const obj = await env.RAW.get(r2Key);
+      if (!obj) return json({ error: "not found" }, 404);
+      return new Response(obj.body, {
+        headers: {
+          "Content-Type": obj.httpMetadata?.contentType ?? "application/octet-stream",
+          "Content-Length": String(obj.size),
+        },
+      });
     }
 
     const user = await authedUser(request, env);

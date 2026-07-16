@@ -14,6 +14,8 @@
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
+import { createPrintJob } from "./lulu.js";
+import { signedFileUrl } from "../../api/src/sign.js";
 import pagedJs from "./paged.polyfill.txt";
 
 // The page estimator runs ~15% under real renders (measured in the render spike).
@@ -34,6 +36,15 @@ export default {
   },
 
   async fetch(request, env) {
+    // Browser-facing magic link — key-authed, ahead of the bearer gate.
+    if (request.method === "GET" && new URL(request.url).pathname === "/approve") {
+      try {
+        return await approve(request, env);
+      } catch (err) {
+        return page(`Something went wrong sending this to print: ${err.message}`, 500);
+      }
+    }
+
     const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     const user = token
       ? await env.DB.prepare("SELECT * FROM users WHERE save_token = ?").bind(token).first()
@@ -54,6 +65,66 @@ export default {
     return json({ error: "POST /check or /run" }, 404);
   },
 };
+
+// GET /approve?key=… — the review email's magic link. Clicking it is what
+// sends the issue to Lulu; nothing prints without it (auto-send at a deadline
+// comes later, once the first manual print round-trips).
+async function approve(request, env) {
+  const key = new URL(request.url).searchParams.get("key");
+  const issue = key
+    ? await env.DB.prepare("SELECT * FROM issues WHERE approve_key = ?").bind(key).first()
+    : null;
+  if (!issue) return page("That approval link isn't valid.", 404);
+
+  const user = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(issue.user_id).first();
+
+  if (issue.lulu_job_id) {
+    return page(
+      `Issue № ${issue.number} is already at the printer (job ${issue.lulu_job_id}). Nothing more to do.`
+    );
+  }
+  if (issue.status !== "rendered") return page(`Issue № ${issue.number} isn't ready to print (status: ${issue.status}).`);
+  if (!issue.cover_key) return page(`Issue № ${issue.number} has no cover PDF yet — can't print.`);
+
+  const addressComplete = !!(user.ship_name && user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode && user.ship_phone);
+  if (!addressComplete) {
+    return page(
+      `We need your shipping address first. <a href="${env.API_URL}/address?key=${user.address_key}">Add it here</a>, then come back to this link.`
+    );
+  }
+
+  const interiorUrl = await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, issue.pdf_key);
+  const coverUrl = await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, issue.cover_key);
+  const job = await createPrintJob(env, { issue, user, interiorUrl, coverUrl });
+
+  await env.DB.prepare(
+    "UPDATE issues SET status = 'sent_to_print', lulu_job_id = ?, approved_at = ? WHERE id = ?"
+  )
+    .bind(String(job.id), new Date().toISOString(), issue.id)
+    .run();
+  await env.DB.prepare("UPDATE items SET status = 'printed' WHERE issue_id = ?").bind(issue.id).run();
+
+  return page(
+    `🌲 <strong>Issue № ${issue.number} is off to the printer.</strong><br><br>
+     Lulu job <code>${job.id}</code> (status: ${job.status?.name ?? "created"}).<br>
+     ${issue.page_count} pages, shipping US Mail to ${user.ship_city}, ${user.ship_state}.<br><br>
+     <em>Ten trees are being planted to apologize.</em>`
+  );
+}
+
+function page(inner, status = 200) {
+  return new Response(
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>Dead Tree Digest</title>
+<style>
+  body { background: #f1e6cf; color: #2b2419; font-family: Georgia, serif; margin: 0; padding: 32px 16px; display: flex; justify-content: center; }
+  .card { max-width: 440px; background: #faf3e3; border: 2.5px solid #2b2419; box-shadow: 6px 6px 0 rgba(31,77,56,0.25); padding: 26px; font-size: 15px; line-height: 1.55; }
+  h1 { font-family: Helvetica, Arial, sans-serif; font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; border-bottom: 2px solid #2b2419; padding-bottom: 8px; margin: 0 0 14px; }
+  a { color: #bf4e24; } code { background: #f1e6cf; padding: 1px 5px; }
+</style></head>
+<body><div class="card"><h1>🌲 Dead Tree Digest</h1>${inner}</div></body></html>`,
+    { status, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}
 
 async function sweep(env) {
   const { results: users } = await env.DB.prepare("SELECT * FROM users").all();
@@ -158,11 +229,12 @@ async function closeForUser(user, env, queued = null) {
   }
 
   const issueId = crypto.randomUUID();
+  const approveKey = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
   const now = new Date().toISOString();
   await env.DB.prepare(
-    "INSERT INTO issues (id, user_id, number, status, page_count, pdf_key, closed_at) VALUES (?, ?, ?, 'rendered', ?, ?, ?)"
+    "INSERT INTO issues (id, user_id, number, status, page_count, pdf_key, cover_key, approve_key, closed_at) VALUES (?, ?, ?, 'rendered', ?, ?, ?, ?, ?)"
   )
-    .bind(issueId, user.id, number, pageCount, pdfKey, now)
+    .bind(issueId, user.id, number, pageCount, pdfKey, coverKey, approveKey, now)
     .run();
   for (const item of picked) {
     await env.DB.prepare("UPDATE items SET issue_id = ?, status = 'assigned' WHERE id = ?")
@@ -171,7 +243,15 @@ async function closeForUser(user, env, queued = null) {
   }
   await env.DB.prepare("UPDATE users SET last_closed_at = ? WHERE id = ?").bind(now, user.id).run();
 
-  const emailed = await sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver });
+  const emailed = await sendIssueFullEmail(env, user, {
+    number,
+    pageCount,
+    picked,
+    rolledOver,
+    approveKey,
+    previewUrl: await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, pdfKey),
+    coverUrl: coverKey ? await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, coverKey) : null,
+  });
 
   return {
     action: "closed",
@@ -235,26 +315,30 @@ async function sendEmail(env, to, subject, text, html) {
   }
 }
 
-function sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver }) {
-  // No login exists — email is the interface. If we don't have a shipping
-  // address, the emailed magic link is how we get one.
+function sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver, approveKey, previewUrl, coverUrl }) {
+  // No login exists — email is the interface. Preview links are signed file
+  // URLs; the approve link is what actually sends the issue to the printer.
   const needsAddress = !(user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode);
   const addressUrl = `${env.API_URL}/address?key=${user.address_key}`;
+  const approveUrl = `https://dtd-closer.keanan-75b.workers.dev/approve?key=${approveKey}`;
 
   const titles = picked.map((i) => `  • ${i.title}${i.byline ? ` — ${i.byline}` : ""}`).join("\n");
   const text =
     `You filled Issue № ${number}. ${pageCount ?? "?"} pages, ${picked.length} articles — typeset and ready.\n\n` +
     `${titles}\n\n` +
     `${rolledOver ? `${rolledOver} save(s) rolled over to start Issue № ${number + 1}.\n\n` : ""}` +
-    `${needsAddress ? `⚠ We don't have a shipping address for you yet — add one here so this issue can ship:\n${addressUrl}\n\n` : ""}` +
-    `— Dead Tree Digest`;
+    `Preview the issue: ${previewUrl}\n${coverUrl ? `Preview the cover: ${coverUrl}\n` : ""}\n` +
+    `${needsAddress ? `⚠ We need a shipping address first: ${addressUrl}\n\n` : ""}` +
+    `Ready? Send it to print: ${approveUrl}\n\n— Dead Tree Digest`;
   const html = `
     <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
       <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">You filled Issue № ${number}</h2>
       <p><strong>${pageCount ?? "?"}</strong> pages · <strong>${picked.length}</strong> articles — typeset and ready.</p>
       <ul>${picked.map((i) => `<li>${escapeHtml(i.title)}${i.byline ? ` — ${escapeHtml(i.byline)}` : ""}</li>`).join("")}</ul>
       ${rolledOver ? `<p style="color:#4a4032;">${rolledOver} save(s) rolled over to start Issue № ${number + 1}.</p>` : ""}
-      ${needsAddress ? `<p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><strong>We don't have a shipping address for you yet.</strong><br><a href="${addressUrl}" style="color:#bf4e24;">Add your address</a> so this issue can ship.</p>` : ""}
+      <p><a href="${previewUrl}" style="color:#1f4d38;">Preview the issue (PDF)</a>${coverUrl ? ` · <a href="${coverUrl}" style="color:#1f4d38;">the cover</a>` : ""}</p>
+      ${needsAddress ? `<p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><strong>We need a shipping address first.</strong><br><a href="${addressUrl}" style="color:#bf4e24;">Add your address</a>, then approve below.</p>` : ""}
+      <p style="margin-top:18px;"><a href="${approveUrl}" style="background:#1f4d38;color:#f1e6cf;padding:12px 22px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;">Send it to print 🌲</a></p>
       <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
     </div>`;
   return sendEmail(env, user.email, `You filled Issue № ${number} — ${pageCount ?? "?"} pages`, text, html);

@@ -18,7 +18,8 @@
   "vars": {
     "FROM_EMAIL": "press@deadtreedigest.com",
     "FROM_NAME": "Dead Tree Digest",
-    "API_URL": "https://dtd-api.keanan-75b.workers.dev"
+    "API_URL": "https://dtd-api.keanan-75b.workers.dev",
+    "LULU_BASE": "https://api.lulu.com"
   },
   "rules": [{ "type": "Text", "globs": ["**/*.txt"] }],
   "observability": { "enabled": true }
