@@ -1,0 +1,10 @@
+{
+  "name": "@dtd/closer",
+  "version": "0.1.0",
+  "description": "Issue closer: daily cron sweeping per-user next_issue_date — thin-issue gate, page-cap packing, render, notify",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@dtd/typeset": "*"
+  }
+}

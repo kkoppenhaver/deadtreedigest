@@ -1,0 +1,24 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "dtd-closer",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": { "crons": ["0 17 * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dtd-library",
+      "database_id": "e473914a-bb65-47ae-a352-ec4078e018bf"
+    }
+  ],
+  "r2_buckets": [{ "binding": "RAW", "bucket_name": "dtd-raw" }],
+  "send_email": [{ "name": "EMAIL" }],
+  "services": [{ "binding": "RENDER", "service": "dtd-render-spike" }],
+  "vars": {
+    "FROM_EMAIL": "press@deadtreedigest.com",
+    "FROM_NAME": "Dead Tree Digest"
+  },
+  "rules": [{ "type": "Text", "globs": ["**/*.txt"] }],
+  "observability": { "enabled": true }
+}
