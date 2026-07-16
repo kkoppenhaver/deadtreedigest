@@ -345,15 +345,6 @@
     opacity: 0.85;
   }
 
-  /* ---------- spec / field notes ---------- */
-  .specs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 2.5px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 rgba(191,78,36,0.25); }
-  .spec { padding: 30px 26px; border-right: 1.5px solid var(--ink); }
-  .spec:last-child { border-right: none; }
-  .spec .num { font-family: 'Alfa Slab One', serif; font-size: 34px; color: var(--rust); line-height: 1; }
-  .spec .num small { font-family: 'Fjalla One', sans-serif; font-size: 16px; color: var(--pine); letter-spacing: 0.06em; }
-  .spec .lbl { font-family: 'Fjalla One', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 14px; margin-top: 8px; color: var(--pine-deep); }
-  .spec p { font-size: 13.5px; color: #4a4032; margin-top: 6px; }
-
   /* ---------- faq ---------- */
   .faq-wrap { max-width: 620px; margin: 0 auto; }
   .faq-q { font-family: 'Fjalla One', sans-serif; font-size: 17px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pine-deep); margin-bottom: 8px; }
@@ -419,15 +410,9 @@
     .badge { left: -20px; }
     .trail { grid-template-columns: 1fr 1fr; row-gap: 40px; }
     .ledger-grid { grid-template-columns: 1fr; }
-    .specs { grid-template-columns: 1fr 1fr; }
-    .spec:nth-child(2) { border-right: none; }
-    .spec:nth-child(1), .spec:nth-child(2) { border-bottom: 1.5px solid var(--ink); }
   }
   @media (max-width: 600px) {
     .trail { grid-template-columns: 1fr; }
-    .specs { grid-template-columns: 1fr; }
-    .spec { border-right: none; border-bottom: 1.5px solid var(--ink); }
-    .spec:last-child { border-bottom: none; }
     .signup-form { flex-direction: column; }
     .signup-form input { border-right: 2.5px solid var(--ink); border-bottom: none; }
     .signup-form button { padding: 16px; }
@@ -610,7 +595,7 @@
             <p>Be honest: reading on the same screen you work on all day never really happens. Ten more open tabs is a chore, not a treat.</p>
             <p>A printed issue is the same reading in a different headspace. Take it to the park, a coffee shop, or a train window. Paper doesn't ping, and nobody ever lost an afternoon to a magazine's notifications.</p>
             <p>Long reads work better this way, too. A 6,000-word essay is a slog to scroll and a pleasure to hold.</p>
-            <p class="fine">Black and white interior, color cover, typeset like the magazine it is.</p>
+            <p class="fine">Perfect-bound, around 100 pages: black and white interior on recycled or FSC-certified stock, full-color cover, typeset like the magazine it is.</p>
           </div>
           <div style="background:var(--paper);border:3px solid var(--ink);padding:12px;transform:rotate(1.2deg);box-shadow:0 18px 40px rgba(0,0,0,0.4);">
             <div style="border:1.5px solid var(--ink);">
@@ -671,39 +656,6 @@
             <div class="receipt-row"><span>Trees consumed</span><span class="dots"></span><span>0.003</span></div>
             <div class="receipt-row total"><span>Trees planted</span><span class="dots"></span><span class="val">10</span></div>
             <div class="receipt-stamp">Overcorrected ✓</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ FIELD NOTES / SPECS ============ -->
-    <section id="specs">
-      <div class="container">
-        <div class="section-head">
-          <div class="overline">Field notes</div>
-          <h2>The vitals</h2>
-          <div class="rule"></div>
-        </div>
-        <div class="specs">
-          <div class="spec">
-            <div class="num">100 <small>pages</small></div>
-            <div class="lbl">Fills, then prints</div>
-            <p>An issue closes when you've saved enough to fill one. Never thin, never padded.</p>
-          </div>
-          <div class="spec">
-            <div class="num">0 <small>alerts</small></div>
-            <div class="lbl">It just shows up</div>
-            <p>No schedule, no tracking emails. The mail is the notification.</p>
-          </div>
-          <div class="spec">
-            <div class="num">B/W <small>+ color cover</small></div>
-            <div class="lbl">Print spec</div>
-            <p>Crisp black and white interior on recycled or FSC-certified stock.</p>
-          </div>
-          <div class="spec">
-            <div class="num">10:1</div>
-            <div class="lbl">Trees planted : used</div>
-            <p>Tallied on the ledger page of every issue.</p>
           </div>
         </div>
       </div>
