@@ -66,6 +66,9 @@ export default {
     if (request.method === "POST" && pathname.match(/^\/items\/[\w-]+\/flag$/)) {
       return flag(env, user, pathname.split("/")[2]);
     }
+    if (request.method === "POST" && pathname.match(/^\/items\/[\w-]+\/reparse$/)) {
+      return reparse(env, user, pathname.split("/")[2]);
+    }
     return json({ error: "not found" }, 404);
   },
 };
@@ -314,6 +317,49 @@ function addressShell(inner) {
   <div class="sub">Where should your printed issues go?</div>
   ${inner}
 </div></body></html>`;
+}
+
+// Re-run the current reader against the preserved raw capture — the payoff
+// of keeping originals in R2: extractor fixes apply to old saves without
+// re-saving. Keeps id, issue assignment, and status; refreshes the parse.
+async function reparse(env, user, itemId) {
+  const item = await env.DB.prepare("SELECT * FROM items WHERE id = ? AND user_id = ?")
+    .bind(itemId, user.id)
+    .first();
+  if (!item) return json({ error: "item not found" }, 404);
+
+  const raw = await env.RAW.get(item.raw_key);
+  if (!raw) return json({ error: "raw capture missing" }, 410);
+
+  const article = parseArticle({
+    html: await raw.text(),
+    url: item.url,
+    source: item.source === "generic" ? null : item.source,
+  });
+  if (!article) return json({ error: "reparse produced nothing article-shaped" }, 422);
+
+  await env.DB.prepare(
+    `UPDATE items SET title=?, byline=?, site_name=?, published_at=?, excerpt=?,
+       content_html=?, links_json=?, images_json=?, word_count=?, estimated_pages=?,
+       needs_review=? WHERE id=?`
+  )
+    .bind(
+      article.title, article.byline, article.siteName, article.publishedAt, article.excerpt,
+      article.contentHtml, JSON.stringify(article.links), JSON.stringify(article.images),
+      article.wordCount, article.estimatedPages, article.needsReview ? 1 : 0, itemId
+    )
+    .run();
+
+  return json({
+    id: itemId,
+    title: article.title,
+    byline: article.byline,
+    siteName: article.siteName,
+    publishedAt: article.publishedAt,
+    wordCount: article.wordCount,
+    estimatedPages: article.estimatedPages,
+    needsReview: article.needsReview,
+  });
 }
 
 // The "this didn't parse right" button.

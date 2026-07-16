@@ -59,10 +59,14 @@ export default {
       if (request.method === "POST" && pathname === "/run") {
         return json(await closeForUser(user, env));
       }
+      if (request.method === "POST" && pathname === "/rerender") {
+        const number = Number(new URL(request.url).searchParams.get("issue"));
+        return json(await rerenderIssue(user, env, number));
+      }
     } catch (err) {
       return json({ error: err.message }, 500);
     }
-    return json({ error: "POST /check or /run" }, 404);
+    return json({ error: "POST /check, /run, or /rerender?issue=N" }, 404);
   },
 };
 
@@ -264,6 +268,58 @@ async function closeForUser(user, env, queued = null) {
     coverKey,
     emailed,
   };
+}
+
+// Re-typeset an existing issue from its (possibly re-parsed) items and
+// overwrite its PDFs — the tail end of the raw-capture re-parse loop.
+// Refuses issues already at the printer.
+async function rerenderIssue(user, env, number) {
+  const issue = await env.DB.prepare("SELECT * FROM issues WHERE user_id = ? AND number = ?")
+    .bind(user.id, number)
+    .first();
+  if (!issue) return { error: `no issue № ${number}` };
+  if (issue.lulu_job_id) return { error: `issue № ${number} is already at the printer` };
+
+  const { results: items } = await env.DB.prepare(
+    "SELECT * FROM items WHERE issue_id = ? ORDER BY created_at"
+  )
+    .bind(issue.id)
+    .all();
+  if (items.length === 0) return { error: "issue has no items" };
+
+  const articles = items.map((i) => ({
+    title: i.title,
+    byline: i.byline,
+    siteName: i.site_name,
+    publishedAt: i.published_at,
+    excerpt: i.excerpt,
+    contentHtml: i.content_html,
+    estimatedPages: i.estimated_pages,
+  }));
+  const dateLabel = new Date(issue.closed_at ?? Date.now()).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  const interior = await renderPdf(
+    env,
+    issueHtml({ number, dateLabel, articles, ledger: { issuesShipped: number } }, { pagedJs })
+  );
+  const pageCount = interior.pages;
+  const cover = await renderPdf(
+    env,
+    coverHtml({ number, dateLabel, pageCount, articleCount: items.length })
+  );
+
+  await env.RAW.put(issue.pdf_key, interior.pdf, { httpMetadata: { contentType: "application/pdf" } });
+  const coverKey = issue.cover_key ?? `issues/${user.id}/issue-${number}-cover.pdf`;
+  await env.RAW.put(coverKey, cover.pdf, { httpMetadata: { contentType: "application/pdf" } });
+  await env.DB.prepare("UPDATE issues SET page_count = ?, cover_key = ? WHERE id = ?")
+    .bind(pageCount, coverKey, issue.id)
+    .run();
+
+  return { action: "rerendered", issue: number, items: items.length, renderedPages: pageCount, pdfKey: issue.pdf_key, coverKey };
 }
 
 // Render via service binding (same-account workers.dev URLs can't be fetched
