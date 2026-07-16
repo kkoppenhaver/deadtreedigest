@@ -26,7 +26,7 @@ A Printernet-style service: save articles as you read, get a printed magazine sh
 - **Price target**: $49/mo. At the 100pp cap, COGS is $21.86/mo + ~$1.72 Stripe + ~$0.83 trees → ~50% gross margin.
 - **Product tiers (updated 2026-07-16)**: two tiers, both print-when-full. Primary — 100pp cap, 14-day floor, $49/mo (worst case ~2.2 issues/mo = old biweekly COGS). Second tier — chunkier/cheaper: 200pp cap, 28-day floor, ~$25–29/mo. Both are just per-user `page_cap` + `min_interval_days` config rows; no separate code path.
 - **Budget**: under $10/issue all-in was the weekly target; biweekly issues are bigger (~$9–13 all-in) but monthly total drops to ~$18–26.
-- **Automation**: review-before-print — rendered PDF sent for approval Sunday night, auto-sends at a deadline if no response.
+- **Automation (updated 2026-07-16): auto-approve, no review gate.** When an issue fills, it renders and goes straight to the press; the email is informational ("Issue № N is at the press") with preview links. Missing address → emailed magic link, auto-prints via daily cron once filled. Print failure → cron retries, manual /approve link as backup lever. No shipped/tracking email — arrival stays a surprise.
 - **Minimum issue rule**: subsumed by print-when-full — an issue only ever ships at (near) cap, so thin issues are structurally impossible.
 - **Stack**: Cloudflare Workers + D1 (library) + R2 (PDFs) + Email Workers (forward-to-save) + Cron Triggers (weekly close). PDF rendering is the one piece that may need Browser Rendering API or an external service.
 

@@ -56,7 +56,10 @@ export default {
         return json(await checkUser(user, env));
       }
       if (request.method === "POST" && pathname === "/run") {
-        return json(await closeForUser(user, env));
+        // Test lever: does NOT auto-print unless ?print=1 — forcing a close
+        // must never quietly spend money.
+        const autoPrint = new URL(request.url).searchParams.get("print") === "1";
+        return json(await closeForUser(user, env, null, { autoPrint }));
       }
       if (request.method === "POST" && pathname === "/rerender") {
         const number = Number(new URL(request.url).searchParams.get("issue"));
@@ -83,9 +86,28 @@ export default {
   },
 };
 
-// GET /approve?key=… — the review email's magic link. Clicking it is what
-// sends the issue to Lulu; nothing prints without it (auto-send at a deadline
-// comes later, once the first manual print round-trips).
+const hasAddress = (user) =>
+  !!(user.ship_name && user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode && user.ship_phone);
+
+// Create the Lulu job and advance issue/items state. Shared by the auto-print
+// path (close + cron retry) and the manual /approve lever.
+async function printIssue(env, issue, user) {
+  const interiorUrl = await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, issue.pdf_key);
+  const coverUrl = await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, issue.cover_key);
+  const job = await createPrintJob(env, { issue, user, interiorUrl, coverUrl });
+
+  await env.DB.prepare(
+    "UPDATE issues SET status = 'sent_to_print', lulu_job_id = ?, approved_at = ? WHERE id = ?"
+  )
+    .bind(String(job.id), new Date().toISOString(), issue.id)
+    .run();
+  await env.DB.prepare("UPDATE items SET status = 'printed' WHERE issue_id = ?").bind(issue.id).run();
+  return job;
+}
+
+// GET /approve?key=… — manual print trigger. Issues auto-print on close now
+// (decided 2026-07-16); this remains as the lever for parked issues
+// ('awaiting_approval') and as a retry when auto-print hit a snag.
 async function approve(request, env) {
   const key = new URL(request.url).searchParams.get("key");
   const issue = key
@@ -100,27 +122,18 @@ async function approve(request, env) {
       `Issue № ${issue.number} is already at the printer (job ${issue.lulu_job_id}). Nothing more to do.`
     );
   }
-  if (issue.status !== "rendered") return page(`Issue № ${issue.number} isn't ready to print (status: ${issue.status}).`);
+  if (!["rendered", "awaiting_approval"].includes(issue.status)) {
+    return page(`Issue № ${issue.number} isn't ready to print (status: ${issue.status}).`);
+  }
   if (!issue.cover_key) return page(`Issue № ${issue.number} has no cover PDF yet — can't print.`);
 
-  const addressComplete = !!(user.ship_name && user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode && user.ship_phone);
-  if (!addressComplete) {
+  if (!hasAddress(user)) {
     return page(
       `We need your shipping address first. <a href="${env.API_URL}/address?key=${user.address_key}">Add it here</a>, then come back to this link.`
     );
   }
 
-  const interiorUrl = await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, issue.pdf_key);
-  const coverUrl = await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, issue.cover_key);
-  const job = await createPrintJob(env, { issue, user, interiorUrl, coverUrl });
-
-  await env.DB.prepare(
-    "UPDATE issues SET status = 'sent_to_print', lulu_job_id = ?, approved_at = ? WHERE id = ?"
-  )
-    .bind(String(job.id), new Date().toISOString(), issue.id)
-    .run();
-  await env.DB.prepare("UPDATE items SET status = 'printed' WHERE issue_id = ?").bind(issue.id).run();
-
+  const job = await printIssue(env, issue, user);
   return page(
     `🌲 <strong>Issue № ${issue.number} is off to the printer.</strong><br><br>
      Lulu job <code>${job.id}</code> (status: ${job.status?.name ?? "created"}).<br>
@@ -152,6 +165,24 @@ async function sweep(env) {
       console.error(`check failed for ${user.id}: ${err.message}`);
     }
   }
+
+  // Auto-print retry: 'rendered' issues that couldn't print at close time
+  // (missing address, transient Lulu failure) go to the press as soon as
+  // they can. Parked issues ('awaiting_approval') are exempt — those wait
+  // for their manual /approve link.
+  const { results: pending } = await env.DB.prepare(
+    "SELECT * FROM issues WHERE status = 'rendered' AND lulu_job_id IS NULL AND cover_key IS NOT NULL"
+  ).all();
+  for (const issue of pending) {
+    const user = users.find((u) => u.id === issue.user_id);
+    if (!user || !hasAddress(user)) continue;
+    try {
+      await printIssue(env, issue, user);
+      console.log(`auto-printed pending issue ${issue.number} for ${user.id}`);
+    } catch (err) {
+      console.error(`auto-print retry failed for issue ${issue.number}: ${err.message}`);
+    }
+  }
 }
 
 async function checkUser(user, env) {
@@ -173,7 +204,7 @@ async function checkUser(user, env) {
   };
 }
 
-async function closeForUser(user, env, queued = null) {
+async function closeForUser(user, env, queued = null, { autoPrint = true } = {}) {
   queued ??= await queuedItems(user, env);
   if (queued.length === 0) return { action: "nothing-queued" };
 
@@ -246,12 +277,29 @@ async function closeForUser(user, env, queued = null) {
   }
   await env.DB.prepare("UPDATE users SET last_closed_at = ? WHERE id = ?").bind(now, user.id).run();
 
-  const emailed = await sendIssueFullEmail(env, user, {
+  // Auto-approve (decided 2026-07-16): the issue goes to the press the moment
+  // it's rendered. Failures fall back to the daily cron retry; a missing
+  // address holds it until the emailed magic link gets filled in.
+  let job = null;
+  if (autoPrint && coverKey && hasAddress(user)) {
+    try {
+      job = await printIssue(
+        env,
+        { id: issueId, number, pdf_key: pdfKey, cover_key: coverKey, page_count: pageCount },
+        user
+      );
+    } catch (err) {
+      console.error(`auto-print failed for issue ${number}: ${err.message}`);
+    }
+  }
+
+  const emailed = await sendIssueEmail(env, user, {
     number,
     pageCount,
     picked,
     rolledOver,
     approveKey,
+    printed: !!job,
     previewUrl: await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, pdfKey),
     coverUrl: coverKey ? await signedFileUrl(env.FILE_SIGNING_SECRET, env.API_URL, coverKey) : null,
   });
@@ -265,6 +313,7 @@ async function closeForUser(user, env, queued = null) {
     renderedPages: pageCount,
     pdfKey,
     coverKey,
+    luluJob: job ? String(job.id) : null,
     emailed,
   };
 }
@@ -370,33 +419,50 @@ async function sendEmail(env, to, subject, text, html) {
   }
 }
 
-function sendIssueFullEmail(env, user, { number, pageCount, picked, rolledOver, approveKey, previewUrl, coverUrl }) {
-  // No login exists — email is the interface. Preview links are signed file
-  // URLs; the approve link is what actually sends the issue to the printer.
-  const needsAddress = !(user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode);
+function sendIssueEmail(env, user, { number, pageCount, picked, rolledOver, approveKey, printed, previewUrl, coverUrl }) {
+  // Auto-approve world: this email is informational. Three shapes —
+  // printed (the normal case), waiting-on-address (magic link; prints
+  // automatically once filled), or print-hiccup (cron retries; manual lever
+  // included just in case).
+  const needsAddress = !hasAddress(user);
   const addressUrl = `${env.API_URL}/address?key=${user.address_key}`;
   const approveUrl = `https://dtd-closer.keanan-75b.workers.dev/approve?key=${approveKey}`;
 
   const titles = picked.map((i) => `  • ${i.title}${i.byline ? ` — ${i.byline}` : ""}`).join("\n");
+  const subject = printed
+    ? `Issue № ${number} is at the press — ${pageCount ?? "?"} pages`
+    : needsAddress
+      ? `Issue № ${number} is ready — we need your shipping address`
+      : `Issue № ${number} is ready — heading to press shortly`;
+
+  const statusText = printed
+    ? "It's at the printer and will simply show up in your mailbox — no tracking emails, no spoilers on timing."
+    : needsAddress
+      ? `We need a shipping address before it can print: ${addressUrl}\nIt goes to the press automatically once that's filled in.`
+      : `The print run hit a snag; we'll retry automatically. You can also send it manually: ${approveUrl}`;
+
   const text =
-    `You filled Issue № ${number}. ${pageCount ?? "?"} pages, ${picked.length} articles — typeset and ready.\n\n` +
-    `${titles}\n\n` +
+    `You filled Issue № ${number}. ${pageCount ?? "?"} pages, ${picked.length} articles.\n\n${titles}\n\n` +
     `${rolledOver ? `${rolledOver} save(s) rolled over to start Issue № ${number + 1}.\n\n` : ""}` +
-    `Preview the issue: ${previewUrl}\n${coverUrl ? `Preview the cover: ${coverUrl}\n` : ""}\n` +
-    `${needsAddress ? `⚠ We need a shipping address first: ${addressUrl}\n\n` : ""}` +
-    `Ready? Send it to print: ${approveUrl}\n\n— Dead Tree Digest`;
+    `Preview: ${previewUrl}\n${coverUrl ? `Cover: ${coverUrl}\n` : ""}\n${statusText}\n\n— Dead Tree Digest`;
+
+  const statusHtml = printed
+    ? `<p>It's at the printer and will simply show up in your mailbox — no tracking emails, no spoilers on timing.</p>`
+    : needsAddress
+      ? `<p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><strong>We need a shipping address before it can print.</strong><br><a href="${addressUrl}" style="color:#bf4e24;">Add your address</a> — it goes to the press automatically once that's in.</p>`
+      : `<p style="background:#f1e6cf;border:2px solid #d9a13b;padding:10px 14px;">The print run hit a snag; we'll retry automatically. You can also <a href="${approveUrl}" style="color:#bf4e24;">send it manually</a>.</p>`;
+
   const html = `
     <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
-      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">You filled Issue № ${number}</h2>
-      <p><strong>${pageCount ?? "?"}</strong> pages · <strong>${picked.length}</strong> articles — typeset and ready.</p>
+      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">${printed ? `Issue № ${number} is at the press` : `You filled Issue № ${number}`}</h2>
+      <p><strong>${pageCount ?? "?"}</strong> pages · <strong>${picked.length}</strong> articles</p>
       <ul>${picked.map((i) => `<li>${escapeHtml(i.title)}${i.byline ? ` — ${escapeHtml(i.byline)}` : ""}</li>`).join("")}</ul>
       ${rolledOver ? `<p style="color:#4a4032;">${rolledOver} save(s) rolled over to start Issue № ${number + 1}.</p>` : ""}
       <p><a href="${previewUrl}" style="color:#1f4d38;">Preview the issue (PDF)</a>${coverUrl ? ` · <a href="${coverUrl}" style="color:#1f4d38;">the cover</a>` : ""}</p>
-      ${needsAddress ? `<p style="background:#f1e6cf;border:2px solid #bf4e24;padding:10px 14px;"><strong>We need a shipping address first.</strong><br><a href="${addressUrl}" style="color:#bf4e24;">Add your address</a>, then approve below.</p>` : ""}
-      <p style="margin-top:18px;"><a href="${approveUrl}" style="background:#1f4d38;color:#f1e6cf;padding:12px 22px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;">Send it to print 🌲</a></p>
+      ${statusHtml}
       <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
     </div>`;
-  return sendEmail(env, user.email, `You filled Issue № ${number} — ${pageCount ?? "?"} pages`, text, html);
+  return sendEmail(env, user.email, subject, text, html);
 }
 
 const escapeHtml = (s) =>
