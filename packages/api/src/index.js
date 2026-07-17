@@ -4,7 +4,7 @@
 // items can be re-parsed after extractor fixes without re-saving.
 
 import { parseArticle } from "@dtd/reader";
-import { verifyKey } from "./sign.js";
+import { verifyKey, signedFileUrl } from "./sign.js";
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data, null, 2), {
@@ -38,6 +38,14 @@ export default {
     // handled before the bearer gate. The key is scoped to the address only.
     if (pathname === "/address") {
       return addressPage(request, env);
+    }
+
+    // The library: queue status, parse previews, flagging, past issues.
+    if (pathname === "/queue") {
+      return queuePage(request, env, ctx);
+    }
+    if (pathname === "/queue/item") {
+      return queueItemPage(request, env);
     }
 
     // HMAC-signed R2 file serving: how Lulu fetches printables and how the
@@ -152,6 +160,7 @@ async function library(env, user) {
   const queuedPages = results.reduce((s, r) => s + r.estimated_pages, 0);
   return json({
     user: { email: user.email, cadence: user.cadence, pageCap: user.page_cap, nextIssueDate: user.next_issue_date },
+    queueUrl: `https://api.deadtreedigest.com/queue?key=${user.library_key}`,
     queued: results,
     queuedCount: results.length,
     queuedPages: Math.round(queuedPages * 10) / 10,
@@ -336,6 +345,118 @@ function addressShell(inner) {
 }
 
 // ---------------------------------------------------------------------------
+// The library page
+
+async function libraryUser(request, env) {
+  const key = new URL(request.url).searchParams.get("key");
+  if (!key) return null;
+  return env.DB.prepare("SELECT * FROM users WHERE library_key = ?").bind(key).first();
+}
+
+async function queuePage(request, env) {
+  const user = await libraryUser(request, env);
+  if (!user) return htmlResponse(libShell("<p class='err'>This link isn't valid.</p>"), 404);
+  const key = user.library_key;
+
+  // flag action via keyed form post
+  if (request.method === "POST") {
+    const form = await request.formData();
+    const itemId = form.get("flag");
+    if (itemId) {
+      await env.DB.prepare("UPDATE items SET needs_review = 1 WHERE id = ? AND user_id = ?")
+        .bind(itemId, user.id)
+        .run();
+    }
+    return Response.redirect(new URL(request.url).origin + "/queue?key=" + key, 303);
+  }
+
+  const { results: queued } = await env.DB.prepare(
+    "SELECT * FROM items WHERE user_id = ? AND status = 'queued' ORDER BY created_at DESC"
+  ).bind(user.id).all();
+  const { results: issues } = await env.DB.prepare(
+    "SELECT * FROM issues WHERE user_id = ? ORDER BY number DESC"
+  ).bind(user.id).all();
+
+  const est = queued.reduce((t, i) => t + i.estimated_pages * 1.15, 0);
+  const pct = Math.min(100, Math.round((est / user.page_cap) * 100));
+
+  const rows = queued.map((i) => `
+    <div class="row">
+      <div class="grow">
+        <a class="t" href="/queue/item?key=${key}&id=${i.id}">${escapeHtml(i.title)}</a>
+        <div class="m">${escapeHtml([i.site_name, i.byline].filter(Boolean).join(" · "))} · ~${i.estimated_pages}pp${i.needs_review ? ' · <span class="warn">needs review</span>' : ""} · saved ${escapeHtml((i.created_at ?? "").slice(0, 10))}</div>
+      </div>
+      <form method="POST" action="/queue?key=${key}"><input type="hidden" name="flag" value="${i.id}"><button ${i.needs_review ? "disabled" : ""}>${i.needs_review ? "flagged" : "flag parse"}</button></form>
+    </div>`).join("");
+
+  const issueRows = await Promise.all(issues.map(async (iss) => {
+    const pdf = iss.pdf_key ? await signedFileUrl(env.FILE_SIGNING_SECRET, new URL(request.url).origin, iss.pdf_key) : null;
+    const cover = iss.cover_key ? await signedFileUrl(env.FILE_SIGNING_SECRET, new URL(request.url).origin, iss.cover_key) : null;
+    return `<div class="row"><div class="grow"><span class="t">Issue № ${iss.number}</span>
+      <div class="m">${escapeHtml(iss.status)}${iss.page_count ? ` · ${iss.page_count}pp` : ""}${iss.lulu_status ? ` · press: ${escapeHtml(iss.lulu_status)}` : ""}</div></div>
+      <div class="links">${pdf ? `<a href="${pdf}">PDF</a>` : ""} ${cover ? `<a href="${cover}">cover</a>` : ""}</div></div>`;
+  }));
+
+  return htmlResponse(libShell(`
+    <div class="fill"><div class="bar"><span style="width:${pct}%"></span></div>
+      <div class="cap">${queued.length} article${queued.length === 1 ? "" : "s"} queued · ~${Math.round(est)} of ${user.page_cap} pages${pct >= 100 ? " · full — printing at the next opening" : ""}</div>
+    </div>
+    <h2>In the queue</h2>
+    ${rows || '<p class="m">Nothing yet. Go read something worth saving.</p>'}
+    <h2>Issues</h2>
+    ${issueRows.join("") || '<p class="m">None yet — your first fills the bar above.</p>'}
+    <p class="m" style="margin-top:26px;">Save by email: <code>${escapeHtml(saveAddress(user))}</code></p>`));
+}
+
+async function queueItemPage(request, env) {
+  const user = await libraryUser(request, env);
+  if (!user) return htmlResponse(libShell("<p class='err'>This link isn't valid.</p>"), 404);
+  const id = new URL(request.url).searchParams.get("id");
+  const item = await env.DB.prepare("SELECT * FROM items WHERE id = ? AND user_id = ?").bind(id, user.id).first();
+  if (!item) return htmlResponse(libShell("<p class='err'>No such item.</p>"), 404);
+
+  return htmlResponse(libShell(`
+    <a href="/queue?key=${user.library_key}">← back to the queue</a>
+    <article class="preview">
+      <h1>${escapeHtml(item.title)}</h1>
+      <div class="m">${escapeHtml([item.site_name, item.byline].filter(Boolean).join(" · "))} · ~${item.estimated_pages}pp · this is how it will typeset</div>
+      ${item.content_html}
+    </article>`));
+}
+
+function libShell(inner) {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Your library — Dead Tree Digest</title>
+<style>
+  body { background: #f1e6cf; color: #2b2419; font-family: Georgia, serif; margin: 0; padding: 32px 16px 80px; display: flex; justify-content: center; }
+  .card { max-width: 640px; width: 100%; }
+  h1.masthead { font-family: Helvetica, Arial, sans-serif; font-size: 16px; letter-spacing: 0.14em; text-transform: uppercase; border-bottom: 2.5px solid #2b2419; padding-bottom: 10px; margin: 0 0 22px; }
+  h2 { font-family: Helvetica, Arial, sans-serif; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #14352a; margin: 30px 0 12px; }
+  .fill .bar { height: 12px; border: 2px solid #2b2419; background: #faf3e3; }
+  .fill .bar span { display: block; height: 100%; background: #1f4d38; }
+  .fill .cap { font-family: 'Courier New', monospace; font-size: 12.5px; margin-top: 7px; color: #4a4032; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px dotted #a89877; }
+  .grow { flex: 1; min-width: 0; }
+  .t { font-weight: bold; font-size: 15px; color: inherit; text-decoration: none; }
+  a.t:hover { color: #bf4e24; }
+  .m { font-size: 12.5px; color: #6b5f4d; margin-top: 3px; }
+  .warn { color: #bf4e24; font-weight: bold; }
+  .links a, a { color: #bf4e24; }
+  button { font-family: Helvetica, sans-serif; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 10px; border: 1.5px solid #2b2419; background: #faf3e3; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  code { background: #faf3e3; border: 1px solid #cdb98f; padding: 2px 6px; font-size: 13px; }
+  .err { color: #bf4e24; font-style: italic; }
+  .preview { background: #faf3e3; border: 2.5px solid #2b2419; padding: 28px; margin-top: 18px; box-shadow: 6px 6px 0 rgba(31,77,56,0.2); }
+  .preview h1 { font-size: 24px; line-height: 1.2; margin: 0 0 6px; }
+  .preview p { text-align: justify; margin: 0 0 0; text-indent: 1.2em; font-size: 15px; line-height: 1.55; }
+  .preview img { max-width: 100%; height: auto; filter: grayscale(1); }
+  .preview .notes p { font-size: 12px; }
+</style></head>
+<body><div class="card"><h1 class="masthead">🌲 Your library</h1>${inner}</div></body></html>`;
+}
+
+// ---------------------------------------------------------------------------
 // Onboarding
 
 const CORS = {
@@ -490,6 +611,7 @@ async function setupPage(request, env) {
         <p>Save anything worth keeping — one click in the extension, or forward any article or newsletter to your personal save address:</p>
         <p><code>${escapeHtml(saveAddress(user))}</code></p>
         <p>When you've saved about 100 pages worth, your issue prints itself and finds you. That's the whole system.</p>
+        <p>Check on your queue anytime: <a href="${apiBase}/queue?key=${user.library_key}">your library</a> (bookmark it).</p>
       </div>
     </div>`;
   return htmlResponse(setupShell(inner));

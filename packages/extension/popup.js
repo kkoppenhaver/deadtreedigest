@@ -92,6 +92,12 @@ async function run() {
     </div>`);
 
   document.getElementById("done").addEventListener("click", () => window.close());
+  if (lib.body?.queueUrl) {
+    const q = document.createElement("div");
+    q.style.cssText = "margin-top:10px;text-align:center;";
+    q.innerHTML = `<a href="${lib.body.queueUrl}" target="_blank" style="font-family:Helvetica,sans-serif;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#1f4d38;">View your full queue →</a>`;
+    document.querySelector(".result").appendChild(q);
+  }
   document.getElementById("flag").addEventListener("click", async (e) => {
     e.target.disabled = true;
     const res = await api(`/items/${a.id}/flag`, { method: "POST" });
