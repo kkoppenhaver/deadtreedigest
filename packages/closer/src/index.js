@@ -386,7 +386,7 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
 
   const interior = await renderPdf(
     env,
-    issueHtml({ number, dateLabel, articles, ledger: { issuesShipped: number } }, { pagedJs })
+    issueHtml({ number, dateLabel, articles }, { pagedJs })
   );
   const pageCount = interior.pages;
 
@@ -501,7 +501,7 @@ async function rerenderIssue(user, env, number) {
 
   const interior = await renderPdf(
     env,
-    issueHtml({ number, dateLabel, articles, ledger: { issuesShipped: number } }, { pagedJs })
+    issueHtml({ number, dateLabel, articles }, { pagedJs })
   );
   const pageCount = interior.pages;
   const past = await env.DB.prepare(

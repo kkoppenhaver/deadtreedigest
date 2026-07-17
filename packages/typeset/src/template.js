@@ -1,7 +1,7 @@
 // Issue template: normalized articles (@dtd/reader output) -> one HTML
 // document typeset for print with Paged.js. This is the digest interior:
 // 5.5x8.5 trim, mirrored margins with a binding gutter, running headers,
-// folios, TOC with real page references, and the ledger page.
+// folios, and a TOC with real page references.
 //
 // B&W interior per spec: everything is ink-on-paper monochrome; images are
 // forced grayscale.
@@ -122,15 +122,6 @@ const STYLES = `
 
   .article-end { text-align: center; font-size: 9pt; letter-spacing: 0.3em; margin-top: 12pt; }
 
-  /* ---------- ledger ---------- */
-  .ledger { page: plain; break-before: page; display: flex; flex-direction: column; justify-content: center; height: 100%; }
-  .ledger-box { border: 2pt solid var(--ink); padding: 18pt; }
-  .ledger h2 { font-family: 'Fjalla One', Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.2em; font-size: 11pt; text-align: center; margin-bottom: 4pt; }
-  .ledger .sub { text-align: center; font-style: italic; font-size: 8.5pt; margin-bottom: 14pt; }
-  .ledger dl { font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9.5pt; }
-  .ledger .row { display: flex; justify-content: space-between; border-bottom: 0.75pt dotted var(--rule); padding: 5pt 0; }
-  .ledger .row.total { border-bottom: none; border-top: 1.5pt solid var(--ink); margin-top: 6pt; padding-top: 8pt; font-weight: bold; }
-  .ledger .foot { text-align: center; font-size: 7.5pt; font-style: italic; color: #333; margin-top: 14pt; }
 `;
 
 function articleSection(a, i) {
@@ -150,7 +141,7 @@ function articleSection(a, i) {
 }
 
 export function issueHtml(issue, { pagedJs }) {
-  const { number = 1, dateLabel = "", articles = [], ledger = {} } = issue;
+  const { number = 1, dateLabel = "", articles = [] } = issue;
 
   const toc = articles
     .map((a, i) => {
@@ -159,15 +150,6 @@ export function issueHtml(issue, { pagedJs }) {
         <span class="m">${escape(meta ? `${meta} — ~${a.estimatedPages}pp` : `~${a.estimatedPages}pp`)}</span></li>`;
     })
     .join("\n");
-
-  const led = {
-    subscribers: 1,
-    issuesShipped: number,
-    sheetsPrinted: "—",
-    treesConsumed: "0.003",
-    treesPlanted: 10,
-    ...ledger,
-  };
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -199,21 +181,6 @@ export function issueHtml(issue, { pagedJs }) {
 </nav>
 
 ${articles.map(articleSection).join("\n")}
-
-<div class="ledger">
-  <div class="ledger-box">
-    <h2>★ The Ledger ★</h2>
-    <div class="sub">Running totals, printed in every issue</div>
-    <dl>
-      <div class="row"><span>Subscribers</span><span>${escape(led.subscribers)}</span></div>
-      <div class="row"><span>Issues shipped</span><span>${escape(led.issuesShipped)}</span></div>
-      <div class="row"><span>Sheets printed</span><span>${escape(led.sheetsPrinted)}</span></div>
-      <div class="row"><span>Trees consumed</span><span>${escape(led.treesConsumed)}</span></div>
-      <div class="row total"><span>Trees planted</span><span>${escape(led.treesPlanted)}</span></div>
-    </dl>
-    <div class="foot">Printed on recycled or FSC-certified stock. The dead tree is partly fiction; the ten trees planted with TIST Kenya are not.</div>
-  </div>
-</div>
 
 </body>
 </html>`;
