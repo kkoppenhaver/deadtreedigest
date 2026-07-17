@@ -367,6 +367,12 @@ async function queuePage(request, env) {
         .bind(itemId, user.id)
         .run();
     }
+    const removeId = form.get("remove");
+    if (removeId) {
+      await env.DB.prepare("UPDATE items SET status = 'skipped' WHERE id = ? AND user_id = ? AND status = 'queued'")
+        .bind(removeId, user.id)
+        .run();
+    }
     return Response.redirect(new URL(request.url).origin + "/queue?key=" + key, 303);
   }
 
@@ -387,6 +393,7 @@ async function queuePage(request, env) {
         <div class="m">${escapeHtml([i.site_name, i.byline].filter(Boolean).join(" · "))} · ~${i.estimated_pages}pp${i.needs_review ? ' · <span class="warn">needs review</span>' : ""} · saved ${escapeHtml((i.created_at ?? "").slice(0, 10))}</div>
       </div>
       <form method="POST" action="/queue?key=${key}"><input type="hidden" name="flag" value="${i.id}"><button ${i.needs_review ? "disabled" : ""}>${i.needs_review ? "flagged" : "flag parse"}</button></form>
+      <form method="POST" action="/queue?key=${key}" onsubmit="return confirm('Remove from your next issue? It won\'t print.')"><input type="hidden" name="remove" value="${i.id}"><button>remove</button></form>
     </div>`).join("");
 
   const issueRows = await Promise.all(issues.map(async (iss) => {

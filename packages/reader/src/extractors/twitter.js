@@ -8,6 +8,45 @@ import { parseHTML } from "linkedom";
 
 export function twitter(html, url) {
   const { document } = parseHTML(html);
+
+  // X longform Articles (the blog-post feature) use different markup than
+  // tweets: a titled rich-text view instead of tweetText nodes.
+  const longform = document.querySelector('[data-testid="twitterArticleReadView"]');
+  if (longform) {
+    const title =
+      document.querySelector('[data-testid="twitter-article-title"]')?.textContent?.trim() || null;
+    const body =
+      longform.querySelector('[data-testid="longformRichTextComponent"]') ??
+      longform.querySelector('[data-testid="twitterArticleRichTextView"]');
+    if (body) {
+      // paragraphs are divs inside the densest container; wrap them as <p>
+      // or the sanitizer's div-unwrapping merges the whole article into one block
+      let container = body;
+      for (const el of body.querySelectorAll("div")) {
+        if (el.children.length > container.children.length) container = el;
+      }
+      const contentHtml = [...container.children].map((c) => `<p>${c.innerHTML}</p>`).join("");
+
+      const spans = [...(document.querySelector('[data-testid="User-Name"]')?.querySelectorAll("span") ?? [])]
+        .map((s) => s.textContent.trim())
+        .filter(Boolean);
+      const handle = spans.find((s) => s.startsWith("@")) ?? null;
+      const name = spans.find((s) => !s.startsWith("@")) ?? null;
+      const cover = document.querySelector('[data-testid="tweetPhoto"] img')?.getAttribute("src");
+      const coverFig = cover && !contentHtml.includes(cover) ? `<figure><img src="${cover}" alt=""></figure>` : "";
+
+      return {
+        title: title ?? (handle ? `Article by ${handle}` : null),
+        byline: name && handle ? `${name} (${handle})` : handle ?? name,
+        siteName: "X (Twitter)",
+        publishedAt: document.querySelector("time[datetime]")?.getAttribute("datetime") ?? null,
+        excerpt: null,
+        contentHtml: coverFig + contentHtml,
+        needsReview: false,
+      };
+    }
+  }
+
   const nodes = [...document.querySelectorAll('article[data-testid="tweet"]')];
   if (nodes.length === 0) return null; // caller falls back to generic + needsReview
 
