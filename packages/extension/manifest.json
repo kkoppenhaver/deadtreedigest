@@ -5,7 +5,11 @@
   "description": "Save the page you're reading to your Dead Tree Digest library. It arrives in print with your next issue.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Save to Dead Tree Digest"
+    "default_title": "Save to Dead Tree Digest",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
   },
   "options_ui": {
     "page": "options.html",
@@ -17,18 +21,22 @@
     "storage"
   ],
   "host_permissions": [
-    "https://api.deadtreedigest.com/*",
-    "https://dtd-api.keanan-75b.workers.dev/*"
+    "https://api.deadtreedigest.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://api.deadtreedigest.com/setup*",
-        "https://dtd-api.keanan-75b.workers.dev/setup*"
+        "https://api.deadtreedigest.com/setup*"
       ],
       "js": [
         "setup.js"
       ]
     }
-  ]
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }

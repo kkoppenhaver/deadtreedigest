@@ -53,12 +53,17 @@ async function run() {
   }
 
   show(`<div class="state">Pressing this page…</div>`);
-  const save = await api("/save", {
-    method: "POST",
-    body: JSON.stringify({ url: capture.url, html: capture.html }),
-  });
+  let save;
+  try {
+    save = await api("/save", {
+      method: "POST",
+      body: JSON.stringify({ url: capture.url, html: capture.html }),
+    });
+  } catch {
+    return fail("Can't reach the press. Check your connection and try again.");
+  }
 
-  if (save.status === 401) return fail("Save token was rejected. Check it in settings.");
+  if (save.status === 401) return fail("This extension isn't connected to an account yet. Open settings to add your token, or use the setup link from your welcome email.");
   if (save.status === 422) return fail("Nothing article-shaped found on this page.");
   if (save.status !== 201) return fail(`Save failed (${save.status}): ${esc(save.body.error ?? "unknown")}`);
 
