@@ -89,7 +89,7 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
     <div class="row"><span>Trees planted</span><span>${treesPlanted}</span></div>
   </div>
   <div class="foot">
-    Printed on recycled or FSC-certified stock.<br>The dead tree is partly fiction; the ten new trees are not.
+    Printed on recycled or FSC-certified stock.<br>The dead tree is partly fiction; the ten trees planted with TIST Kenya are not.
     <div class="url">deadtreedigest.com</div>
   </div>
 </div>
@@ -152,8 +152,8 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   <div class="mast">Dead Tree Digest</div>
   <div class="issue-strip"><span>Issue № ${number}${dateLabel ? ` — ${dateLabel}` : ""}</span></div>
   <div class="caption">
-    <div class="big">One falls. Ten rise.</div>
-    <div class="small">Your reading, printed &amp; delivered</div>
+    <div class="big">Read what you meant to read.</div>
+    <div class="small">deadtreedigest.com</div>
   </div>
 </div>
 

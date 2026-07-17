@@ -205,7 +205,7 @@ ${articles.map(articleSection).join("\n")}
       <div class="row"><span>Trees consumed</span><span>${escape(led.treesConsumed)}</span></div>
       <div class="row total"><span>Trees planted</span><span>${escape(led.treesPlanted)}</span></div>
     </dl>
-    <div class="foot">Printed on recycled or FSC-certified stock. The dead tree is partly fiction; the ten new trees are not.</div>
+    <div class="foot">Printed on recycled or FSC-certified stock. The dead tree is partly fiction; the ten trees planted with TIST Kenya are not.</div>
   </div>
 </div>
 
