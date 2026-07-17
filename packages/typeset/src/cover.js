@@ -50,11 +50,11 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   .front svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
   .front .mast {
     position: absolute; top: ${BLEED + 0.5}in; left: 0; right: 0; text-align: center;
-    font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: normal; font-size: 38pt; line-height: 1.02;
+    font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: normal; font-size: 34pt; line-height: 1.02;
     letter-spacing: 0.02em; text-transform: uppercase; color: var(--pine-deep);
   }
   .front .issue-strip {
-    position: absolute; top: ${BLEED + 1.62}in; left: 0; right: 0; text-align: center;
+    position: absolute; top: ${BLEED + 1.45}in; left: 0; right: 0; text-align: center;
     font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9.5pt; letter-spacing: 0.28em; text-transform: uppercase; color: var(--rust);
   }
   /* paper chip so the strip survives crossing the sun */
@@ -149,7 +149,7 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
       <g transform="translate(222,626) scale(0.95)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
     </g>
   </svg>
-  <div class="mast">Dead Tree<br>Digest</div>
+  <div class="mast">Dead Tree Digest</div>
   <div class="issue-strip"><span>Issue № ${number}${dateLabel ? ` — ${dateLabel}` : ""}</span></div>
   <div class="caption">
     <div class="big">One falls. Ten rise.</div>
