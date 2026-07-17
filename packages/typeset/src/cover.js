@@ -62,7 +62,8 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   }
 
   /* back */
-  .back .tagline { font-style: italic; font-size: 13pt; line-height: 1.5; }
+  .back .tagline { font-style: italic; font-size: 16pt; line-height: 1.55; }
+  .back .tagline strong { font-size: 17pt; }
   .back .tagline strong { color: var(--ochre); font-style: normal; }
   .back .ledger { border: 2pt solid var(--paper); padding: 12pt 14pt; font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9pt; }
   .back .ledger .h { text-align: center; font-weight: bold; letter-spacing: 0.2em; margin-bottom: 8pt; }
@@ -76,15 +77,16 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 <body>
 
 <div class="back">
-  <div class="tagline">The articles you saved,<br><strong>finally read.</strong></div>
+  <div class="tagline">“Read later” usually<br>means read never.<br><strong>This time it didn't.</strong></div>
   <div class="ledger">
     <div class="h">★ THE LEDGER ★</div>
     <div class="row"><span>This issue</span><span>${pageCount} pages · ${articleCount} article${articleCount === 1 ? "" : "s"}</span></div>
     <div class="row"><span>Trees consumed</span><span>${(pageCount / 2 / 8000).toFixed(4)}</span></div>
-    <div class="row"><span>Trees planted</span><span>${treesPlanted}</span></div>
+    <div class="row"><span>Trees planted, in your name</span><span>${treesPlanted}</span></div>
+    <div class="row"><span>Planted with</span><span>TIST Kenya</span></div>
   </div>
   <div class="foot">
-    Printed on recycled or FSC-certified stock.<br>The dead tree is partly fiction; the ten trees planted with TIST Kenya are not.
+    Printed on recycled or FSC-certified stock.<br>The dead tree is partly fiction; the ten new trees are not.
     <div class="url">deadtreedigest.com</div>
   </div>
 </div>
