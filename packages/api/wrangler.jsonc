@@ -14,5 +14,10 @@
   ],
   "r2_buckets": [{ "binding": "RAW", "bucket_name": "dtd-raw" }],
   "services": [{ "binding": "CLOSER", "service": "dtd-closer" }],
+  "send_email": [{ "name": "EMAIL" }],
+  "vars": {
+    "FROM_EMAIL": "press@mail.deadtreedigest.com",
+    "FROM_NAME": "Dead Tree Digest"
+  },
   "observability": { "enabled": true }
 }

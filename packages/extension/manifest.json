@@ -11,6 +11,22 @@
     "page": "options.html",
     "open_in_tab": false
   },
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["https://dtd-api.keanan-75b.workers.dev/*"]
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://dtd-api.keanan-75b.workers.dev/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://dtd-api.keanan-75b.workers.dev/setup*"
+      ],
+      "js": [
+        "setup.js"
+      ]
+    }
+  ]
 }
