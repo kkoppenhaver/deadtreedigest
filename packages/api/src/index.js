@@ -210,6 +210,9 @@ function validateAddress(a) {
   for (const field of ["name", "street1", "city", "postcode"]) {
     if (!a[field]?.trim()) return { error: `${field} is required` };
   }
+  if (a.name.includes("@")) {
+    return { error: "that name looks like an email address — we need a name for the mailing label" };
+  }
 
   return {
     updated: {
@@ -263,10 +266,13 @@ async function addressPage(request, env) {
     const { error, updated } = validateAddress(a);
     if (error) return htmlResponse(addressShell(addressForm(key, a, error)));
     await persistAddress(env, user.id, updated);
+    const origin = new URL(request.url).origin;
     return htmlResponse(
       addressShell(
         `<p class="ok">✓ Address saved. Your issues will ship to:</p>
-         <p class="addr">${escapeHtml(updated.ship_name)}<br>${escapeHtml(updated.ship_street1)}${updated.ship_street2 ? `<br>${escapeHtml(updated.ship_street2)}` : ""}<br>${escapeHtml(updated.ship_city)}, ${updated.ship_state} ${escapeHtml(updated.ship_postcode)}</p>`
+         <p class="addr">${escapeHtml(updated.ship_name)}<br>${escapeHtml(updated.ship_street1)}${updated.ship_street2 ? `<br>${escapeHtml(updated.ship_street2)}` : ""}<br>${escapeHtml(updated.ship_city)}, ${updated.ship_state} ${escapeHtml(updated.ship_postcode)}</p>
+         <p style="margin-top:22px;"><a href="${origin}/setup?key=${user.setup_key}" style="display:inline-block;background:#1f4d38;color:#f1e6cf;padding:11px 20px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;box-shadow:3px 3px 0 #2b2419;">Continue setup →</a></p>
+         <p style="font-size:13px;font-style:italic;color:#6b5f4d;margin-top:14px;">Already set up? Then you're done here — go read something worth saving.</p>`
       )
     );
   }
@@ -386,11 +392,11 @@ async function sendWelcomeEmail(env, user, setupUrl) {
     `That link installs your press credentials: the browser extension for saving, and where your issues should ship.\n\n— Dead Tree Digest`;
   const html = `
     <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
-      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">🌲 Welcome to Dead Tree Digest</h2>
-      <p>Your first issue starts building the moment you save your first article. Setup takes about two minutes.</p>
-      <p style="margin-top:18px;"><a href="${setupUrl}" style="background:#1f4d38;color:#f1e6cf;padding:12px 22px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;">Set up my press credentials</a></p>
-      <p style="font-size:13px;color:#6b5f4d;font-style:italic;margin-top:14px;">The link connects your saving extension and tells us where issues should ship. After that, you just read the internet like normal.</p>
-      <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
+      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px; margin-bottom: 20px;">🌲 Welcome to Dead Tree Digest</h2>
+      <p style="margin: 0 0 26px;">Your first issue starts building the moment you save your first article. Setup takes about two minutes.</p>
+      <p style="margin: 30px 0;"><a href="${setupUrl}" style="background:#1f4d38;color:#f1e6cf;padding:12px 22px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;">Set up my press credentials</a></p>
+      <p style="font-size:13px;color:#6b5f4d;font-style:italic;margin: 0 0 30px;">The link connects your saving extension and tells us where issues should ship. After that, you just read the internet like normal.</p>
+      <p style="font-style: italic; color: #4a4032; margin: 0;">— Dead Tree Digest</p>
     </div>`;
   try {
     await env.EMAIL.send({

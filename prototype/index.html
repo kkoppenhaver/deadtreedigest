@@ -644,20 +644,34 @@
           <button type="submit">Save my spot</button>
         </form>
         <script>
-          document.getElementById("waitlist-form").addEventListener("submit", async (e) => {
+          const dtdForm = document.getElementById("waitlist-form");
+          function dtdSignedUpState() {
+            const btn = dtdForm.querySelector("button");
+            const input = dtdForm.querySelector("input[name=email]");
+            btn.disabled = true;
+            input.disabled = true;
+            btn.textContent = "Check your email 🌲";
+            for (const a of document.querySelectorAll('a[href="#join"]')) {
+              a.textContent = "You're signed up ✓";
+              a.style.pointerEvents = "none";
+              a.style.opacity = "0.75";
+            }
+          }
+          if (localStorage.getItem("dtd_signed_up")) dtdSignedUpState();
+          dtdForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const form = e.target;
-            const btn = form.querySelector("button");
+            const btn = dtdForm.querySelector("button");
             btn.disabled = true; btn.textContent = "Saving…";
             try {
               const res = await fetch("https://api.deadtreedigest.com/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: form.email.value, website: form.website.value }),
+                body: JSON.stringify({ email: dtdForm.email.value, website: dtdForm.website.value }),
               });
               const body = await res.json();
               if (res.ok) {
-                btn.textContent = "Check your email 🌲";
+                localStorage.setItem("dtd_signed_up", "1");
+                dtdSignedUpState();
               } else {
                 btn.disabled = false; btn.textContent = body.error || "Try again?";
               }
