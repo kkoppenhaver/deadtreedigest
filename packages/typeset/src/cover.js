@@ -81,10 +81,9 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   <div class="trees">
     <div class="tn">${treesTotal ?? treesPlanted}</div>
     <div class="tc">trees planted in your name</div>
-    <div class="tp">with TIST Kenya</div>
+    <div class="tp">And more to come</div>
   </div>
   <div class="foot">
-    Printed on recycled or FSC-certified stock.<br>The dead tree is partly fiction; the ten new trees are not.
     <div class="url">deadtreedigest.com</div>
   </div>
 </div>
