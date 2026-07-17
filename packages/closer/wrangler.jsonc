@@ -22,7 +22,8 @@
     "ADMIN_EMAIL": "k.koppenhaver@gmail.com",
     "API_URL": "https://api.deadtreedigest.com",
     "PRESS_URL": "https://press.deadtreedigest.com",
-    "LULU_BASE": "https://api.lulu.com"
+    "LULU_BASE": "https://api.lulu.com",
+    "DH_PROJECT_ID": "81818183"
   },
   "rules": [{ "type": "Text", "globs": ["**/*.txt"] }],
   "observability": { "enabled": true }

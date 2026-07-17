@@ -15,6 +15,7 @@
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
 import { createPrintJob, getPrintJob } from "./lulu.js";
+import { plantTrees, TREES_PER_ISSUE } from "./trees.js";
 import { signedFileUrl } from "../../api/src/sign.js";
 import pagedJs from "./paged.polyfill.txt";
 
@@ -70,7 +71,23 @@ export default {
         const { results: before } = await env.DB.prepare(
           "SELECT number, lulu_status FROM issues WHERE status = 'sent_to_print'"
         ).all();
-        await pollPrintJobs(env, users);
+        // Trees owed: printed issues that haven't planted yet (transient failures).
+  const { results: owed } = await env.DB.prepare(
+    "SELECT * FROM issues WHERE lulu_job_id IS NOT NULL AND trees_planted IS NULL"
+  ).all();
+  for (const issue of owed) {
+    try {
+      const planted = await plantTrees(env, { userId: issue.user_id });
+      await env.DB.prepare("UPDATE issues SET trees_planted = ?, tree_request_id = ? WHERE id = ?")
+        .bind(planted.treeCount ?? TREES_PER_ISSUE, planted.uuid ?? null, issue.id)
+        .run();
+      console.log(`planted owed trees for issue ${issue.number}`);
+    } catch (err) {
+      console.error(`owed-tree retry failed for issue ${issue.number}: ${err.message}`);
+    }
+  }
+
+  await pollPrintJobs(env, users);
         const { results: after } = await env.DB.prepare(
           "SELECT number, status, lulu_status, tracking_url FROM issues WHERE lulu_job_id IS NOT NULL"
         ).all();
@@ -113,6 +130,17 @@ async function printIssue(env, issue, user) {
     .bind(String(job.id), new Date().toISOString(), issue.id)
     .run();
   await env.DB.prepare("UPDATE items SET status = 'printed' WHERE issue_id = ?").bind(issue.id).run();
+
+  // Ten trees, planted in the subscriber's name. Failures never block a
+  // print — the daily sweep retries any issue with a job but no trees.
+  try {
+    const planted = await plantTrees(env, { userId: user.id });
+    await env.DB.prepare("UPDATE issues SET trees_planted = ?, tree_request_id = ? WHERE id = ?")
+      .bind(planted.treeCount ?? TREES_PER_ISSUE, planted.uuid ?? null, issue.id)
+      .run();
+  } catch (err) {
+    console.error(`tree planting failed for issue ${issue.number ?? issue.id}: ${err.message}`);
+  }
   return job;
 }
 
