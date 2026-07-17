@@ -395,7 +395,11 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
     try {
       cover = await renderPdf(
         env,
-        coverHtml({ number, dateLabel, pageCount, articleCount: picked.length })
+        coverHtml({
+          number, dateLabel, pageCount, articleCount: picked.length,
+          coverLines: [...picked].sort((a, b) => b.estimated_pages - a.estimated_pages).slice(0, 3)
+            .map((i) => ({ title: i.title, byline: i.byline ?? i.site_name })),
+        })
       );
     } catch (err) {
       console.error(`cover render failed: ${err.message}`); // interior still ships to review
@@ -500,7 +504,11 @@ async function rerenderIssue(user, env, number) {
   const pageCount = interior.pages;
   const cover = await renderPdf(
     env,
-    coverHtml({ number, dateLabel, pageCount, articleCount: items.length })
+    coverHtml({
+      number, dateLabel, pageCount, articleCount: items.length,
+      coverLines: [...items].sort((a, b) => b.estimated_pages - a.estimated_pages).slice(0, 3)
+        .map((i) => ({ title: i.title, byline: i.byline ?? i.site_name })),
+    })
   );
 
   await env.RAW.put(issue.pdf_key, interior.pdf, { httpMetadata: { contentType: "application/pdf" } });

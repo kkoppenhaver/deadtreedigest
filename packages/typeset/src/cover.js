@@ -13,13 +13,16 @@ const PAGES_PER_INCH = 444;
 // Lulu guideline: spine text needs ~80+ pages of spine to sit safely.
 const SPINE_TEXT_MIN_PAGES = 80;
 
+const escapeCover = (t) =>
+  String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 export function spineWidthIn(pageCount) {
   return pageCount / PAGES_PER_INCH;
 }
 
 import { FONTS_CSS } from "./fonts.css.js";
 
-export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10 }) {
+export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10, coverLines = [] }) {
   const spine = spineWidthIn(pageCount);
   const W = (BLEED + TRIM_W + spine + TRIM_W + BLEED).toFixed(4);
   const H = (BLEED + TRIM_H + BLEED).toFixed(4);
@@ -49,22 +52,29 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   /* front */
   .front svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
   .front .mast {
-    position: absolute; top: ${BLEED + 0.5}in; left: 0; right: 0; text-align: center;
-    font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: normal; font-size: 34pt; line-height: 1.02;
+    position: absolute; top: ${BLEED + 0.42}in; left: 0; right: 0; text-align: center;
+    font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: normal; font-size: 33pt; line-height: 1;
     letter-spacing: 0.02em; text-transform: uppercase; color: var(--pine-deep);
   }
-  .front .issue-strip {
-    position: absolute; top: ${BLEED + 1.45}in; left: 0; right: 0; text-align: center;
-    font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9.5pt; letter-spacing: 0.28em; text-transform: uppercase; color: var(--rust);
+  .front .issue-line {
+    position: absolute; top: ${BLEED + 0.98}in; left: 0; right: 0; text-align: center;
+    font-family: 'Courier Prime', monospace; font-size: 9pt; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rust);
   }
-  /* paper chip so the strip survives crossing the sun */
-  .front .issue-strip span { background: var(--paper); border: 1.5pt solid var(--ink); padding: 3pt 10pt; }
-  .front .caption {
-    position: absolute; bottom: ${BLEED + 0.42}in; left: ${BLEED + 0.5}in; right: ${BLEED + 0.5}in;
-    background: var(--paper); border: 2.5pt solid var(--ink); padding: 8pt 12pt; text-align: center;
+  .front .lines {
+    position: absolute; top: ${BLEED + 1.55}in; left: ${BLEED + 0.45}in; width: 3.4in;
   }
-  .front .caption .big { font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: bold; font-size: 13pt; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pine-deep); }
-  .front .caption .small { font-family: 'Courier Prime', 'Courier New', monospace; font-size: 7.5pt; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rust); margin-top: 3pt; }
+  .front .lines .cl { margin-bottom: 13pt; }
+  .front .lines .cl .clt { font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 13.5pt; line-height: 1.15; color: var(--pine-deep); text-transform: uppercase; letter-spacing: 0.02em; }
+  .front .lines .cl .clt::before { content: "▪ "; color: var(--rust); }
+  .front .lines .cl .clb { font-family: 'Courier Prime', monospace; font-size: 7.5pt; letter-spacing: 0.18em; text-transform: uppercase; color: #7a5a30; margin-top: 2pt; padding-left: 13pt; }
+  .front .baseboard {
+    position: absolute; left: 0; right: 0; bottom: 0; height: ${BLEED + 0.4}in;
+    background: var(--paper); border-top: 2.5pt solid var(--ink);
+    display: flex; align-items: center; justify-content: center; gap: 10pt;
+    font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 10pt; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pine-deep);
+    padding-bottom: ${BLEED}in;
+  }
+  .front .baseboard .url { font-family: 'Courier Prime', monospace; font-size: 8pt; letter-spacing: 0.2em; color: var(--rust); }
 
   /* back */
   .back .tagline { font-style: italic; font-size: 13pt; line-height: 1.5; }
@@ -99,37 +109,28 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 <div class="front">
   <svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <rect width="460" height="700" fill="#e8c579"/>
-    <rect y="80" width="460" height="34" fill="#e3ba62"/>
-    <rect y="150" width="460" height="34" fill="#dfb04e"/>
+    <rect y="120" width="460" height="26" fill="#e3ba62"/>
+    <rect y="180" width="460" height="26" fill="#dfb04e"/>
     <g fill="#bf4e24">
-      <circle cx="340" cy="180" r="52"/>
-      <g stroke="#bf4e24" stroke-width="8" opacity="0.75">
-        <line x1="340" y1="92" x2="340" y2="114"/>
-        <line x1="271" y1="117" x2="287" y2="133"/>
-        <line x1="409" y1="117" x2="393" y2="133"/>
-        <line x1="248" y1="180" x2="272" y2="180"/>
-        <line x1="432" y1="180" x2="408" y2="180"/>
+      <circle cx="385" cy="175" r="38"/>
+      <g stroke="#bf4e24" stroke-width="6" opacity="0.75">
+        <line x1="385" y1="112" x2="385" y2="128"/>
+        <line x1="335" y1="132" x2="347" y2="144"/>
+        <line x1="435" y1="132" x2="423" y2="144"/>
+        <line x1="318" y1="175" x2="336" y2="175"/>
       </g>
     </g>
-    <path d="M0 360 L90 270 L170 350 L260 260 L350 355 L460 280 L460 470 L0 470 Z" fill="#8f9e6b"/>
-    <path d="M0 430 L120 330 L230 430 L330 340 L460 440 L460 560 L0 560 Z" fill="#4f7a53"/>
-    <g>
-      <g transform="translate(52,330)">
-        <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
-        <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
-        <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
-        <rect x="25" y="135" width="10" height="24" fill="#5b3a25"/>
-      </g>
-      <g transform="translate(360,318) scale(1.05)">
-        <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
-        <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
-        <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
-        <rect x="25" y="135" width="10" height="24" fill="#5b3a25"/>
-      </g>
+    <path d="M0 420 L110 340 L230 420 L340 350 L460 415 L460 700 L0 700 Z" fill="#8f9e6b"/>
+    <path d="M0 470 L140 400 L300 475 L460 420 L460 700 L0 700 Z" fill="#4f7a53"/>
+    <g transform="translate(368,380) scale(1.15)">
+      <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
+      <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
+      <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
+      <rect x="25" y="135" width="10" height="26" fill="#5b3a25"/>
     </g>
-    <path d="M0 545 Q 120 518 240 542 Q 360 564 460 538 L460 700 L0 700 Z" fill="#c9a94f"/>
-    <path d="M0 590 Q 150 566 300 590 Q 400 606 460 592 L460 700 L0 700 Z" fill="#b98f3c"/>
-    <g transform="translate(206,548)">
+    <path d="M0 560 Q 130 535 260 558 Q 380 578 460 556 L460 700 L0 700 Z" fill="#c9a94f"/>
+    <path d="M0 615 Q 150 592 310 615 Q 410 630 460 618 L460 700 L0 700 Z" fill="#b98f3c"/>
+    <g transform="translate(58,540) scale(2)">
       <ellipse cx="22" cy="34" rx="30" ry="9" fill="#8a5a33" opacity="0.35"/>
       <path d="M4 6 Q 2 26 6 32 L38 32 Q 42 24 40 6 Z" fill="#7a4a2a"/>
       <ellipse cx="22" cy="6" rx="18" ry="7" fill="#c99e6a"/>
@@ -137,24 +138,23 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
       <ellipse cx="22" cy="6" rx="5" ry="2" fill="none" stroke="#7a4a2a" stroke-width="1.4"/>
     </g>
     <g fill="#2b6248">
-      <g transform="translate(46,592)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(86,610) scale(0.9)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(128,598)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(166,616) scale(1.1)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(252,614) scale(0.95)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(290,600)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(326,618) scale(0.9)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(366,604) scale(1.1)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(408,620) scale(0.85)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(222,626) scale(0.95)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(180,585) scale(1.3)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(220,596) scale(1.15)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(258,588) scale(1.05)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(294,600) scale(0.95)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(328,592) scale(0.85)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(358,602) scale(0.75)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(384,595) scale(0.65)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(406,604) scale(0.6)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(426,598) scale(0.55)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(443,606) scale(0.5)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
     </g>
   </svg>
   <div class="mast">Dead Tree Digest</div>
-  <div class="issue-strip"><span>Issue № ${number}${dateLabel ? ` — ${dateLabel}` : ""}</span></div>
-  <div class="caption">
-    <div class="big">Read what you meant to read.</div>
-    <div class="small">deadtreedigest.com</div>
-  </div>
+  <div class="issue-line">Issue № ${number}${dateLabel ? ` · ${dateLabel}` : ""}</div>
+  ${coverLines.length ? `<div class="lines">${coverLines.slice(0, 3).map((l) => `
+    <div class="cl"><div class="clt">${escapeCover(l.title)}</div>${l.byline ? `<div class="clb">${escapeCover(l.byline)}</div>` : ""}</div>`).join("")}</div>` : ""}
+  <div class="baseboard">Read what you meant to read. <span class="url">deadtreedigest.com</span></div>
 </div>
 
 </body>
