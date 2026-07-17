@@ -93,47 +93,96 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 
 <div class="front">
   <svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <rect width="460" height="700" fill="#e8c579"/>
-    <rect y="120" width="460" height="26" fill="#e3ba62"/>
-    <rect y="180" width="460" height="26" fill="#dfb04e"/>
-    <g fill="#bf4e24">
-      <circle cx="385" cy="175" r="38"/>
-      <g stroke="#bf4e24" stroke-width="6" opacity="0.75">
-        <line x1="385" y1="112" x2="385" y2="128"/>
-        <line x1="335" y1="132" x2="347" y2="144"/>
-        <line x1="435" y1="132" x2="423" y2="144"/>
-        <line x1="318" y1="175" x2="336" y2="175"/>
-      </g>
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f2ddaa"/>
+        <stop offset="0.55" stop-color="#e8c579"/>
+        <stop offset="1" stop-color="#dcaa55"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+
+    <!-- sun with glow halos, upper right; light source for the whole scene -->
+    <circle cx="352" cy="170" r="78" fill="#bf4e24" opacity="0.08"/>
+    <circle cx="352" cy="170" r="56" fill="#bf4e24" opacity="0.14"/>
+    <circle cx="352" cy="170" r="36" fill="#c65a2e"/>
+    <circle cx="352" cy="170" r="36" fill="none" stroke="#f2ddaa" stroke-width="1.5" opacity="0.5"/>
+
+    <!-- birds -->
+    <g stroke="#8a5a33" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round">
+      <path d="M120 200 q6 -7 12 0 q6 -7 12 0"/>
+      <path d="M165 224 q5 -6 10 0 q5 -6 10 0"/>
     </g>
-    <path d="M0 420 L110 340 L230 420 L340 350 L460 415 L460 700 L0 700 Z" fill="#8f9e6b"/>
-    <path d="M0 470 L140 400 L300 475 L460 420 L460 700 L0 700 Z" fill="#4f7a53"/>
-    <g transform="translate(368,380) scale(1.15)">
-      <polygon points="30,0 58,52 2,52" fill="#1f4d38"/>
-      <polygon points="30,28 64,90 -4,90" fill="#1a4231"/>
-      <polygon points="30,60 72,135 -12,135" fill="#14352a"/>
-      <rect x="25" y="135" width="10" height="26" fill="#5b3a25"/>
+
+    <!-- L1: far ridge — hazy, near sky value (atmospheric perspective) -->
+    <path d="M0 340 L70 296 L128 330 L205 282 L268 326 L332 296 L395 330 L460 302 L460 420 L0 420 Z" fill="#d3bd85"/>
+    <path d="M205 282 L268 326 L232 326 Z" fill="#dcc794" opacity="0.9"/>
+    <path d="M70 296 L128 330 L96 330 Z" fill="#dcc794" opacity="0.9"/>
+
+    <!-- L2: mid ridge — sage, faceted lit/shadow -->
+    <path d="M0 408 L58 352 L120 402 L196 336 L262 398 L338 352 L410 400 L460 370 L460 500 L0 500 Z" fill="#a3ad7c"/>
+    <path d="M196 336 L262 398 L214 398 Z" fill="#b1ba8a"/>
+    <path d="M338 352 L410 400 L362 400 Z" fill="#b1ba8a"/>
+    <path d="M58 352 L120 402 L58 402 Z" fill="#95a06f"/>
+
+    <!-- L3: near ridge — deep green, stronger contrast -->
+    <path d="M0 490 L88 428 L170 486 L258 420 L336 482 L406 440 L460 474 L460 580 L0 580 Z" fill="#5d7a55"/>
+    <path d="M258 420 L336 482 L282 482 Z" fill="#6a8961"/>
+    <path d="M88 428 L170 486 L104 486 Z" fill="#516d4b"/>
+    <!-- pine silhouette band along its base -->
+    <path d="M0 540 l14 -22 12 22 6 -10 10 18 12 -24 12 24 8 -14 10 16 14 -26 12 26 8 -12 10 14 12 -22 12 22 6 -10 10 16 14 -24 12 24 8 -14 12 18 12 -20 12 20 8 -12 10 14 14 -22 12 22 6 -8 8 10 V585 H0 Z" fill="#31543f"/>
+
+    <!-- L4: valley floor with winding path leading to the stump -->
+    <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="#c9a94f"/>
+    <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="#b8923e"/>
+    <path d="M300 574 Q 250 596 180 606 Q 110 616 88 648 Q 76 668 92 700 L150 700 Q 138 668 156 650 Q 186 622 250 612 Q 310 602 330 578 Z" fill="#dcc17a" opacity="0.9"/>
+
+    <!-- big pine, right, faceted with sun-side lighting -->
+    <g>
+      <polygon points="392,388 424,452 360,452" fill="#1f4d38"/>
+      <polygon points="392,388 424,452 392,452" fill="#2b6248"/>
+      <polygon points="392,424 434,502 350,502" fill="#193f2e"/>
+      <polygon points="392,424 434,502 392,502" fill="#26573f"/>
+      <polygon points="392,464 446,560 338,560" fill="#14352a"/>
+      <polygon points="392,464 446,560 392,560" fill="#1f4d38"/>
+      <polygon points="386,560 398,560 400,592 384,592" fill="#5b3a25"/>
+      <polygon points="392,560 398,560 400,592 392,592" fill="#6d472c"/>
     </g>
-    <path d="M0 560 Q 130 535 260 558 Q 380 578 460 556 L460 700 L0 700 Z" fill="#c9a94f"/>
-    <path d="M0 615 Q 150 592 310 615 Q 410 630 460 618 L460 700 L0 700 Z" fill="#b98f3c"/>
-    <g transform="translate(58,540) scale(2)">
-      <ellipse cx="22" cy="34" rx="30" ry="9" fill="#8a5a33" opacity="0.35"/>
-      <path d="M4 6 Q 2 26 6 32 L38 32 Q 42 24 40 6 Z" fill="#7a4a2a"/>
-      <ellipse cx="22" cy="6" rx="18" ry="7" fill="#c99e6a"/>
-      <ellipse cx="22" cy="6" rx="11" ry="4.2" fill="none" stroke="#7a4a2a" stroke-width="1.6"/>
-      <ellipse cx="22" cy="6" rx="5" ry="2" fill="none" stroke="#7a4a2a" stroke-width="1.4"/>
+
+    <!-- hero stump, low-poly faceted, casting a long evening shadow -->
+    <g>
+      <ellipse cx="132" cy="646" rx="64" ry="12" fill="#8a5a33" opacity="0.3"/>
+      <path d="M96 586 L100 636 Q 116 646 132 646 L132 582 Z" fill="#6b3f23"/>
+      <path d="M132 582 L132 646 Q 148 646 164 636 L168 586 Z" fill="#8a5a33"/>
+      <path d="M120 584 L122 644 L142 644 L144 584 Z" fill="#7a4a2a"/>
+      <ellipse cx="132" cy="584" rx="36" ry="13" fill="#d3a873"/>
+      <ellipse cx="134" cy="583" rx="26" ry="9" fill="none" stroke="#8a5a33" stroke-width="1.8" opacity="0.7"/>
+      <ellipse cx="136" cy="582" rx="16" ry="5.5" fill="none" stroke="#8a5a33" stroke-width="1.5" opacity="0.7"/>
+      <ellipse cx="138" cy="581" rx="7" ry="2.5" fill="none" stroke="#8a5a33" stroke-width="1.2" opacity="0.7"/>
     </g>
-    <g fill="#2b6248">
-      <g transform="translate(180,585) scale(1.3)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(220,596) scale(1.15)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(258,588) scale(1.05)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(294,600) scale(0.95)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(328,592) scale(0.85)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(358,602) scale(0.75)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(384,595) scale(0.65)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(406,604) scale(0.6)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(426,598) scale(0.55)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(443,606) scale(0.5)"><polygon points="8,0 15,16 1,16"/><rect x="6.5" y="16" width="3" height="6" fill="#5b3a25"/></g>
+
+    <!-- ten saplings along the path, receding toward the ridge -->
+    <g>
+      <g transform="translate(196,616) scale(1.35)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(232,606) scale(1.2)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(266,598) scale(1.05)"><polygon points="8,0 15,17 1,17" fill="#2f6a4e"/><polygon points="8,0 15,17 8,17" fill="#397a5a"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(296,590) scale(0.9)"><polygon points="8,0 15,17 1,17" fill="#33705427"/><polygon points="8,0 15,17 1,17" fill="#337054"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(322,584) scale(0.78)"><polygon points="8,0 15,17 1,17" fill="#3b7a5c"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(344,578) scale(0.66)"><polygon points="8,0 15,17 1,17" fill="#448463"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(362,574) scale(0.56)"><polygon points="8,0 15,17 1,17" fill="#4d8d6b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(377,570) scale(0.47)"><polygon points="8,0 15,17 1,17" fill="#579573"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(389,567) scale(0.4)"><polygon points="8,0 15,17 1,17" fill="#619c7b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(399,564) scale(0.34)"><polygon points="8,0 15,17 1,17" fill="#6ba383"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
     </g>
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
   </svg>
   <div class="mast">Dead Tree Digest</div>
   ${dateLabel ? `<div class="issue-line">${dateLabel}</div>` : ""}
