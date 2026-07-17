@@ -133,6 +133,8 @@ async function printIssue(env, issue, user) {
 
   // Ten trees, planted in the subscriber's name. Failures never block a
   // print — the daily sweep retries any issue with a job but no trees.
+  // Guard: a canceled-and-reprinted issue must not plant twice.
+  if (issue.trees_planted) return job;
   try {
     const planted = await plantTrees(env, { userId: user.id });
     await env.DB.prepare("UPDATE issues SET trees_planted = ?, tree_request_id = ? WHERE id = ?")
