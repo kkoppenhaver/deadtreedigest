@@ -12,6 +12,12 @@ import { FONTS_CSS } from "./fonts.css.js";
 const escape = (s) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+const cleanSite = (s) =>
+  String(s ?? "").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+
+// some sites put their URL where an author name belongs
+const cleanByline = (b) => (/^https?:\/\//.test(b ?? "") ? cleanSite(b) : b);
+
 const fmtDate = (iso) => {
   if (!iso) return null;
   const d = new Date(iso);
@@ -64,9 +70,9 @@ const STYLES = `
   .toc { page: plain; break-after: page; }
   .toc h2 { font-family: 'Fjalla One', Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.14em; font-size: 10pt; border-bottom: 1.5pt solid var(--ink); padding-bottom: 6pt; margin-bottom: 12pt; }
   .toc ol { list-style: none; }
-  .toc li { margin-bottom: 9pt; }
-  .toc .t { display: block; font-size: 10.5pt; font-weight: bold; }
-  .toc .m { font-size: 8pt; color: #444; font-style: italic; }
+  .toc li { margin-bottom: 5.5pt; }
+  .toc .t { display: block; font-size: 9.75pt; font-weight: bold; line-height: 1.25; }
+  .toc .m { font-size: 7.25pt; color: #444; font-style: italic; }
   .toc a { text-decoration: none; color: inherit; }
   /* NB: Paged.js doesn't implement leader(); and attr(href) must live on the
      <a> itself — a pseudo-element on an inner span reads the span's (absent)
@@ -129,11 +135,11 @@ const STYLES = `
 
 function articleSection(a, i) {
   // The kicker owns the source; the byline row carries only author + date.
-  const meta = [a.byline, fmtDate(a.publishedAt)].filter(Boolean).join(" · ");
+  const meta = [cleanByline(a.byline), fmtDate(a.publishedAt)].filter(Boolean).join(" · ");
   return `
   <section class="article" id="a${i}">
     <header class="article-head">
-      <div class="kicker">${escape(a.siteName ?? "From the library")}</div>
+      <div class="kicker">${escape(cleanSite(a.siteName) || "From the library")}</div>
       <h1>${escape(a.title)}</h1>
       ${a.excerpt ? `<p class="standfirst">${escape(a.excerpt)}</p>` : ""}
       ${meta ? `<div class="byline">${escape(meta)}</div>` : ""}
@@ -148,7 +154,7 @@ export function issueHtml(issue, { pagedJs }) {
 
   const toc = articles
     .map((a, i) => {
-      const meta = [a.siteName, a.byline].filter(Boolean).join(" · ");
+      const meta = [cleanSite(a.siteName), cleanByline(a.byline)].filter(Boolean).join(" · ");
       return `<li><a href="#a${i}"><span class="t">${escape(a.title)}</span></a>
         <span class="m">${escape(meta ? `${meta} — ~${a.estimatedPages}pp` : `~${a.estimatedPages}pp`)}</span></li>`;
     })
