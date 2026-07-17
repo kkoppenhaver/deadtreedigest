@@ -643,6 +643,11 @@
           <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;" aria-hidden="true">
           <button type="submit">Sign me up</button>
         </form>
+        <div style="max-width:520px;margin:10px auto 0;display:flex;align-items:center;gap:0;">
+          <input type="text" id="handle-input" placeholder="yourname" aria-label="Choose your save address" style="flex:1;font-family:'Courier Prime',monospace;font-size:14px;padding:10px 12px;border:2px solid var(--ink);border-right:none;background:#faf3e3;color:var(--ink);outline:none;min-width:0;">
+          <span style="font-family:'Courier Prime',monospace;font-size:14px;padding:10px 12px;border:2px solid var(--ink);background:var(--paper-dark);white-space:nowrap;">@deadtreedigest.com</span>
+        </div>
+        <p style="margin-top:8px;font-size:13px;font-style:italic;color:#6b5f4d;">Optional: pick the address you'll forward articles to.</p>
         <script>
           const dtdForm = document.getElementById("waitlist-form");
           function dtdSignedUpState() {
@@ -658,6 +663,11 @@
             }
           }
           if (localStorage.getItem("dtd_signed_up")) dtdSignedUpState();
+          dtdForm.email.addEventListener("input", () => {
+            const h = document.getElementById("handle-input");
+            if (!h.dataset.touched) h.placeholder = (dtdForm.email.value.split("@")[0] || "yourname").toLowerCase().replace(/[^a-z0-9.-]/g, "");
+          });
+          document.getElementById("handle-input").addEventListener("input", (e) => (e.target.dataset.touched = "1"));
           dtdForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const btn = dtdForm.querySelector("button");
@@ -666,7 +676,7 @@
               const res = await fetch("https://api.deadtreedigest.com/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: dtdForm.email.value, website: dtdForm.website.value }),
+                body: JSON.stringify({ email: dtdForm.email.value, website: dtdForm.website.value, handle: document.getElementById("handle-input").value }),
               });
               const body = await res.json();
               if (res.ok) {

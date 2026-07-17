@@ -366,6 +366,7 @@ async function signup(request, env) {
   if (body.website) return corsJson({ ok: true }); // honeypot: bots fill hidden fields
 
   let user = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+  const requestedHandle = sanitizeHandle(body.handle);
   if (!user) {
     const id = "u_" + crypto.randomUUID().replaceAll("-", "").slice(0, 12);
     const saveToken = [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -379,10 +380,44 @@ async function signup(request, env) {
     user = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first();
   }
 
+  // Vanity save address: requested handle, else derived from the email's
+  // local part; collisions get digits; reserved names fall through to derived.
+  if (!user.handle) {
+    const candidates = [requestedHandle, sanitizeHandle(email.split("@")[0])].filter(Boolean);
+    for (let base of candidates) {
+      for (const attempt of [base, base + Math.floor(10 + Math.random() * 90)]) {
+        const taken = await env.DB.prepare("SELECT 1 FROM users WHERE handle = ?").bind(attempt).first();
+        if (!taken) {
+          await env.DB.prepare("UPDATE users SET handle = ? WHERE id = ?").bind(attempt, user.id).run();
+          user = { ...user, handle: attempt };
+          break;
+        }
+      }
+      if (user.handle) break;
+    }
+  }
+
   const setupUrl = `${new URL(request.url).origin}/setup?key=${user.setup_key}`;
   const sent = await sendWelcomeEmail(env, user, setupUrl);
   return corsJson({ ok: true, emailed: sent });
 }
+
+const RESERVED_HANDLES = new Set([
+  "save", "press", "admin", "administrator", "info", "hello", "mail", "email",
+  "postmaster", "hostmaster", "webmaster", "abuse", "noreply", "no-reply",
+  "support", "billing", "legal", "privacy", "security", "root", "help",
+  "contact", "team", "api", "www", "ledger", "setup", "test",
+]);
+
+function sanitizeHandle(raw) {
+  if (!raw) return null;
+  const h = String(raw).toLowerCase().trim().replace(/[^a-z0-9.-]/g, "").replace(/^[.-]+|[.-]+$/g, "").slice(0, 30);
+  if (h.length < 3 || RESERVED_HANDLES.has(h)) return null;
+  return h;
+}
+
+const saveAddress = (user) =>
+  user.handle ? `${user.handle}@deadtreedigest.com` : `save-${user.email_key}@deadtreedigest.com`;
 
 async function sendWelcomeEmail(env, user, setupUrl) {
   const text =
@@ -395,7 +430,7 @@ async function sendWelcomeEmail(env, user, setupUrl) {
       <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px; margin-bottom: 20px;">🌲 Welcome to Dead Tree Digest</h2>
       <p style="margin: 0 0 26px;">Your first issue starts building the moment you save your first article. Setup takes about two minutes.</p>
       <p style="margin: 30px 0;"><a href="${setupUrl}" style="background:#1f4d38;color:#f1e6cf;padding:12px 22px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;">Set up my press credentials</a></p>
-      <p style="font-size:13px;color:#6b5f4d;font-style:italic;margin: 0 0 30px;">The link connects your saving extension and tells us where issues should ship. After that, you just read the internet like normal.</p>
+      <p style="font-size:13px;color:#6b5f4d;font-style:italic;margin: 0 0 30px;">The link connects your saving extension and tells us where issues should ship. After that, you just read the internet like normal — and anything you'd rather forward, send to <strong>${saveAddress(user)}</strong>.</p>
       <p style="font-style: italic; color: #4a4032; margin: 0;">— Dead Tree Digest</p>
     </div>`;
   try {
@@ -453,7 +488,7 @@ async function setupPage(request, env) {
       <div>
         <strong>Go read the internet</strong>
         <p>Save anything worth keeping — one click in the extension, or forward any article or newsletter to your personal save address:</p>
-        <p><code>save-${escapeHtml(user.email_key)}@deadtreedigest.com</code></p>
+        <p><code>${escapeHtml(saveAddress(user))}</code></p>
         <p>When you've saved about 100 pages worth, your issue prints itself and finds you. That's the whole system.</p>
       </div>
     </div>`;

@@ -16,7 +16,7 @@ export default {
     const mail = await PostalMime.parse(raw);
 
     const rcpt = (message.to ?? "").toLowerCase();
-    const local = rcpt.split("@")[0];
+    const local = rcpt.split("@")[0].split("+")[0]; // keanan+newsletters@ still lands
 
     let user = null;
     const keyed = local.match(/^save-([a-z0-9]+)$/);
@@ -26,8 +26,11 @@ export default {
       const sender = (message.from ?? "").toLowerCase();
       user = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(sender).first();
     } else {
-      message.setReject("No such address");
-      return;
+      user = await env.DB.prepare("SELECT * FROM users WHERE handle = ?").bind(local).first();
+      if (!user) {
+        message.setReject("No such address");
+        return;
+      }
     }
     if (!user) {
       message.setReject("This address isn't connected to a Dead Tree Digest account");
