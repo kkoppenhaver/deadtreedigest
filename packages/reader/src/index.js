@@ -58,6 +58,12 @@ export function parseArticle({ html, url = null, source = null, email: emailMeta
   if (!title) {
     title = text.slice(0, 80).trimEnd() + (text.length > 80 ? "…" : "");
   }
+  // Pages saved from inside webmail carry the account in the document title
+  // ("Subject - user@example.com - Gmail") — strip the suffix chain.
+  title = title
+    .replace(/\s*[-–—|]\s*[\w.+-]+@[\w.-]+\.\w+\s*(?:[-–—|]\s*Gmail)?$/i, "")
+    .replace(/\s*[-–—|]\s*Gmail$/i, "")
+    .trim() || title;
 
   // Excerpts need enough substance to earn standfirst treatment: not empty
   // punctuation, not a stray date line (< 4 words), not a copy of the lead.

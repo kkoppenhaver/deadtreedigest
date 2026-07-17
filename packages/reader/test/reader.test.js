@@ -202,6 +202,14 @@ describe("footnote sections", () => {
   });
 });
 
+describe("webmail title suffixes", () => {
+  it("strips the Gmail account/product suffix from titles", () => {
+    const html = `<html><head><title>How I Polish Software - k.koppenhaver@gmail.com - Gmail</title></head><body><article><p>Body content with enough words to extract confidently and make Readability comfortable with this little synthetic fixture of an email opened in a webmail client.</p><p>Second paragraph so there is more than one block of content here.</p></article></body></html>`;
+    const article = parseArticle({ html, url: "https://mail.google.com/mail/u/0/" });
+    expect(article.title).toBe("How I Polish Software");
+  });
+});
+
 describe("page estimation", () => {
   it("estimates pages from word count for the 100pp cap", () => {
     const words = Array.from({ length: 2000 }, (_, i) => `word${i}`).join(" ");
