@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Dead Tree Digest — Save",
+  "name": "Dead Tree Digest",
   "version": "0.1.0",
   "description": "Save the page you're reading to your Dead Tree Digest library. It arrives in print with your next issue.",
   "action": {

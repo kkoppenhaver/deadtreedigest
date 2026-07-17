@@ -2,7 +2,7 @@
 
 ## Listing
 
-**Name**: Dead Tree Digest — Save to print
+**Name**: Dead Tree Digest
 
 **Short description** (under 132 chars):
 Save articles as you browse. When you've saved enough to fill an issue, they arrive as a printed magazine in your mailbox.
