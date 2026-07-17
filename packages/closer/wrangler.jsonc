@@ -5,6 +5,7 @@
   "compatibility_date": "2026-06-15",
   "compatibility_flags": ["nodejs_compat"],
   "triggers": { "crons": ["0 17 * * *"] },
+  "routes": [{ "pattern": "press.deadtreedigest.com", "custom_domain": true }],
   "d1_databases": [
     {
       "binding": "DB",
@@ -19,7 +20,8 @@
     "FROM_EMAIL": "press@mail.deadtreedigest.com",
     "FROM_NAME": "Dead Tree Digest",
     "ADMIN_EMAIL": "k.koppenhaver@gmail.com",
-    "API_URL": "https://dtd-api.keanan-75b.workers.dev",
+    "API_URL": "https://api.deadtreedigest.com",
+    "PRESS_URL": "https://press.deadtreedigest.com",
     "LULU_BASE": "https://api.lulu.com"
   },
   "rules": [{ "type": "Text", "globs": ["**/*.txt"] }],

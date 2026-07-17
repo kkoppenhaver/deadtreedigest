@@ -650,7 +650,7 @@
             const btn = form.querySelector("button");
             btn.disabled = true; btn.textContent = "Saving…";
             try {
-              const res = await fetch("https://dtd-api.keanan-75b.workers.dev/signup", {
+              const res = await fetch("https://api.deadtreedigest.com/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: form.email.value, website: form.website.value }),

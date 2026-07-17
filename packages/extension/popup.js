@@ -12,7 +12,7 @@ function show(html) {
 }
 
 async function settings() {
-  const defaults = { apiBase: "https://dtd-api.keanan-75b.workers.dev", token: "" };
+  const defaults = { apiBase: "https://api.deadtreedigest.com", token: "" };
   return { ...defaults, ...(await chrome.storage.sync.get(["apiBase", "token"])) };
 }
 

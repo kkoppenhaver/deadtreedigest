@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const DEFAULT_API = "https://dtd-api.keanan-75b.workers.dev";
+const DEFAULT_API = "https://api.deadtreedigest.com";
 
 async function settings() {
   const s = await chrome.storage.sync.get(["apiBase", "token"]);

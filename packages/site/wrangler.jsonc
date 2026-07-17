@@ -1,0 +1,10 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "dtd-site",
+  "compatibility_date": "2026-06-15",
+  "assets": { "directory": "../../prototype" },
+  "routes": [
+    { "pattern": "deadtreedigest.com", "custom_domain": true },
+    { "pattern": "www.deadtreedigest.com", "custom_domain": true }
+  ]
+}

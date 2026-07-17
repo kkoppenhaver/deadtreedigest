@@ -4,6 +4,7 @@
   "main": "src/index.js",
   "compatibility_date": "2026-06-15",
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [{ "pattern": "api.deadtreedigest.com", "custom_domain": true }],
   "d1_databases": [
     {
       "binding": "DB",

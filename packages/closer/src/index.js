@@ -149,7 +149,7 @@ async function approve(request, env) {
     `🌲 <strong>Issue № ${issue.number} is off to the printer.</strong><br><br>
      Lulu job <code>${job.id}</code> (status: ${job.status?.name ?? "created"}).<br>
      ${issue.page_count} pages, shipping US Mail to ${user.ship_city}, ${user.ship_state}.<br><br>
-     <em>Ten trees are being planted to apologize.</em>`
+     <em>Ten trees are being planted in your name.</em>`
   );
 }
 
@@ -521,7 +521,7 @@ function sendAddressNeededEmail(env, user, { number }) {
 // Operator alert, not a user email: print failures go to ADMIN_EMAIL with
 // the details and the manual print lever. The cron retries daily regardless.
 function sendPrintFailureAlert(env, user, { number, pageCount, approveKey, error }) {
-  const approveUrl = `https://dtd-closer.keanan-75b.workers.dev/approve?key=${approveKey}`;
+  const approveUrl = `${env.PRESS_URL}/approve?key=${approveKey}`;
   const text =
     `Print job failed for ${user.email}, issue № ${number} (${pageCount ?? "?"}pp).\n\n` +
     `Error: ${error}\n\nThe daily cron will retry. Manual trigger: ${approveUrl}\n\n— dtd-closer`;
