@@ -186,7 +186,7 @@ async function sweep(env) {
   ).all();
   for (const issue of pending) {
     const user = users.find((u) => u.id === issue.user_id);
-    if (!user || !hasAddress(user)) continue;
+    if (!user || !user.beta || !hasAddress(user)) continue;
     try {
       await printIssue(env, issue, user);
       console.log(`auto-printed pending issue ${issue.number} for ${user.id}`);
@@ -252,6 +252,25 @@ async function pollPrintJobs(env, users) {
   }
 }
 
+function sendGateReviewEmail(env, user, queued, est) {
+  const titles = queued.slice(0, 20).map((q) => `  • ${q.title}`).join("\n");
+  const flipCmd = `npx wrangler d1 execute dtd-library --remote -c packages/api/wrangler.jsonc --command "UPDATE users SET beta = 1 WHERE email = '${user.email}'"`;
+  const text =
+    `${user.email} filled an issue (${queued.length} items, ~${round1(est)}pp est) and is waiting at the print gate.\n\n` +
+    `Signed up: ${user.signed_up_at ?? "unknown"}\nAddress on file: ${hasAddress(user) ? "yes" : "no"}\n\nQueue:\n${titles}\n\n` +
+    `Approve them:\n${flipCmd}\n\nTheir issue closes and prints on their next save or tomorrow's sweep.\n\n— dtd-closer`;
+  const html = `
+    <div style="font-family: 'Courier New', monospace; color: #2b2419; max-width: 44em; font-size: 13px;">
+      <p><strong>🌲 Print gate:</strong> ${escapeHtml(user.email)} filled an issue — ${queued.length} items, ~${round1(est)}pp estimated.</p>
+      <p>Signed up: ${escapeHtml(user.signed_up_at ?? "unknown")} · Address on file: ${hasAddress(user) ? "yes" : "no"}</p>
+      <ul>${queued.slice(0, 20).map((q) => `<li>${escapeHtml(q.title)}</li>`).join("")}</ul>
+      <p>Approve them:</p>
+      <p style="background:#f1e6cf;border:1px solid #2b2419;padding:8px 12px;word-break:break-all;">${escapeHtml(flipCmd)}</p>
+      <p>Their issue closes and prints on their next save or tomorrow's sweep.</p>
+    </div>`;
+  return sendEmail(env, env.ADMIN_EMAIL, `[DTD] print gate: ${user.email} filled an issue`, text, html);
+}
+
 function sendStatusAlert(env, user, issue, { status, message, stuckUnpaid }) {
   const headline = stuckUnpaid
     ? `stuck in ${status} for ${STUCK_AFTER_HOURS}h+ — check the payment method on the Lulu account`
@@ -276,6 +295,20 @@ async function checkUser(user, env) {
   const full = est >= user.page_cap;
   const sinceClose = daysSince(user.last_closed_at);
   const eligible = sinceClose >= user.min_interval_days;
+
+  // The print gate: non-beta users' issues never close — the queue holds,
+  // nothing renders, nothing prints, and the operator gets one review email.
+  // Flipping beta=1 lets the next check close and print normally.
+  if (full && eligible && !user.beta) {
+    let emailed = false;
+    if (!user.gate_alerted_at) {
+      emailed = await sendGateReviewEmail(env, user, queued, est);
+      await env.DB.prepare("UPDATE users SET gate_alerted_at = ? WHERE id = ?")
+        .bind(new Date().toISOString(), user.id)
+        .run();
+    }
+    return { action: "gated", queuedPages: round1(est), cap: user.page_cap, emailed };
+  }
 
   if (full && eligible) return closeForUser(user, env, queued);
 
