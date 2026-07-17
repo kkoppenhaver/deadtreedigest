@@ -144,14 +144,14 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 
     <!-- big pine, right, faceted with sun-side lighting -->
     <g>
-      <polygon points="392,388 424,452 360,452" fill="#1f4d38"/>
-      <polygon points="392,388 424,452 392,452" fill="#2b6248"/>
-      <polygon points="392,424 434,502 350,502" fill="#193f2e"/>
-      <polygon points="392,424 434,502 392,502" fill="#26573f"/>
-      <polygon points="392,464 446,560 338,560" fill="#14352a"/>
-      <polygon points="392,464 446,560 392,560" fill="#1f4d38"/>
-      <polygon points="386,560 398,560 400,592 384,592" fill="#5b3a25"/>
-      <polygon points="392,560 398,560 400,592 392,592" fill="#6d472c"/>
+      <polygon points="430,388 462,452 398,452" fill="#1f4d38"/>
+      <polygon points="430,388 462,452 430,452" fill="#2b6248"/>
+      <polygon points="430,424 472,502 388,502" fill="#193f2e"/>
+      <polygon points="430,424 472,502 430,502" fill="#26573f"/>
+      <polygon points="430,464 484,560 376,560" fill="#14352a"/>
+      <polygon points="430,464 484,560 430,560" fill="#1f4d38"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
     <!-- hero stump, low-poly faceted, casting a long evening shadow -->
@@ -172,12 +172,12 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
       <g transform="translate(232,606) scale(1.2)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
       <g transform="translate(266,598) scale(1.05)"><polygon points="8,0 15,17 1,17" fill="#2f6a4e"/><polygon points="8,0 15,17 8,17" fill="#397a5a"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
       <g transform="translate(296,590) scale(0.9)"><polygon points="8,0 15,17 1,17" fill="#33705427"/><polygon points="8,0 15,17 1,17" fill="#337054"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(322,584) scale(0.78)"><polygon points="8,0 15,17 1,17" fill="#3b7a5c"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(344,578) scale(0.66)"><polygon points="8,0 15,17 1,17" fill="#448463"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(362,574) scale(0.56)"><polygon points="8,0 15,17 1,17" fill="#4d8d6b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(377,570) scale(0.47)"><polygon points="8,0 15,17 1,17" fill="#579573"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(389,567) scale(0.4)"><polygon points="8,0 15,17 1,17" fill="#619c7b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(399,564) scale(0.34)"><polygon points="8,0 15,17 1,17" fill="#6ba383"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(318,586) scale(0.78)"><polygon points="8,0 15,17 1,17" fill="#3b7a5c"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(338,582) scale(0.66)"><polygon points="8,0 15,17 1,17" fill="#448463"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(354,578) scale(0.56)"><polygon points="8,0 15,17 1,17" fill="#4d8d6b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(368,575) scale(0.47)"><polygon points="8,0 15,17 1,17" fill="#579573"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(380,572) scale(0.4)"><polygon points="8,0 15,17 1,17" fill="#619c7b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(390,570) scale(0.34)"><polygon points="8,0 15,17 1,17" fill="#6ba383"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
     </g>
 
     <!-- film grain -->
