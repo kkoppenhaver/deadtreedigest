@@ -150,7 +150,7 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
     </g>
   </svg>
   <div class="mast">Dead Tree<br>Digest</div>
-  <div class="issue-strip"><span>Issue № ${number}${dateLabel ? ` — ${dateLabel}` : ""} · ${articleCount} article${articleCount === 1 ? "" : "s"} · ${pageCount} pages</span></div>
+  <div class="issue-strip"><span>Issue № ${number}${dateLabel ? ` — ${dateLabel}` : ""}</span></div>
   <div class="caption">
     <div class="big">One falls. Ten rise.</div>
     <div class="small">Your reading, printed &amp; delivered</div>
