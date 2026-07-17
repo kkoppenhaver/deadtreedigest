@@ -393,12 +393,14 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
   let cover = null;
   if (pageCount) {
     try {
+      const past = await env.DB.prepare(
+        "SELECT COALESCE(SUM(trees_planted), 0) AS t FROM issues WHERE user_id = ?"
+      ).bind(user.id).first();
       cover = await renderPdf(
         env,
         coverHtml({
           number, dateLabel, pageCount, articleCount: picked.length,
-          coverLines: [...picked].sort((a, b) => b.estimated_pages - a.estimated_pages).slice(0, 3)
-            .map((i) => ({ title: i.title, byline: i.byline ?? i.site_name })),
+          treesTotal: (past?.t ?? 0) + TREES_PER_ISSUE,
         })
       );
     } catch (err) {
@@ -502,12 +504,14 @@ async function rerenderIssue(user, env, number) {
     issueHtml({ number, dateLabel, articles, ledger: { issuesShipped: number } }, { pagedJs })
   );
   const pageCount = interior.pages;
+  const past = await env.DB.prepare(
+    "SELECT COALESCE(SUM(trees_planted), 0) AS t FROM issues WHERE user_id = ?"
+  ).bind(user.id).first();
   const cover = await renderPdf(
     env,
     coverHtml({
       number, dateLabel, pageCount, articleCount: items.length,
-      coverLines: [...items].sort((a, b) => b.estimated_pages - a.estimated_pages).slice(0, 3)
-        .map((i) => ({ title: i.title, byline: i.byline ?? i.site_name })),
+      treesTotal: Math.max(past?.t ?? 0, TREES_PER_ISSUE),
     })
   );
 

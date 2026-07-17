@@ -22,7 +22,7 @@ export function spineWidthIn(pageCount) {
 
 import { FONTS_CSS } from "./fonts.css.js";
 
-export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10 }) {
+export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10, treesTotal = null }) {
   const spine = spineWidthIn(pageCount);
   const W = (BLEED + TRIM_W + spine + TRIM_W + BLEED).toFixed(4);
   const H = (BLEED + TRIM_H + BLEED).toFixed(4);
@@ -65,10 +65,10 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   .back .tagline { font-style: italic; font-size: 16pt; line-height: 1.55; }
   .back .tagline strong { font-size: 17pt; }
   .back .tagline strong { color: var(--ochre); font-style: normal; }
-  .back .ledger { border: 2pt solid var(--paper); padding: 12pt 14pt; font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9pt; }
-  .back .ledger .h { text-align: center; font-weight: bold; letter-spacing: 0.2em; margin-bottom: 8pt; }
-  .back .ledger .row { display: flex; justify-content: space-between; padding: 3pt 0; border-bottom: 0.5pt dotted rgba(241,230,207,0.4); }
-  .back .ledger .row:last-child { border-bottom: none; font-weight: bold; }
+  .back .trees { text-align: center; }
+  .back .trees .tn { font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 64pt; line-height: 1; color: var(--ochre); }
+  .back .trees .tc { font-family: 'Courier Prime', 'Courier New', monospace; font-size: 9.5pt; letter-spacing: 0.22em; text-transform: uppercase; color: #cbbf9f; margin-top: 10pt; }
+  .back .trees .tp { font-family: 'Courier Prime', 'Courier New', monospace; font-size: 8pt; letter-spacing: 0.18em; text-transform: uppercase; color: #8d8168; margin-top: 4pt; }
   .back .foot { font-size: 8pt; font-style: italic; color: #cbbf9f; text-align: center; }
   .back .foot .url { font-family: 'Fjalla One', Helvetica, sans-serif; font-style: normal; font-size: 9.5pt; letter-spacing: 0.12em; color: var(--paper); margin-top: 6pt; text-transform: lowercase; }
 </style>
@@ -78,12 +78,10 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
 
 <div class="back">
   <div class="tagline"><strong>You did it.</strong></div>
-  <div class="ledger">
-    <div class="h">★ THE LEDGER ★</div>
-    <div class="row"><span>This issue</span><span>${pageCount} pages · ${articleCount} article${articleCount === 1 ? "" : "s"}</span></div>
-    <div class="row"><span>Trees consumed</span><span>${(pageCount / 2 / 8000).toFixed(4)}</span></div>
-    <div class="row"><span>Trees planted, in your name</span><span>${treesPlanted}</span></div>
-    <div class="row"><span>Planted with</span><span>TIST Kenya</span></div>
+  <div class="trees">
+    <div class="tn">${treesTotal ?? treesPlanted}</div>
+    <div class="tc">trees planted in your name</div>
+    <div class="tp">with TIST Kenya</div>
   </div>
   <div class="foot">
     Printed on recycled or FSC-certified stock.<br>The dead tree is partly fiction; the ten new trees are not.
