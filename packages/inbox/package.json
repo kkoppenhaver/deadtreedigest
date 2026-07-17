@@ -1,0 +1,10 @@
+{
+  "name": "@dtd/inbox",
+  "version": "0.1.0",
+  "description": "Email ingestion: forward an article/newsletter to your save address, it lands in your library",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "postal-mime": "^2.3.2"
+  }
+}

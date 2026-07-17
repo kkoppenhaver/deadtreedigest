@@ -452,7 +452,9 @@ async function setupPage(request, env) {
       <div class="n">4</div>
       <div>
         <strong>Go read the internet</strong>
-        <p>Save anything worth keeping. When you've saved about 100 pages worth, your issue prints itself and finds you. That's the whole system.</p>
+        <p>Save anything worth keeping — one click in the extension, or forward any article or newsletter to your personal save address:</p>
+        <p><code>save-${escapeHtml(user.email_key)}@deadtreedigest.com</code></p>
+        <p>When you've saved about 100 pages worth, your issue prints itself and finds you. That's the whole system.</p>
       </div>
     </div>`;
   return htmlResponse(setupShell(inner));

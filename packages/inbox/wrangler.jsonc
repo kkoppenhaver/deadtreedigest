@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "dtd-inbox",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dtd-library",
+      "database_id": "e473914a-bb65-47ae-a352-ec4078e018bf"
+    }
+  ],
+  "services": [{ "binding": "API", "service": "dtd-api" }],
+  "observability": { "enabled": true }
+}
