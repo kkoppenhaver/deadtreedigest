@@ -22,7 +22,7 @@ export function spineWidthIn(pageCount) {
 
 import { FONTS_CSS } from "./fonts.css.js";
 
-export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10, coverLines = [] }) {
+export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10 }) {
   const spine = spineWidthIn(pageCount);
   const W = (BLEED + TRIM_W + spine + TRIM_W + BLEED).toFixed(4);
   const H = (BLEED + TRIM_H + BLEED).toFixed(4);
@@ -57,24 +57,9 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
     letter-spacing: 0.02em; text-transform: uppercase; color: var(--pine-deep);
   }
   .front .issue-line {
-    position: absolute; top: ${BLEED + 0.98}in; left: 0; right: 0; text-align: center;
-    font-family: 'Courier Prime', monospace; font-size: 9pt; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rust);
+    position: absolute; top: ${BLEED + 0.96}in; left: 0; right: 0; text-align: center;
+    font-family: 'Courier Prime', monospace; font-size: 8pt; letter-spacing: 0.34em; text-transform: uppercase; color: var(--pine-deep); opacity: 0.75;
   }
-  .front .lines {
-    position: absolute; top: ${BLEED + 1.55}in; left: ${BLEED + 0.45}in; width: 3.4in;
-  }
-  .front .lines .cl { margin-bottom: 13pt; }
-  .front .lines .cl .clt { font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 13.5pt; line-height: 1.15; color: var(--pine-deep); text-transform: uppercase; letter-spacing: 0.02em; }
-  .front .lines .cl .clt::before { content: "▪ "; color: var(--rust); }
-  .front .lines .cl .clb { font-family: 'Courier Prime', monospace; font-size: 7.5pt; letter-spacing: 0.18em; text-transform: uppercase; color: #7a5a30; margin-top: 2pt; padding-left: 13pt; }
-  .front .baseboard {
-    position: absolute; left: 0; right: 0; bottom: 0; height: ${BLEED + 0.4}in;
-    background: var(--paper); border-top: 2.5pt solid var(--ink);
-    display: flex; align-items: center; justify-content: center; gap: 10pt;
-    font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 10pt; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pine-deep);
-    padding-bottom: ${BLEED}in;
-  }
-  .front .baseboard .url { font-family: 'Courier Prime', monospace; font-size: 8pt; letter-spacing: 0.2em; color: var(--rust); }
 
   /* back */
   .back .tagline { font-style: italic; font-size: 13pt; line-height: 1.5; }
@@ -151,10 +136,7 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
     </g>
   </svg>
   <div class="mast">Dead Tree Digest</div>
-  <div class="issue-line">Issue № ${number}${dateLabel ? ` · ${dateLabel}` : ""}</div>
-  ${coverLines.length ? `<div class="lines">${coverLines.slice(0, 3).map((l) => `
-    <div class="cl"><div class="clt">${escapeCover(l.title)}</div>${l.byline ? `<div class="clb">${escapeCover(l.byline)}</div>` : ""}</div>`).join("")}</div>` : ""}
-  <div class="baseboard">Read what you meant to read. <span class="url">deadtreedigest.com</span></div>
+  ${dateLabel ? `<div class="issue-line">${dateLabel}</div>` : ""}
 </div>
 
 </body>

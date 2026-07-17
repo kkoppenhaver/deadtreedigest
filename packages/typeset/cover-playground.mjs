@@ -92,11 +92,6 @@ function render() {
     dateLabel: $("date").value,
     pageCount,
     articleCount: Number($("articles").value),
-    coverLines: [
-      { title: "Salary Negotiation: Make More Money, Be More Valued", byline: "Kalzumeus Software" },
-      { title: "Every Company's First AI Strategy Should Be a Skill Library", byline: "Hiten Shah (@hnshah)" },
-      { title: "Publishing your work increases your luck", byline: "github.blog" },
-    ],
   });
   if ($("guides").checked) {
     html = html.replace("</body>", guidesOverlay(pageCount) + "</body>");
