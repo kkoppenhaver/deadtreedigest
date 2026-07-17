@@ -22,7 +22,7 @@ export function spineWidthIn(pageCount) {
 
 import { FONTS_CSS } from "./fonts.css.js";
 
-export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10, treesTotal = null }) {
+export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null }) {
   // Chrome truncates the PDF page box to whole points (Lulu rejected job
   // 2959013: 11.5045in CSS came out as exactly 11.500in, 0.002 under Lulu's
   // minimum). Size the sheet in integer points, rounded UP, and let the
@@ -84,7 +84,7 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   <div class="tagline"><strong>You did it.</strong></div>
   <div class="trees">
     <div class="tn">${treesTotal ?? treesPlanted}</div>
-    <div class="tc">trees planted in your name</div>
+    <div class="tc">tree${(treesTotal ?? treesPlanted) === 1 ? "" : "s"} planted in your name</div>
     <div class="tp">And more to come</div>
   </div>
   <div class="foot">

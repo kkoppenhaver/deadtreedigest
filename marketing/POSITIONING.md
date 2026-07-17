@@ -84,5 +84,8 @@ How-it-works skeleton (3 beats):
 2. Your saves typeset themselves into a magazine — and when it's full, it prints. You never know the day.
 3. It shows up in your mail. Take it somewhere better than your desk.
 
-Trees line (objection slot): "We print on real paper and plant ten trees per
-issue for the privilege. The running tally is printed in every copy."
+Trees line (objection slot): "We print on real paper and plant a whole tree
+for every issue. Your running tally is printed on the back cover of every
+copy." (Updated 2026-07-17: was ten trees per issue; one tree is still ~300x
+an issue's actual paper footprint and keeps unit economics sane. The tally
+moved from an interior ledger page to the back cover the same day.)

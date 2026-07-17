@@ -131,7 +131,7 @@ async function printIssue(env, issue, user) {
     .run();
   await env.DB.prepare("UPDATE items SET status = 'printed' WHERE issue_id = ?").bind(issue.id).run();
 
-  // Ten trees, planted in the subscriber's name. Failures never block a
+  // A tree, planted in the subscriber's name. Failures never block a
   // print — the daily sweep retries any issue with a job but no trees.
   // Guard: a canceled-and-reprinted issue must not plant twice.
   if (issue.trees_planted) return job;
@@ -179,7 +179,9 @@ async function approve(request, env) {
     `🌲 <strong>Issue № ${issue.number} is off to the printer.</strong><br><br>
      Lulu job <code>${job.id}</code> (status: ${job.status?.name ?? "created"}).<br>
      ${issue.page_count} pages, shipping US Mail to ${user.ship_city}, ${user.ship_state}.<br><br>
-     <em>Ten trees are being planted in your name.</em>`
+     ${issue.trees_planted
+       ? `<em>Your tree${issue.trees_planted === 1 ? " was" : "s were"} already planted for this issue.</em>`
+       : `<em>A tree is being planted in your name.</em>`}`
   );
 }
 
