@@ -23,9 +23,13 @@ export function spineWidthIn(pageCount) {
 import { FONTS_CSS } from "./fonts.css.js";
 
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 10, treesTotal = null }) {
-  const spine = spineWidthIn(pageCount);
-  const W = (BLEED + TRIM_W + spine + TRIM_W + BLEED).toFixed(4);
-  const H = (BLEED + TRIM_H + BLEED).toFixed(4);
+  // Chrome truncates the PDF page box to whole points (Lulu rejected job
+  // 2959013: 11.5045in CSS came out as exactly 11.500in, 0.002 under Lulu's
+  // minimum). Size the sheet in integer points, rounded UP, and let the
+  // solid-color spine absorb the sub-point remainder.
+  const wPt = Math.ceil((BLEED + TRIM_W + spineWidthIn(pageCount) + TRIM_W + BLEED) * 72);
+  const hPt = Math.round((BLEED + TRIM_H + BLEED) * 72); // 8.75in = 630pt exactly
+  const spine = wPt / 72 - 2 * (BLEED + TRIM_W); // rendered spine, >= nominal
   const spineText = pageCount >= SPINE_TEXT_MIN_PAGES;
 
   return `<!DOCTYPE html>
@@ -40,11 +44,11 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
     --rust: #bf4e24; --ochre: #d9a13b; --sky: #e8c579;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  @page { size: ${W}in ${H}in; margin: 0; }
-  body { width: ${W}in; height: ${H}in; font-family: 'Lora', Georgia, serif; color: var(--ink); display: flex; }
+  @page { size: ${wPt}pt ${hPt}pt; margin: 0; }
+  body { width: ${wPt}pt; height: ${hPt}pt; font-family: 'Lora', Georgia, serif; color: var(--ink); display: flex; }
 
   .back  { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: var(--pine-deep); color: var(--paper); padding: ${BLEED + 0.55}in ${BLEED + 0.45}in; padding-left: ${0.45 + BLEED}in; display: flex; flex-direction: column; justify-content: space-between; }
-  .spine { width: ${spine.toFixed(4)}in; height: 100%; background: var(--rust); color: var(--paper); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .spine { flex: 1; height: 100%; background: var(--rust); color: var(--paper); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .front { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: var(--sky); position: relative; overflow: hidden; }
 
   .spine .txt { transform: rotate(90deg); white-space: nowrap; font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: bold; font-size: ${Math.min(11, spine * 44)}pt; letter-spacing: 0.14em; text-transform: uppercase; }
