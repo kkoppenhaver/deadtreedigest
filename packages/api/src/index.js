@@ -24,6 +24,12 @@ export default {
 
     if (pathname === "/health") return json({ ok: true });
 
+    // Public ledger totals for the static ledger page (CORS-open, GET only).
+    // Global aggregates, no per-user data; safe to serve to anyone.
+    if (request.method === "GET" && pathname === "/ledger") {
+      return ledgerTotals(env);
+    }
+
     // Public onboarding: the homepage form posts here (CORS-open), the
     // welcome email links to /setup.
     if (pathname === "/signup") {
@@ -165,6 +171,38 @@ async function library(env, user) {
     queuedCount: results.length,
     queuedPages: Math.round(queuedPages * 10) / 10,
     capRemaining: Math.round((user.page_cap - queuedPages) * 10) / 10,
+  });
+}
+
+// One grown tree ≈ this many sheets of paper — the constant behind both the
+// "trees consumed" figure here and the ~300x footprint math in the closer.
+const SHEETS_PER_TREE = 8000;
+
+// GET /ledger — the running math the static ledger page renders. Global
+// totals only: how many of us there are, what we've printed, what that cost
+// in paper, and what we've planted. Basis is *printed* issues (paper is spent
+// at print time, and trees are planted per print job), not shipped ones.
+async function ledgerTotals(env) {
+  const subs = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM users WHERE beta = 1"
+  ).first();
+  const printed = await env.DB.prepare(
+    `SELECT COUNT(*) AS issues,
+            COALESCE(SUM(page_count), 0) AS pages,
+            COALESCE(SUM(trees_planted), 0) AS planted
+     FROM issues WHERE lulu_job_id IS NOT NULL`
+  ).first();
+
+  const sheets = Math.ceil((printed.pages || 0) / 2); // duplex: 2 pages/sheet
+  const treesConsumed = Math.round((sheets / SHEETS_PER_TREE) * 1000) / 1000;
+
+  return corsJson({
+    subscribers: subs.n,
+    issuesPrinted: printed.issues,
+    sheets,
+    treesConsumed,
+    treesPlanted: printed.planted,
+    updatedAt: new Date().toISOString(),
   });
 }
 
