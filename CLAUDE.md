@@ -29,7 +29,7 @@ R2 `dtd-raw` (raw captures at `raw/{user}/{item}.html`, PDFs at `issues/{user}/i
   raw capture to R2 → `waitUntil` pokes closer `/check`.
 - **Print-when-full**: queue est×1.15 ≥ page_cap AND ≥min_interval_days since
   last close AND user.beta → close, typeset interior+cover (cover after
-  interior: spine = pages/444), Lulu print job, 10 trees via DigitalHumani
+  interior: spine = pages/444), Lulu print job, 1 tree via DigitalHumani
   (TIST Kenya, project 81818183), NO email on success (full-surprise).
   Non-beta full queues hold + email ADMIN_EMAIL once. Daily cron 17:00 UTC:
   same check, pending-print retry, owed-trees retry, Lulu status polling
