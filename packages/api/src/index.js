@@ -183,9 +183,9 @@ const SHEETS_PER_TREE = 8000;
 // in paper, and what we've planted. Basis is *printed* issues (paper is spent
 // at print time, and trees are planted per print job), not shipped ones.
 async function ledgerTotals(env) {
-  const subs = await env.DB.prepare(
-    "SELECT COUNT(*) AS n FROM users WHERE beta = 1"
-  ).first();
+  // Everyone who has signed up, beta or waitlist — the ledger counts people,
+  // not just the accounts we're currently printing for.
+  const subs = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();
   const printed = await env.DB.prepare(
     `SELECT COUNT(*) AS issues,
             COALESCE(SUM(page_count), 0) AS pages,
