@@ -13,7 +13,7 @@ copy source of truth.
 | Homepage + ledger + privacy (static) | `prototype/` | dtd-site | deadtreedigest.com |
 | API: save/signup/setup/address/queue/files | `packages/api` | dtd-api | api.deadtreedigest.com |
 | Closer: print-when-full, approve, status, trees | `packages/closer` | dtd-closer | press.deadtreedigest.com |
-| Render: HTML→PDF via Browser Rendering + Paged.js | `packages/typeset/worker` | dtd-render-spike | (service binding only) |
+| Render: HTML→PDF via Browser Rendering + Paged.js | `packages/typeset/worker` | dtd-render | (service binding only) |
 | Email ingestion (forward-to-save) | `packages/inbox` | dtd-inbox | Email Routing catch-all |
 | Reader: HTML→digest-HTML normalizer | `packages/reader` | (bundled into api) | — |
 | Typesetter: issue + cover templates | `packages/typeset` | (bundled into closer) | — |

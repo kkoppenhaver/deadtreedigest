@@ -15,7 +15,7 @@
   ],
   "r2_buckets": [{ "binding": "RAW", "bucket_name": "dtd-raw" }],
   "send_email": [{ "name": "EMAIL" }],
-  "services": [{ "binding": "RENDER", "service": "dtd-render-spike" }],
+  "services": [{ "binding": "RENDER", "service": "dtd-render" }],
   "vars": {
     "FROM_EMAIL": "press@mail.deadtreedigest.com",
     "FROM_NAME": "Dead Tree Digest",
