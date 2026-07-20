@@ -1,5 +1,7 @@
 # Chrome Web Store submission — Dead Tree Digest
 
+**LIVE (approved 2026-07-19)**: https://chromewebstore.google.com/detail/dead-tree-digest/ocpajbflahmfjalabcdodjapmcfalacb
+
 ## Listing
 
 **Name**: Dead Tree Digest

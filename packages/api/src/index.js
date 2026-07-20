@@ -594,7 +594,7 @@ async function setupPage(request, env) {
       <div class="n">1</div>
       <div>
         <strong>Install the saving extension</strong>
-        <p>Chrome only for now. During the beta it installs from source: <a href="https://github.com/kkoppenhaver/deadtreedigest" target="_blank">grab it here</a>, then load <code>packages/extension</code> via chrome://extensions → Load unpacked.</p>
+        <p>Chrome only for now. <a href="https://chromewebstore.google.com/detail/dead-tree-digest/ocpajbflahmfjalabcdodjapmcfalacb" target="_blank">Install it from the Chrome Web Store</a>, then come back to this page.</p>
       </div>
     </div>
     <div class="step">
