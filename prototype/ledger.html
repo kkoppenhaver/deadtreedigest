@@ -40,7 +40,7 @@
       <div class="rh-title">★ THE LEDGER ★</div>
       <div class="rh-sub">Running totals to date</div>
     </div>
-    <div class="row"><span>Readers with an issue</span><span class="dots"></span><span data-stat="readers">1</span></div>
+    <div class="row"><span>Subscribers</span><span class="dots"></span><span data-stat="subscribers">1</span></div>
     <div class="row"><span>Issues printed</span><span class="dots"></span><span data-stat="issuesPrinted">1</span></div>
     <div class="row"><span>Sheets printed</span><span class="dots"></span><span data-stat="sheets">23</span></div>
     <div class="row"><span>Trees consumed</span><span class="dots"></span><span data-stat="treesConsumed">0.003</span></div>
@@ -49,7 +49,6 @@
 
   <div class="method">
     <h2>How we count</h2>
-    <p>“Readers with an issue” is the number of people who have had at least one issue shipped to them, not everyone who has signed up.</p>
     <p>A tree yields roughly 8,000 sheets of paper. Each issue runs a few dozen sheets, so a year of issues still uses only a small fraction of one tree per subscriber.</p>
     <p>We plant a tree for every printed issue with <strong>TIST Kenya</strong> (the International Small Group and Tree Planting Program), routed through DigitalHumani's reforestation API. TIST has been planting with smallholder farmers since 1999, with third-party verification of trees that are alive years later, not just seedlings in the ground. Every planting request has a receipt, and we keep them.</p>
     <p>We print on recycled or FSC-certified stock, so some of the "trees consumed" figure is bookkeeping fiction. The planted trees are not.</p>
@@ -65,7 +64,7 @@
         .then(function (d) {
           if (!d) return;
           var vals = {
-            readers: d.readers,
+            subscribers: d.subscribers,
             issuesPrinted: d.issuesPrinted,
             sheets: d.sheets,
             treesConsumed: typeof d.treesConsumed === "number" ? d.treesConsumed.toFixed(3) : d.treesConsumed,

@@ -183,11 +183,9 @@ const SHEETS_PER_TREE = 8000;
 // in paper, and what we've planted. Basis is *printed* issues (paper is spent
 // at print time, and trees are planted per print job), not shipped ones.
 async function ledgerTotals(env) {
-  // Distinct people who have had at least one issue shipped to them — the
-  // ledger tracks readers actually holding a copy, not signups or waitlist.
-  const readers = await env.DB.prepare(
-    "SELECT COUNT(DISTINCT user_id) AS n FROM issues WHERE shipped_at IS NOT NULL"
-  ).first();
+  // Everyone who has signed up (Keanan's call 2026-07-19: count all signups,
+  // not just beta users or shipped-to readers).
+  const subscribers = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();
   const printed = await env.DB.prepare(
     `SELECT COUNT(*) AS issues,
             COALESCE(SUM(page_count), 0) AS pages,
@@ -199,7 +197,7 @@ async function ledgerTotals(env) {
   const treesConsumed = Math.round((sheets / SHEETS_PER_TREE) * 1000) / 1000;
 
   return corsJson({
-    readers: readers.n,
+    subscribers: subscribers.n,
     issuesPrinted: printed.issues,
     sheets,
     treesConsumed,
