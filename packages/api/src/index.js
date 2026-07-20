@@ -627,7 +627,8 @@ async function setupPage(request, env) {
   const apiBase = new URL(request.url).origin;
   const addressDone = !!(user.ship_street1 && user.ship_city && user.ship_state && user.ship_postcode);
   const inner = `
-    <div id="dtd-credentials" data-token="${escapeHtml(user.save_token)}" data-api="${escapeHtml(apiBase)}" style="display:none;"></div>
+    <div id="dtd-credentials" data-token="${escapeHtml(user.save_token)}" data-api="${escapeHtml(apiBase)}" data-email="${escapeHtml(user.email)}" style="display:none;"></div>
+    <p class="who">Setting up the library of <strong>${escapeHtml(user.email)}</strong>. Not you? Close this page and use the setup link from your own welcome email.</p>
     <div class="step">
       <div class="n">1</div>
       <div>
@@ -676,6 +677,7 @@ function setupShell(inner) {
   .step p { margin: 4px 0 0; color: #4a4032; }
   a { color: #bf4e24; } code { background: #f1e6cf; padding: 1px 5px; font-size: 13px; }
   .wait { font-style: italic; }
+  .who { background: #f1e6cf; border: 1.5px solid #cdb98f; padding: 10px 12px; font-size: 13.5px; margin: 0 0 20px; }
   .ok { color: #1f4d38; font-weight: bold; }
   .err { color: #bf4e24; font-style: italic; }
 </style></head>

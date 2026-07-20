@@ -32,13 +32,19 @@
 <body>
   <h1>Dead Tree Digest — Settings</h1>
 
-  <label>Save token
-    <input type="password" id="token" placeholder="your save_token">
-  </label>
-  <label>API base
-    <input type="text" id="apiBase" placeholder="https://dtd-api.keanan-75b.workers.dev">
-  </label>
-  <button id="save">Save settings</button><span class="status" id="status"></span>
+  <div id="conn" class="hint">Checking connection…</div>
+
+  <details style="margin-top:10px;">
+    <summary style="cursor:pointer;font-size:11px;color:#6b5f4d;">Advanced: connect manually</summary>
+    <div class="hint">Normally the setup link from your welcome email does this for you.</div>
+    <label>Save token
+      <input type="password" id="token" placeholder="your save_token">
+    </label>
+    <label>API base
+      <input type="text" id="apiBase" placeholder="https://api.deadtreedigest.com">
+    </label>
+    <button id="save">Save settings</button><span class="status" id="status"></span>
+  </details>
 
   <h2>Shipping address</h2>
   <div class="hint">Where your printed issues get mailed. US only for now.</div>
