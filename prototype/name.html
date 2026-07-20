@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Why it's called Dead Tree Digest: an honest note on a catchy name, recycled paper, and planting a tree for every issue so we come out net positive.">
+<title>What's with the name? — Dead Tree Digest</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Lora:ital,wght@0,400;0,500;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f1e6cf;
+    --paper-dark: #e6d7b8;
+    --ink: #2b2419;
+    --pine: #1f4d38;
+    --pine-deep: #14352a;
+    --rust: #bf4e24;
+    --ochre: #d9a13b;
+    --cream-line: #cdb98f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Lora', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  /* paper grain over everything, same as the homepage */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.48 0 0 0 0 0.36 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3 {
+    font-family: 'Fjalla One', 'Arial Narrow', sans-serif;
+    text-transform: uppercase;
+    font-weight: 400;
+    line-height: 1.05;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+  /* ---------- header (matches index) ---------- */
+  header { border-bottom: 3px double var(--ink); background: var(--paper); }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+  .wordmark {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: var(--ink);
+  }
+  .wordmark svg { display: block; }
+  nav { display: flex; gap: 28px; align-items: center; }
+  nav a {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+    border-bottom: 2px solid transparent; padding-bottom: 2px;
+  }
+  nav a:hover { border-bottom-color: var(--rust); color: var(--rust); }
+  nav a.current { border-bottom-color: var(--ink); }
+  .nav-cta {
+    background: var(--rust); color: var(--paper) !important;
+    padding: 10px 20px 9px !important; border: 2px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .nav-cta:hover { transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--ink); border-bottom-color: var(--ink) !important; }
+
+  /* ---------- article ---------- */
+  main { padding: 64px 0 24px; }
+  .article { max-width: 660px; margin: 0 auto; }
+
+  .kicker {
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--rust); margin-bottom: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .kicker::before { content: ""; width: 40px; height: 2px; background: var(--rust); display: inline-block; }
+
+  h1 { font-size: clamp(36px, 5.5vw, 58px); color: var(--pine-deep); letter-spacing: 0.01em; }
+  .lede { font-size: clamp(19px, 2vw, 22px); font-style: italic; margin: 22px 0 8px; max-width: 40ch; }
+  .lede strong { color: var(--pine); font-style: normal; }
+
+  .rule { width: 90px; height: 4px; background: var(--ochre); margin: 34px 0; box-shadow: 0 7px 0 var(--pine); }
+
+  .article h2 { font-size: clamp(24px, 3vw, 32px); color: var(--pine-deep); margin: 44px 0 14px; letter-spacing: 0.02em; }
+  .article p { margin-bottom: 18px; color: #3f3628; }
+  .article p em { color: var(--pine); font-style: italic; }
+  .article a { color: var(--rust); }
+
+  /* the acronym breakout */
+  .lockup {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border: 2.5px solid var(--ink); box-shadow: 6px 6px 0 rgba(31,77,56,0.22);
+    margin: 30px 0 8px; background: var(--paper);
+  }
+  .lockup div { padding: 20px 18px; text-align: center; border-right: 1.5px solid var(--ink); }
+  .lockup div:last-child { border-right: none; }
+  .lockup .letter { font-family: 'Alfa Slab One', 'Fjalla One', serif; font-size: 40px; color: var(--rust); line-height: 1; }
+  .lockup .word { font-family: 'Fjalla One', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px; color: var(--pine-deep); margin-top: 8px; }
+  .lockup-note { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: #6b5f4d; text-align: center; margin: 0 0 8px; }
+
+  /* net-positive pull */
+  .math {
+    background: var(--pine-deep); color: #e9dfc8;
+    border: 2.5px solid var(--ink); box-shadow: 6px 6px 0 rgba(31,77,56,0.28);
+    padding: 26px 28px; margin: 30px 0;
+  }
+  .math .big { font-family: 'Fjalla One', sans-serif; text-transform: uppercase; letter-spacing: 0.04em; font-size: clamp(20px, 2.4vw, 26px); color: var(--paper); margin-bottom: 8px; }
+  .math .big .ochre { color: var(--ochre); }
+  .math p { color: #cbbf9f; margin: 0; font-size: 15.5px; }
+
+  .kicker-out { text-align: center; margin: 48px 0 8px; }
+  .btn {
+    font-family: 'Fjalla One', sans-serif; font-size: 16px; letter-spacing: 0.12em;
+    text-transform: uppercase; text-decoration: none;
+    padding: 15px 28px 13px; border: 2.5px solid var(--ink);
+    display: inline-block; cursor: pointer;
+    background: var(--pine); color: var(--paper); box-shadow: 5px 5px 0 var(--ink);
+  }
+  .btn:hover { transform: translate(2px,2px); box-shadow: 3px 3px 0 var(--ink); background: var(--pine-deep); }
+
+  .colophon { font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.02em; color: #6b5f4d; font-style: normal; border-top: 1.5px solid var(--cream-line); margin-top: 44px; padding-top: 20px; }
+
+  /* ---------- footer (matches index) ---------- */
+  footer { background: var(--pine-deep); color: #cbbf9f; border-top: 3px solid var(--ink); padding: 48px 0 36px; font-size: 14px; margin-top: 56px; }
+  footer .legal { font-family: 'Courier Prime', monospace; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; text-align: center; color: #8d8168; }
+  footer .legal a { color: inherit; }
+
+  @media (max-width: 600px) {
+    nav a:not(.nav-cta) { display: none; }
+    .lockup .letter { font-size: 32px; }
+    .lockup div { padding: 16px 8px; }
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <a class="wordmark" href="index.html">
+        <svg width="34" height="38" viewBox="0 0 34 38" aria-hidden="true">
+          <polygon points="17,2 30,22 4,22" fill="#1f4d38"/>
+          <polygon points="17,12 32,32 2,32" fill="#2b6248"/>
+          <rect x="14.5" y="32" width="5" height="6" fill="#bf4e24"/>
+        </svg>
+        Dead Tree Digest
+      </a>
+      <nav>
+        <a href="index.html#how">How it works</a>
+        <a href="index.html#trees">The trees</a>
+        <a href="name.html" class="current">The name</a>
+        <a href="index.html#join" class="nav-cta">Get started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="container article">
+      <div class="kicker">A note on the name</div>
+      <h1>What's with the name?</h1>
+      <p class="lede">Short version: it's a <strong>joke I couldn't stop saying</strong>, sitting on top of a promise I take seriously.</p>
+
+      <div class="rule"></div>
+
+      <p>I picked Dead Tree Digest because it's easy to say and hard to forget. The initials fall into place on their own.</p>
+
+      <div class="lockup" aria-label="D T D, spelled out">
+        <div><div class="letter">D</div><div class="word">Dead</div></div>
+        <div><div class="letter">T</div><div class="word">Tree</div></div>
+        <div><div class="letter">D</div><div class="word">Digest</div></div>
+      </div>
+      <p class="lockup-note">Three letters that never need explaining.</p>
+
+      <p>"Dead tree edition" is the old newsroom nickname for the printed paper, the version made of, well, a tree that used to be standing. We build a printed thing on purpose, so leaning into the phrase felt honest and a little bit funny. A name that winks at what it is beats a name you have to decode.</p>
+
+      <h2>The part I actually lose sleep over</h2>
+      <p>A catchy name is only worth keeping if the thing underneath it holds up. From the start I wanted one rule to be true: reading on paper with us should leave the world with <em>more</em> trees, not fewer. Net positive rather than break-even. And not some quiet cost we're hoping you won't notice.</p>
+
+      <p>That comes down to two decisions, and neither one is decoration.</p>
+
+      <h2>The paper</h2>
+      <p>Every issue is printed on recycled or FSC-certified stock. Recycled means the fiber has already lived a life; FSC-certified means the forest it came from is managed so it keeps being a forest. It's the same choice the good magazines make, and it's the floor, not the finish line.</p>
+
+      <h2>The trees</h2>
+      <p>For every issue that lands in your mailbox, we plant a tree in your name through TIST Kenya, verified and routed so there's a receipt behind it. Here's the shape of it: an issue uses a few dozen sheets, and a single grown tree yields somewhere around eight thousand. So the paper a copy costs is a rounding error against what one planting puts back.</p>
+
+      <div class="math">
+        <div class="big">A few dozen sheets out. <span class="ochre">Thousands back.</span></div>
+        <p>That gap is the whole point. The dead tree in the name is mostly a figure of speech; the planted ones are counted, one issue at a time.</p>
+      </div>
+
+      <p>If you'd rather see the arithmetic than take my word for it, it's all on <a href="ledger.html">the ledger</a>, updated with every issue and printed on the back cover of every copy you get.</p>
+
+      <div class="kicker-out">
+        <a class="btn" href="index.html#join">Start your first issue</a>
+      </div>
+
+      <p class="colophon">The dead tree is partly fiction. The new trees are not. That distinction is the only fine print here.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="legal">
+        © 2026 Dead Tree Digest · <a href="name.html">The name</a> · <a href="ledger.html">The ledger</a> · <a href="privacy.html">Privacy</a> · No feeds were harmed in the making of this magazine
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
