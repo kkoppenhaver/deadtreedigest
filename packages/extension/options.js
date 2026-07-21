@@ -21,7 +21,22 @@ function flash(el, msg, isError = false) {
   if (!isError) setTimeout(() => (el.textContent = ""), 2000);
 }
 
-// ---- connection settings ----
+// ---- connection status ----
+async function showConnection() {
+  const { token } = await settings();
+  if (!token) {
+    $("conn").textContent = "Not connected. Open the setup link from your welcome email.";
+    return;
+  }
+  const res = await api("/me").catch(() => null);
+  $("conn").textContent =
+    res?.status === 200
+      ? `Connected. Saving to the library of ${res.body.email}.`
+      : "Connected, but the saved token isn't working. Re-open your setup link.";
+}
+showConnection();
+
+// ---- manual connection (advanced fallback) ----
 settings().then((s) => {
   $("token").value = s.token;
   $("apiBase").value = s.apiBase;
@@ -33,6 +48,7 @@ $("save").addEventListener("click", async () => {
     apiBase: $("apiBase").value.trim().replace(/\/+$/, "") || DEFAULT_API,
   });
   flash($("status"), "Saved ✓");
+  showConnection();
   loadAddress();
 });
 
