@@ -424,6 +424,16 @@ async function queuePage(request, env) {
   const est = queued.reduce((t, i) => t + i.estimated_pages * 1.15, 0);
   const pct = Math.min(100, Math.round((est / user.page_cap) * 100));
 
+  // A full queue prints at the next opening: min_interval_days after the
+  // last close (the closer's cost guard). Name the date when it's known.
+  const openAt = user.last_closed_at
+    ? new Date(new Date(user.last_closed_at).valueOf() + user.min_interval_days * 86_400_000)
+    : null;
+  const fullNote =
+    openAt && openAt > new Date()
+      ? `full — prints on or after ${openAt.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
+      : "full — printing at the next opening";
+
   const rows = queued.map((i) => `
     <div class="row">
       <div class="grow">
@@ -444,7 +454,7 @@ async function queuePage(request, env) {
 
   return htmlResponse(libShell(`
     <div class="fill"><div class="bar"><span style="width:${pct}%"></span></div>
-      <div class="cap">${queued.length} article${queued.length === 1 ? "" : "s"} queued · ~${Math.round(est)} of ${user.page_cap} pages${pct >= 100 ? " · full — printing at the next opening" : ""}</div>
+      <div class="cap">${queued.length} article${queued.length === 1 ? "" : "s"} queued · ~${Math.round(est)} of ${user.page_cap} pages${pct >= 100 ? ` · ${fullNote}` : ""}</div>
     </div>
     <h2>In the queue</h2>
     ${rows || '<p class="m">Nothing yet. Go read something worth saving.</p>'}
