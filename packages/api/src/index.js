@@ -40,6 +40,16 @@ export default {
       return setupPage(request, env);
     }
 
+    // Billing: /subscribe bounces to Stripe Checkout (setup_key-authed, same
+    // key the welcome email already carries); the webhook flips beta as
+    // subscriptions start and stop.
+    if (request.method === "GET" && pathname === "/subscribe") {
+      return subscribePage(request, env);
+    }
+    if (request.method === "POST" && pathname === "/stripe/webhook") {
+      return stripeWebhook(request, env);
+    }
+
     // Magic-link address page: key-authed (emailed URL), browser-facing,
     // handled before the bearer gate. The key is scoped to the address only.
     if (pathname === "/address") {
@@ -663,6 +673,163 @@ async function sendWelcomeEmail(env, user, setupUrl) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Billing (Stripe Checkout + webhook). No SDK: two REST calls and an HMAC.
+
+async function stripePost(env, path, params) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(params),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error?.message ?? `stripe ${path} failed (${res.status})`);
+  return body;
+}
+
+// GET /subscribe?key=<setup_key> — create a Checkout session and bounce.
+// Checkout collects the shipping address (US + CA) and phone, so for a
+// paying user this replaces the /address step too.
+async function subscribePage(request, env) {
+  const key = new URL(request.url).searchParams.get("key");
+  const user = key
+    ? await env.DB.prepare("SELECT * FROM users WHERE setup_key = ?").bind(key).first()
+    : null;
+  if (!user) return htmlResponse(setupShell("<p class='err'>This link isn't valid. Use the one from your welcome email.</p>"), 404);
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRICE_ID) {
+    return htmlResponse(setupShell("<p class='err'>Subscriptions aren't switched on yet. During the beta the operator flips the press by hand.</p>"), 503);
+  }
+  if (user.beta) {
+    return htmlResponse(setupShell(`<p>You're already active — the press prints when your queue fills. <a href="/setup?key=${user.setup_key}">Back to setup</a></p>`));
+  }
+
+  const origin = new URL(request.url).origin;
+  const session = await stripePost(env, "checkout/sessions", {
+    mode: "subscription",
+    "line_items[0][price]": env.STRIPE_PRICE_ID,
+    "line_items[0][quantity]": "1",
+    client_reference_id: user.id,
+    ...(user.stripe_customer_id
+      ? { customer: user.stripe_customer_id }
+      : { customer_email: user.email }),
+    allow_promotion_codes: "true",
+    "shipping_address_collection[allowed_countries][0]": "US",
+    "shipping_address_collection[allowed_countries][1]": "CA",
+    "phone_number_collection[enabled]": "true",
+    success_url: `${origin}/setup?key=${user.setup_key}`,
+    cancel_url: `${origin}/setup?key=${user.setup_key}`,
+  });
+  return Response.redirect(session.url, 303);
+}
+
+// Stripe-Signature: t=<ts>,v1=<hmac>[,v1=…] over `${t}.${payload}`.
+async function verifyStripeSignature(payload, header, secret) {
+  const parts = header.split(",").map((kv) => kv.split("="));
+  const t = parts.find(([k]) => k === "t")?.[1];
+  const sigs = parts.filter(([k]) => k === "v1").map(([, v]) => v);
+  if (!t || sigs.length === 0) return false;
+  if (Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${t}.${payload}`));
+  const expected = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sigs.some((sig) => {
+    if (sig.length !== expected.length) return false;
+    let diff = 0;
+    for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
+    return diff === 0;
+  });
+}
+
+async function sendAdminEmail(env, subject, text) {
+  if (!env.ADMIN_EMAIL) return false;
+  try {
+    await env.EMAIL.send({
+      to: env.ADMIN_EMAIL,
+      from: { email: env.FROM_EMAIL, name: env.FROM_NAME },
+      subject, text,
+    });
+    return true;
+  } catch (err) {
+    console.error(`admin email failed: ${err.message}`);
+    return false;
+  }
+}
+
+// Subscription statuses that keep the press running. past_due stays on (be
+// forgiving mid-dunning) but alerts the operator.
+const PRINTING_STATUSES = ["active", "trialing", "past_due"];
+
+async function stripeWebhook(request, env) {
+  const payload = await request.text();
+  const ok =
+    env.STRIPE_WEBHOOK_SECRET &&
+    (await verifyStripeSignature(payload, request.headers.get("stripe-signature") ?? "", env.STRIPE_WEBHOOK_SECRET));
+  if (!ok) return json({ error: "bad signature" }, 400);
+
+  const event = JSON.parse(payload);
+  const obj = event.data?.object ?? {};
+
+  if (event.type === "checkout.session.completed") {
+    const user = obj.client_reference_id
+      ? await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(obj.client_reference_id).first()
+      : await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(obj.customer_details?.email?.toLowerCase() ?? "").first();
+    if (!user) {
+      await sendAdminEmail(env, "[DTD] Stripe checkout with no matching user", JSON.stringify(obj, null, 2).slice(0, 2000));
+      return json({ received: true });
+    }
+
+    await env.DB.prepare(
+      "UPDATE users SET stripe_customer_id = ?, stripe_subscription_id = ?, subscription_status = 'active', beta = 1 WHERE id = ?"
+    ).bind(obj.customer, obj.subscription, user.id).run();
+
+    // Checkout collected shipping + phone; persist it if it validates. A
+    // rejected address isn't fatal (the address magic-link flow still
+    // exists), it just gets flagged to the operator.
+    const ship = obj.collected_information?.shipping_details ?? obj.shipping_details;
+    if (ship?.address) {
+      const result = validateAddress({
+        name: ship.name,
+        street1: ship.address.line1,
+        street2: ship.address.line2,
+        city: ship.address.city,
+        state: ship.address.state,
+        postcode: ship.address.postal_code,
+        phone: obj.customer_details?.phone ?? "",
+      });
+      if (result.updated) await persistAddress(env, user.id, result.updated);
+      else await sendAdminEmail(env, `[DTD] subscriber address needs a look: ${user.email}`, `Checkout address didn't validate (${result.error}). The user can fix it at the /address magic link.`);
+    }
+
+    await sendAdminEmail(env, `[DTD] new subscriber: ${user.email}`, `Subscription ${obj.subscription} is live. beta=1, press armed.`);
+    return json({ received: true });
+  }
+
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    const status = event.type === "customer.subscription.deleted" ? "canceled" : obj.status;
+    const printing = PRINTING_STATUSES.includes(status) ? 1 : 0;
+    const { meta } = await env.DB.prepare(
+      "UPDATE users SET subscription_status = ?, beta = ? WHERE stripe_subscription_id = ?"
+    ).bind(status, printing, obj.id).run();
+    if (meta.changes > 0 && (!printing || status === "past_due")) {
+      await sendAdminEmail(env, `[DTD] subscription ${status}: ${obj.id}`, `beta is now ${printing}. Customer ${obj.customer}.`);
+    }
+    return json({ received: true });
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    await sendAdminEmail(env, "[DTD] payment failed", `Customer ${obj.customer}, invoice ${obj.id}, attempt ${obj.attempt_count}.`);
+    return json({ received: true });
+  }
+
+  return json({ received: true });
+}
+
 // GET /setup?key=… — the onboarding page. Carries the save token in a data
 // attribute; the extension's content script spots this page, stores the
 // credentials, and flips the status to connected. No copy-pasting.
@@ -701,6 +868,15 @@ async function setupPage(request, env) {
     </div>
     <div class="step">
       <div class="n">4</div>
+      <div>
+        <strong>Start your subscription</strong>
+        <p>${user.beta
+          ? "✓ You're active — the press prints when your queue fills."
+          : `$49 a month: printing, shipping, and the tree we plant, all included. <a href="${apiBase}/subscribe?key=${user.setup_key}">Subscribe</a> — there's a box for a code if you have one. Just finished? Give it a minute and reload.`}</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="n">5</div>
       <div>
         <strong>Go read the internet</strong>
         <p>Save anything worth keeping — one click in the extension, or forward any article or newsletter to your personal save address:</p>

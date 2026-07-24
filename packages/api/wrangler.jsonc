@@ -18,7 +18,8 @@
   "send_email": [{ "name": "EMAIL" }],
   "vars": {
     "FROM_EMAIL": "press@mail.deadtreedigest.com",
-    "FROM_NAME": "Dead Tree Digest"
+    "FROM_NAME": "Dead Tree Digest",
+    "ADMIN_EMAIL": "k.koppenhaver@gmail.com"
   },
   "observability": { "enabled": true }
 }
