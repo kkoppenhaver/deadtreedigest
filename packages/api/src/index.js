@@ -434,7 +434,7 @@ async function queuePage(request, env) {
       ? `full — prints on or after ${openAt.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
       : "full — printing at the next opening";
 
-  const rows = queued.map((i) => `
+  const rowHtml = (i) => `
     <div class="row">
       <div class="grow">
         <a class="t" href="/queue/item?key=${key}&id=${i.id}">${escapeHtml(i.title)}</a>
@@ -442,7 +442,22 @@ async function queuePage(request, env) {
       </div>
       <form method="POST" action="/queue?key=${key}"><input type="hidden" name="flag" value="${i.id}"><button ${i.needs_review ? "disabled" : ""}>${i.needs_review ? "flagged" : "flag parse"}</button></form>
       <form method="POST" action="/queue?key=${key}" onsubmit="return confirm('Remove from your next issue? It won\'t print.')"><input type="hidden" name="remove" value="${i.id}"><button>remove</button></form>
-    </div>`).join("");
+    </div>`;
+
+  // Mirror the closer's greedy pack (save order, same 1.15 margin) so the
+  // page shows the same split the close will make: what fits under the cap
+  // prints in the next issue, the rest rolls over to the one after.
+  const pickedIds = new Set();
+  let packed = 0;
+  for (const item of [...queued].reverse()) {
+    const cost = item.estimated_pages * 1.15;
+    if (pickedIds.size > 0 && packed + cost > user.page_cap) continue;
+    pickedIds.add(item.id);
+    packed += cost;
+  }
+  const pickedRows = queued.filter((i) => pickedIds.has(i.id)).map(rowHtml).join("");
+  const rolledRows = queued.filter((i) => !pickedIds.has(i.id)).map(rowHtml).join("");
+  const nextNumber = (issues[0]?.number ?? 0) + 1;
 
   const issueRows = await Promise.all(issues.map(async (iss) => {
     const pdf = iss.pdf_key ? await signedFileUrl(env.FILE_SIGNING_SECRET, new URL(request.url).origin, iss.pdf_key) : null;
@@ -456,8 +471,14 @@ async function queuePage(request, env) {
     <div class="fill"><div class="bar"><span style="width:${pct}%"></span></div>
       <div class="cap">${queued.length} article${queued.length === 1 ? "" : "s"} queued · ~${Math.round(est)} of ${user.page_cap} pages${pct >= 100 ? ` · ${fullNote}` : ""}</div>
     </div>
-    <h2>In the queue</h2>
-    ${rows || '<p class="m">Nothing yet. Go read something worth saving.</p>'}
+    ${rolledRows
+      ? `<h2>In Issue № ${nextNumber}</h2>
+    ${pickedRows}
+    <h2>Rolling over to Issue № ${nextNumber + 1}</h2>
+    <p class="m">These don't fit under the ${user.page_cap}-page cap, so they lead off the next issue instead.</p>
+    ${rolledRows}`
+      : `<h2>In the queue</h2>
+    ${pickedRows || '<p class="m">Nothing yet. Go read something worth saving.</p>'}`}
     <h2>Issues</h2>
     ${issueRows.join("") || '<p class="m">None yet — your first fills the bar above.</p>'}
     <p class="m" style="margin-top:26px;">Save by email: <code>${escapeHtml(saveAddress(user))}</code></p>`));
