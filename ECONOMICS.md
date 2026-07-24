@@ -44,7 +44,7 @@ Canadian card adds 1.5% → **$2.80**. A 100%-off promo bills $0 → no fees.
 | Typical US (1 issue/mo, ~113pp) | 13.42 + 2.06 = $15.48 | $33.52 | **68%** |
 | Worst-case US (2.2 issues at cap) | 2.2 × 13.06 + 2.06 = $30.79 | $18.21 | **37%** |
 | Typical Canada (1 issue, paid, CA card) | ~17.50 + 2.80 = ~$20.30 | ~$28.70 | **~59%** |
-| Comped account (100% promo or hand-flipped beta) | ~$13.50–17.50/issue | −COGS | operator-funded |
+| Comped account (100% promo or subscription_status='comped') | ~$13.50–17.50/issue | −COGS | operator-funded |
 
 The 14-day interval floor is what makes worst-case COGS equal the old
 biweekly model — the margin floor is a config guarantee, not a hope.

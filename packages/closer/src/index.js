@@ -30,6 +30,12 @@ const json = (data, status = 200) =>
 
 const daysSince = (iso) => (iso ? (Date.now() - new Date(iso).valueOf()) / 86_400_000 : Infinity);
 
+// Who the press prints for: paying subscriptions in good standing (the api
+// worker's Stripe webhook maintains the status) plus operator-comped
+// accounts ('comped' is only ever set by hand).
+const canPrint = (user) =>
+  ["comped", "active", "trialing", "past_due"].includes(user.subscription_status);
+
 export default {
   async scheduled(_event, env, ctx) {
     ctx.waitUntil(sweep(env));
@@ -218,7 +224,7 @@ async function sweep(env) {
   ).all();
   for (const issue of pending) {
     const user = users.find((u) => u.id === issue.user_id);
-    if (!user || !user.beta || !hasAddress(user)) continue;
+    if (!user || !canPrint(user) || !hasAddress(user)) continue;
     try {
       await printIssue(env, issue, user);
       console.log(`auto-printed pending issue ${issue.number} for ${user.id}`);
@@ -286,7 +292,7 @@ async function pollPrintJobs(env, users) {
 
 function sendGateReviewEmail(env, user, queued, est) {
   const titles = queued.slice(0, 20).map((q) => `  • ${q.title}`).join("\n");
-  const flipCmd = `npx wrangler d1 execute dtd-library --remote -c packages/api/wrangler.jsonc --command "UPDATE users SET beta = 1 WHERE email = '${user.email}'"`;
+  const flipCmd = `npx wrangler d1 execute dtd-library --remote -c packages/api/wrangler.jsonc --command "UPDATE users SET subscription_status = 'comped' WHERE email = '${user.email}'"`;
   const text =
     `${user.email} filled an issue (${queued.length} items, ~${round1(est)}pp est) and is waiting at the print gate.\n\n` +
     `Signed up: ${user.signed_up_at ?? "unknown"}\nAddress on file: ${hasAddress(user) ? "yes" : "no"}\n\nQueue:\n${titles}\n\n` +
@@ -328,10 +334,10 @@ async function checkUser(user, env) {
   const sinceClose = daysSince(user.last_closed_at);
   const eligible = sinceClose >= user.min_interval_days;
 
-  // The print gate: non-beta users' issues never close — the queue holds,
-  // nothing renders, nothing prints, and the operator gets one review email.
-  // Flipping beta=1 lets the next check close and print normally.
-  if (full && eligible && !user.beta) {
+  // The print gate: without an active subscription (or a comped status set
+  // by the operator) issues never close — the queue holds, nothing renders,
+  // nothing prints, and the operator gets one review email.
+  if (full && eligible && !canPrint(user)) {
     let emailed = false;
     if (!user.gate_alerted_at) {
       emailed = await sendGateReviewEmail(env, user, queued, est);

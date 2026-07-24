@@ -28,10 +28,12 @@ R2 `dtd-raw` (raw captures at `raw/{user}/{item}.html`, PDFs at `issues/{user}/i
   `<handle>@deadtreedigest.com` → `POST /save` → `@dtd/reader` parses → D1 +
   raw capture to R2 → `waitUntil` pokes closer `/check`.
 - **Print-when-full**: queue est×1.15 ≥ page_cap AND ≥min_interval_days since
-  last close AND user.beta → close, typeset interior+cover (cover after
-  interior: spine = pages/444), Lulu print job, 1 tree via DigitalHumani
-  (TIST Kenya, project 81818183), NO email on success (full-surprise).
-  Non-beta full queues hold + email ADMIN_EMAIL once. Daily cron 17:00 UTC:
+  last close AND canPrint(user) (subscription_status ∈ comped/active/
+  trialing/past_due; Stripe webhook maintains it, 'comped' is operator-set)
+  → close, typeset interior+cover (cover after interior: spine = pages/444),
+  Lulu print job, 1 tree via DigitalHumani (TIST Kenya, project 81818183),
+  NO email on success (full-surprise). Unsubscribed full queues hold + email
+  ADMIN_EMAIL once. Daily cron 17:00 UTC:
   same check, pending-print retry, owed-trees retry, Lulu status polling
   (bad states alert admin; SHIPPED recorded silently).
 - **Auth**: no logins. Bearer save_token for clients; scoped magic-link keys

@@ -702,7 +702,7 @@ async function subscribePage(request, env) {
   if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRICE_ID) {
     return htmlResponse(setupShell("<p class='err'>Subscriptions aren't switched on yet. During the beta the operator flips the press by hand.</p>"), 503);
   }
-  if (user.beta) {
+  if (canPrint(user)) {
     return htmlResponse(setupShell(`<p>You're already active — the press prints when your queue fills. <a href="/setup?key=${user.setup_key}">Back to setup</a></p>`));
   }
 
@@ -761,9 +761,12 @@ async function sendAdminEmail(env, subject, text) {
   }
 }
 
-// Subscription statuses that keep the press running. past_due stays on (be
-// forgiving mid-dunning) but alerts the operator.
-const PRINTING_STATUSES = ["active", "trialing", "past_due"];
+// Subscription statuses that keep the press running. 'comped' is the
+// operator's value (never written by the webhook — set it by hand for
+// house accounts and gifts); past_due stays on (be forgiving mid-dunning)
+// but alerts the operator.
+const PRINTING_STATUSES = ["comped", "active", "trialing", "past_due"];
+const canPrint = (user) => PRINTING_STATUSES.includes(user.subscription_status);
 
 async function stripeWebhook(request, env) {
   const payload = await request.text();
@@ -785,7 +788,7 @@ async function stripeWebhook(request, env) {
     }
 
     await env.DB.prepare(
-      "UPDATE users SET stripe_customer_id = ?, stripe_subscription_id = ?, subscription_status = 'active', beta = 1 WHERE id = ?"
+      "UPDATE users SET stripe_customer_id = ?, stripe_subscription_id = ?, subscription_status = 'active' WHERE id = ?"
     ).bind(obj.customer, obj.subscription, user.id).run();
 
     // Checkout collected shipping + phone; persist it if it validates. A
@@ -806,18 +809,18 @@ async function stripeWebhook(request, env) {
       else await sendAdminEmail(env, `[DTD] subscriber address needs a look: ${user.email}`, `Checkout address didn't validate (${result.error}). The user can fix it at the /address magic link.`);
     }
 
-    await sendAdminEmail(env, `[DTD] new subscriber: ${user.email}`, `Subscription ${obj.subscription} is live. beta=1, press armed.`);
+    await sendAdminEmail(env, `[DTD] new subscriber: ${user.email}`, `Subscription ${obj.subscription} is live. Press armed.`);
     return json({ received: true });
   }
 
   if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
     const status = event.type === "customer.subscription.deleted" ? "canceled" : obj.status;
-    const printing = PRINTING_STATUSES.includes(status) ? 1 : 0;
+    const printing = PRINTING_STATUSES.includes(status);
     const { meta } = await env.DB.prepare(
-      "UPDATE users SET subscription_status = ?, beta = ? WHERE stripe_subscription_id = ?"
-    ).bind(status, printing, obj.id).run();
+      "UPDATE users SET subscription_status = ? WHERE stripe_subscription_id = ?"
+    ).bind(status, obj.id).run();
     if (meta.changes > 0 && (!printing || status === "past_due")) {
-      await sendAdminEmail(env, `[DTD] subscription ${status}: ${obj.id}`, `beta is now ${printing}. Customer ${obj.customer}.`);
+      await sendAdminEmail(env, `[DTD] subscription ${status}: ${obj.id}`, `Press is ${printing ? "still armed (dunning)" : "disarmed"}. Customer ${obj.customer}.`);
     }
     return json({ received: true });
   }
@@ -870,7 +873,7 @@ async function setupPage(request, env) {
       <div class="n">4</div>
       <div>
         <strong>Start your subscription</strong>
-        <p>${user.beta
+        <p>${canPrint(user)
           ? "✓ You're active — the press prints when your queue fills."
           : `$49 a month: printing, shipping, and the tree we plant, all included. <a href="${apiBase}/subscribe?key=${user.setup_key}">Subscribe</a> — there's a box for a code if you have one. Just finished? Give it a minute and reload.`}</p>
       </div>
