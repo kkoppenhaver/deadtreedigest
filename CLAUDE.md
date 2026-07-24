@@ -4,7 +4,7 @@ Save articles as you browse; when you've saved ~100 pages, they print
 themselves into a perfect-bound magazine that shows up in your mailbox.
 Single-user production system (Keanan is subscriber № 1), architected
 multi-tenant. `SPEC.md` is the decision log; `marketing/POSITIONING.md` is the
-copy source of truth.
+copy source of truth; `ECONOMICS.md` is the financial model.
 
 ## Architecture (all Cloudflare, one account)
 
