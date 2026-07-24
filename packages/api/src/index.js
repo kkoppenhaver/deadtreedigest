@@ -221,6 +221,16 @@ const US_STATES = {
   wyoming: "WY", "district of columbia": "DC",
 };
 
+// No 2-letter collisions with US_STATES, so the province match doubles as
+// country detection (Lulu wants country_code = CA for these).
+const CA_PROVINCES = {
+  alberta: "AB", "british columbia": "BC", manitoba: "MB", "new brunswick": "NB",
+  "newfoundland and labrador": "NL", newfoundland: "NL", "nova scotia": "NS",
+  "northwest territories": "NT", nunavut: "NU", ontario: "ON",
+  "prince edward island": "PE", quebec: "QC", "québec": "QC",
+  saskatchewan: "SK", yukon: "YT",
+};
+
 function profile(user) {
   return {
     email: user.email,
@@ -240,18 +250,26 @@ function profile(user) {
   };
 }
 
-// Normalizes to Lulu's picky formats: 2-letter state, "+1 XXX XXX XXXX" phone.
-// Returns { error } or { updated } (column map ready to persist).
+// Normalizes to Lulu's picky formats: 2-letter state/province, "+1 XXX XXX
+// XXXX" phone (US and Canada are both NANP, so one phone shape covers both).
+// Country is inferred from the state match. Returns { error } or { updated }
+// (column map ready to persist).
 function validateAddress(a) {
   if (!a || typeof a !== "object") return { error: "address object is required" };
 
   let state = (a.state ?? "").trim();
-  state = state.length === 2 ? state.toUpperCase() : US_STATES[state.toLowerCase()] ?? null;
-  if (!state || !Object.values(US_STATES).includes(state))
-    return { error: "state must be a US state (2-letter code or full name)" };
+  state = state.length === 2
+    ? state.toUpperCase()
+    : US_STATES[state.toLowerCase()] ?? CA_PROVINCES[state.toLowerCase()] ?? null;
+  const country = !state ? null
+    : Object.values(US_STATES).includes(state) ? "US"
+    : Object.values(CA_PROVINCES).includes(state) ? "CA"
+    : null;
+  if (!country)
+    return { error: "state must be a US state or Canadian province (2-letter code or full name)" };
 
   const phoneDigits = (a.phone ?? "").replace(/\D/g, "").replace(/^1/, "");
-  if (phoneDigits.length !== 10) return { error: "phone must be a 10-digit US number" };
+  if (phoneDigits.length !== 10) return { error: "phone must be a 10-digit US or Canadian number" };
   const phone = `+1 ${phoneDigits.slice(0, 3)} ${phoneDigits.slice(3, 6)} ${phoneDigits.slice(6)}`;
 
   for (const field of ["name", "street1", "city", "postcode"]) {
@@ -269,7 +287,7 @@ function validateAddress(a) {
       ship_city: a.city.trim(),
       ship_state: state,
       ship_postcode: a.postcode.trim(),
-      ship_country: "US",
+      ship_country: country,
       ship_phone: phone,
     },
   };
@@ -347,10 +365,10 @@ function addressForm(key, a = {}, error = null) {
       <label>Apt / unit (optional) <input name="street2" value="${v("street2")}"></label>
       <div class="row">
         <label>City <input name="city" value="${v("city")}" required></label>
-        <label>State <input name="state" value="${v("state")}" placeholder="IL" required></label>
+        <label>State / Province <input name="state" value="${v("state")}" placeholder="IL or ON" required></label>
       </div>
       <div class="row">
-        <label>ZIP <input name="postcode" value="${v("postcode")}" required></label>
+        <label>ZIP / Postal code <input name="postcode" value="${v("postcode")}" required></label>
         <label>Phone <input name="phone" type="tel" value="${v("phone")}" placeholder="847 555 0100" required></label>
       </div>
       <button type="submit">Save address</button>
