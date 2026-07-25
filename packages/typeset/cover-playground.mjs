@@ -61,6 +61,7 @@ const page = `<!DOCTYPE html>
   <label>Articles <input type="number" id="articles" value="16" min="1"></label>
   <label>Date <input type="text" id="date" value="July 2026"></label>
   <label>Season <select id="season"><option>summer</option><option>fall</option><option>winter</option><option>spring</option></select></label>
+  <label>Time <select id="time"><option>day</option><option>night</option></select></label>
   <label>Locale <select id="locale"></select></label>
   <label><input type="checkbox" id="guides" checked> trim/spine guides</label>
 </div>
@@ -102,6 +103,7 @@ function render() {
     pageCount,
     articleCount: Number($("articles").value),
     season: $("season").value,
+    time: $("time").value,
     locale: $("locale").value,
   });
   if ($("guides").checked) {
@@ -121,7 +123,7 @@ function render() {
 for (const loc of Object.keys(SCENES)) {
   const o = document.createElement("option"); o.textContent = loc; $("locale").appendChild(o);
 }
-for (const id of ["pages", "number", "articles", "date", "guides", "season", "locale"]) {
+for (const id of ["pages", "number", "articles", "date", "guides", "season", "time", "locale"]) {
   $(id).addEventListener("input", render);
 }
 window.addEventListener("resize", render);
@@ -134,16 +136,18 @@ function frontOnly(html) {
 }
 const grid = $("matrix");
 for (const loc of Object.keys(SCENES)) {
-  for (const season of ["spring", "summer", "fall", "winter"]) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    const f = document.createElement("iframe");
-    f.srcdoc = frontOnly(coverHtml({ number: 1, dateLabel: "", pageCount: 100, articleCount: 10, season, locale: loc }));
-    const cap = document.createElement("div");
-    cap.className = "cap";
-    cap.textContent = loc + " · " + season;
-    cell.appendChild(f); cell.appendChild(cap);
-    grid.appendChild(cell);
+  for (const time of ["day", "night"]) {
+    for (const season of ["spring", "summer", "fall", "winter"]) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      const f = document.createElement("iframe");
+      f.srcdoc = frontOnly(coverHtml({ number: 1, dateLabel: "", pageCount: 100, articleCount: 10, season, time, locale: loc }));
+      const cap = document.createElement("div");
+      cap.className = "cap";
+      cap.textContent = loc + " · " + season + " · " + time;
+      cell.appendChild(f); cell.appendChild(cap);
+      grid.appendChild(cell);
+    }
   }
 }
 </script>

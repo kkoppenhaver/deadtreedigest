@@ -21,11 +21,42 @@ export function spineWidthIn(pageCount) {
 }
 
 import { FONTS_CSS } from "./fonts.css.js";
-import { SEASONS, seasonFor } from "./palettes.js";
+import { PALETTES, seasonFor, timeFor } from "./palettes.js";
 
 // The locale scenes (issue #12). Each is a function of a season palette
 // returning the full front-cover <svg>. The roster rotates by issue number
 // in the closer; the spine and back cover never change.
+// Day gets the sun and birds; night gets the moon, craters, and a fixed
+// star field (deterministic — rerenders can't reshuffle the sky).
+const STARS = [
+  [46, 96, 1.6, 0.9], [92, 178, 1.1, 0.7], [138, 64, 1.3, 0.8], [176, 142, 1.0, 0.6],
+  [216, 88, 1.5, 0.9], [252, 190, 1.1, 0.65], [286, 60, 1.2, 0.75], [312, 236, 1.0, 0.6],
+  [388, 84, 1.4, 0.85], [420, 210, 1.1, 0.7], [72, 258, 1.2, 0.7], [232, 282, 1.0, 0.55],
+  [412, 296, 1.3, 0.75], [148, 300, 1.0, 0.6],
+];
+
+function skyActors(p) {
+  if (!p.night) {
+    return `<!-- sun with glow halos, upper right; light source for the whole scene -->
+    <circle cx="352" cy="170" r="78" fill="${p.sunGlow}" opacity="0.08"/>
+    <circle cx="352" cy="170" r="56" fill="${p.sunGlow}" opacity="0.14"/>
+    <circle cx="352" cy="170" r="36" fill="${p.sun}"/>
+    <circle cx="352" cy="170" r="36" fill="none" stroke="${p.sky0}" stroke-width="1.5" opacity="0.5"/>
+    <g stroke="${p.birds}" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round">
+      <path d="M120 200 q6 -7 12 0 q6 -7 12 0"/>
+      <path d="M165 224 q5 -6 10 0 q5 -6 10 0"/>
+    </g>`;
+  }
+  return `<!-- moon with glow, upper right; the night's light source -->
+    <circle cx="352" cy="170" r="70" fill="${p.sunGlow}" opacity="0.10"/>
+    <circle cx="352" cy="170" r="48" fill="${p.sunGlow}" opacity="0.12"/>
+    <circle cx="352" cy="170" r="32" fill="${p.sun}"/>
+    <circle cx="340" cy="160" r="6" fill="${p.sunGlow}" opacity="0.45"/>
+    <circle cx="360" cy="182" r="4" fill="${p.sunGlow}" opacity="0.4"/>
+    <circle cx="349" cy="175" r="2.6" fill="${p.sunGlow}" opacity="0.4"/>
+    <g>${STARS.map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${p.stars}" opacity="${o}"/>`).join("")}</g>`;
+}
+
 function mountainScene(p) {
   return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
@@ -43,17 +74,7 @@ function mountainScene(p) {
     <!-- sky -->
     <rect width="460" height="700" fill="url(#sky)"/>
 
-    <!-- sun with glow halos, upper right; light source for the whole scene -->
-    <circle cx="352" cy="170" r="78" fill="${p.sunGlow}" opacity="0.08"/>
-    <circle cx="352" cy="170" r="56" fill="${p.sunGlow}" opacity="0.14"/>
-    <circle cx="352" cy="170" r="36" fill="${p.sun}"/>
-    <circle cx="352" cy="170" r="36" fill="none" stroke="${p.sky0}" stroke-width="1.5" opacity="0.5"/>
-
-    <!-- birds -->
-    <g stroke="${p.birds}" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round">
-      <path d="M120 200 q6 -7 12 0 q6 -7 12 0"/>
-      <path d="M165 224 q5 -6 10 0 q5 -6 10 0"/>
-    </g>
+${skyActors(p)}
 
     <!-- L1: far ridge — hazy, near sky value (atmospheric perspective) -->
     <path d="M0 340 L70 296 L128 330 L205 282 L268 326 L332 296 L395 330 L460 302 L460 420 L0 420 Z" fill="${p.far}"/>
@@ -125,9 +146,10 @@ function mountainScene(p) {
 export const SCENES = { mountain: mountainScene };
 export const LOCALE_ROSTER = ["mountain"]; // grows with issue #12's scene batch
 
-export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, locale = "mountain" }) {
-  const palette = SEASONS[season ?? "summer"] ?? SEASONS.summer;
+export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, time = "day", locale = "mountain" }) {
+  const palette = PALETTES[season ?? "summer"]?.[time] ?? PALETTES.summer.day;
   const scene = (SCENES[locale] ?? mountainScene)(palette);
+  const mastInk = palette.night ? "#f1e6cf" : "var(--pine-deep)";
   // Chrome truncates the PDF page box to whole points (Lulu rejected job
   // 2959013: 11.5045in CSS came out as exactly 11.500in, 0.002 under Lulu's
   // minimum). Size the sheet in integer points, rounded UP, and let the
@@ -152,8 +174,8 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   @page { size: ${wPt}pt ${hPt}pt; margin: 0; }
   body { width: ${wPt}pt; height: ${hPt}pt; font-family: 'Lora', Georgia, serif; color: var(--ink); display: flex; }
 
-  .back  { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: var(--pine-deep); color: var(--paper); padding: ${BLEED + 0.55}in ${BLEED + 0.45}in; padding-left: ${0.45 + BLEED}in; display: flex; flex-direction: column; justify-content: space-between; }
-  .spine { flex: 1; height: 100%; background: var(--rust); color: var(--paper); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .back  { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: ${palette.back}; color: var(--paper); padding: ${BLEED + 0.55}in ${BLEED + 0.45}in; padding-left: ${0.45 + BLEED}in; display: flex; flex-direction: column; justify-content: space-between; }
+  .spine { flex: 1; height: 100%; background: ${palette.spine}; color: var(--paper); display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .front { width: ${(BLEED + TRIM_W).toFixed(4)}in; height: 100%; background: var(--sky); position: relative; overflow: hidden; }
 
   .spine .txt { transform: rotate(90deg); white-space: nowrap; font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: bold; font-size: ${Math.min(11, spine * 44)}pt; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -163,11 +185,11 @@ export function coverHtml({ number, dateLabel = "", pageCount, articleCount, tre
   .front .mast {
     position: absolute; top: ${BLEED + 0.42}in; left: 0; right: 0; text-align: center;
     font-family: 'Fjalla One', Helvetica, sans-serif; font-weight: normal; font-size: 33pt; line-height: 1;
-    letter-spacing: 0.02em; text-transform: uppercase; color: var(--pine-deep);
+    letter-spacing: 0.02em; text-transform: uppercase; color: ${mastInk};
   }
   .front .issue-line {
     position: absolute; top: ${BLEED + 0.96}in; left: 0; right: 0; text-align: center;
-    font-family: 'Courier Prime', monospace; font-size: 8pt; letter-spacing: 0.34em; text-transform: uppercase; color: var(--pine-deep); opacity: 0.75;
+    font-family: 'Courier Prime', monospace; font-size: 8pt; letter-spacing: 0.34em; text-transform: uppercase; color: ${mastInk}; opacity: 0.75;
   }
 
   /* back */
