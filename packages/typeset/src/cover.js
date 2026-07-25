@@ -558,8 +558,182 @@ ${skyActors(p)}
   </svg>`;
 }
 
-export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene, boreal: borealScene, swamp: swampScene };
-export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie", "boreal", "swamp"]; // grows with issue #12's scene batch
+// Cityscape: the reader's park in the middle of a city — two skyline layers
+// behind a rounded park treeline, a lamppost by the trail. At night the
+// office windows stay lit (deterministic, like everything else) and the
+// lamp comes on. No seasonal garnish; the palette does the work.
+function cityscapeScene(p) {
+  const bldg = (x, w, h, base, fill) => `<rect x="${x}" y="${base - h}" width="${w}" height="${h}" fill="${fill}"/>`;
+  const farBase = 460, bandBase = 478;
+  const farRow = [[0, 38, 66], [44, 26, 90], [76, 30, 54], [112, 22, 110], [140, 34, 70], [180, 26, 96], [212, 30, 60], [248, 24, 120], [278, 32, 76], [316, 26, 58], [348, 30, 88], [384, 24, 64], [414, 46, 72]]
+    .map(([x, w, h]) => bldg(x, w, h, farBase, p.far)).join("");
+  const bandRow = [[12, 30, 58], [52, 24, 84], [84, 34, 48], [126, 20, 100], [154, 28, 64], [190, 24, 44], [222, 32, 78], [262, 22, 54], [292, 30, 92], [330, 24, 48], [360, 28, 68], [396, 22, 40], [424, 36, 58]]
+    .map(([x, w, h]) => bldg(x, w, h, bandBase, p.band)).join("");
+  const windows = p.night ? `<g fill="${p.sun}" opacity="0.7">
+      ${[[58, 404], [66, 418], [58, 432], [298, 398], [306, 412], [298, 426], [306, 440], [131, 390], [131, 408], [366, 420], [374, 434], [230, 410], [240, 424]]
+        .map(([x, y]) => `<rect x="${x}" y="${y}" width="4" height="6"/>`).join("")}
+    </g>` : "";
+  const lamp = `<g>
+      <rect x="188" y="544" width="4" height="62" fill="#2b2419"/>
+      <path d="M182 606 h16 l-2 6 h-12 Z" fill="#2b2419"/>
+      <path d="M184 544 h12 l-2 -10 h-8 Z" fill="#2b2419"/>
+      ${p.night ? `<circle cx="190" cy="538" r="10" fill="${p.sun}" opacity="0.25"/><circle cx="190" cy="538" r="4.5" fill="${p.sun}"/>` : `<circle cx="190" cy="538" r="4.5" fill="#e8dcc0" opacity="0.85"/>`}
+    </g>`;
+  return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.sky0}"/>
+        <stop offset="0.55" stop-color="${p.sky1}"/>
+        <stop offset="1" stop-color="${p.sky2}"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+${skyActors(p)}
+
+    <!-- skylines: hazy distance, then the near silhouette with its furniture -->
+    ${farRow}
+    ${bandRow}
+    <!-- antenna on the tallest, water tower on the mid-block -->
+    <line x1="136" y1="378" x2="136" y2="356" stroke="${p.band}" stroke-width="2.5"/>
+    <circle cx="136" cy="354" r="2.5" fill="${p.band}"/>
+    <g fill="${p.band}">
+      <path d="M228 400 l2 -12 h16 l2 12 Z"/>
+      <ellipse cx="237" cy="388" rx="10" ry="4"/>
+      <path d="M230 400 l-2 8 M244 400 l2 8" stroke="${p.band}" stroke-width="2"/>
+    </g>
+    ${windows}
+
+    <!-- the park treeline, rounded and unbothered by the towers -->
+    <path d="M0 546 q20 -22 40 0 q16 -18 36 -2 q18 -20 38 0 q14 -14 32 -4 q18 -18 38 0 q16 -16 36 -2 q18 -18 38 0 q14 -12 32 -4 q16 -16 36 0 q18 -18 40 0 q16 -14 34 -2 q20 -18 40 0 L460 546 L460 582 L0 582 Z" fill="${p.near}"/>
+    <path d="M0 546 q20 -22 40 0 q16 -18 36 -2 q18 -20 38 0 L114 552 L0 552 Z" fill="${p.nearLit}" opacity="0.5"/>
+
+    <!-- the lawn -->
+    <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="${p.ground0}"/>
+    <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="${p.ground1}"/>
+
+    <!-- big pine, right (series constant) -->
+    <g>
+      <polygon points="430,388 462,452 398,452" fill="${p.tree0d}"/>
+      <polygon points="430,388 462,452 430,452" fill="${p.tree0l}"/>
+      <polygon points="430,424 472,502 388,502" fill="${p.tree1d}"/>
+      <polygon points="430,424 472,502 430,502" fill="${p.tree1l}"/>
+      <polygon points="430,464 484,560 376,560" fill="${p.tree2d}"/>
+      <polygon points="430,464 484,560 430,560" fill="${p.tree2l}"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
+    </g>
+
+    ${lamp}
+    ${trailAndMotif(p)}
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
+  </svg>`;
+}
+
+// Southwest canyon: a window arch on the left, a family of hoodoos on the
+// right, strata lines in the rock. The opening in the arch shows hazy
+// distance, not sky, so the desert reads deep. Garnish: a snowline dusts
+// the arch and hoodoo caps in winter (day and night — desert snow lingers).
+function canyonScene(p, seasonKey) {
+  const snow = seasonKey === "winter" ? `<!-- the snowline — winter closes only -->
+    <g fill="${p.ground0}" opacity="0.95">
+      <path d="M34 470 Q 40 428 92 420 Q 150 414 196 438 L 190 448 Q 148 426 96 431 Q 48 439 44 472 Z"/>
+      <path d="M246 464 L250 452 L272 452 L276 464 L268 468 L254 468 Z"/>
+      <path d="M288 488 L294 478 L324 478 L330 488 L320 492 L298 492 Z"/>
+      <path d="M342 454 L346 440 L362 440 L366 454 L360 458 L348 458 Z"/>
+    </g>` : "";
+  return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.sky0}"/>
+        <stop offset="0.55" stop-color="${p.sky1}"/>
+        <stop offset="1" stop-color="${p.sky2}"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+${skyActors(p)}
+
+    <!-- far mesas, flat-topped, haze-lit rims -->
+    <path d="M0 388 L60 388 L74 402 L150 402 L164 388 L250 388 L262 404 L330 404 L344 390 L460 390 L460 452 L0 452 Z" fill="${p.far}"/>
+    <g fill="${p.farLit}">
+      <rect x="0" y="388" width="60" height="5"/>
+      <rect x="74" y="402" width="76" height="5"/>
+      <rect x="164" y="388" width="86" height="5"/>
+      <rect x="262" y="404" width="68" height="5"/>
+      <rect x="344" y="390" width="116" height="5"/>
+    </g>
+
+    <!-- canyon wall with strata -->
+    <path d="M0 430 L40 430 L52 444 L96 444 L108 428 L150 428 L160 446 L210 446 L222 430 L270 430 L280 448 L326 448 L338 432 L390 432 L400 450 L460 450 L460 540 L0 540 Z" fill="${p.mid}"/>
+    <g stroke="${p.midShade}" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+      <path d="M14 468 h52 M110 462 h64 M226 470 h58 M338 466 h70"/>
+      <path d="M40 496 h70 M160 502 h54 M262 494 h66 M382 500 h50"/>
+    </g>
+
+    <!-- the window arch -->
+    <path d="M30 570 L34 470 Q 40 428 92 420 Q 150 414 196 438 Q 212 448 210 570 Z" fill="${p.near}"/>
+    <path d="M196 438 Q 212 448 210 570 L 196 570 Q 198 452 186 444 Z" fill="${p.nearLit}" opacity="0.9"/>
+    <path d="M78 570 L80 500 Q 84 466 116 462 Q 150 460 162 486 Q 168 500 166 570 Z" fill="${p.far}"/>
+    <path d="M80 560 h84 v10 h-84 Z" fill="${p.farLit}" opacity="0.6"/>
+    <g stroke="${p.nearShade}" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+      <path d="M40 520 h30 M176 516 h26"/>
+    </g>
+
+    <!-- the hoodoo family -->
+    <path d="M250 566 L254 470 L246 464 L250 452 L272 452 L276 464 L268 470 L272 566 Z" fill="${p.near}"/>
+    <path d="M261 566 L261 452 L272 452 L276 464 L268 470 L272 566 Z" fill="${p.nearLit}" opacity="0.85"/>
+    <path d="M296 566 L298 494 L288 488 L294 478 L324 478 L330 488 L320 494 L324 566 Z" fill="${p.near}"/>
+    <path d="M310 566 L310 478 L324 478 L330 488 L320 494 L324 566 Z" fill="${p.nearLit}" opacity="0.85"/>
+    <path d="M346 566 L348 460 L342 454 L346 440 L362 440 L366 454 L360 460 L362 566 Z" fill="${p.near}"/>
+    <path d="M354 566 L354 440 L362 440 L366 454 L360 460 L362 566 Z" fill="${p.nearLit}" opacity="0.85"/>
+    <g stroke="${p.nearShade}" stroke-width="2" stroke-linecap="round" opacity="0.6">
+      <path d="M252 510 h18 M298 520 h24 M348 508 h13"/>
+    </g>
+    ${snow}
+
+    <!-- desert floor -->
+    <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="${p.ground0}"/>
+    <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="${p.ground1}"/>
+    <!-- fallen rocks by the trail -->
+    <g fill="${p.nearShade}" opacity="0.9">
+      <path d="M236 668 l8 -10 12 2 6 8 -4 6 -18 0 Z"/>
+      <path d="M352 636 l6 -8 10 2 4 6 -3 5 -14 0 Z"/>
+    </g>
+
+    <!-- big pine, right (series constant) -->
+    <g>
+      <polygon points="430,388 462,452 398,452" fill="${p.tree0d}"/>
+      <polygon points="430,388 462,452 430,452" fill="${p.tree0l}"/>
+      <polygon points="430,424 472,502 388,502" fill="${p.tree1d}"/>
+      <polygon points="430,424 472,502 430,502" fill="${p.tree1l}"/>
+      <polygon points="430,464 484,560 376,560" fill="${p.tree2d}"/>
+      <polygon points="430,464 484,560 430,560" fill="${p.tree2l}"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
+    </g>
+
+    ${trailAndMotif(p)}
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
+  </svg>`;
+}
+
+export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene, boreal: borealScene, swamp: swampScene, cityscape: cityscapeScene, canyon: canyonScene };
+export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie", "boreal", "swamp", "cityscape", "canyon"]; // issue #12's full roster
 
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, time = "day", locale = "mountain" }) {
   const seasonKey = PALETTES[season] ? season : "summer";
