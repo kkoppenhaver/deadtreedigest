@@ -90,7 +90,7 @@ function trailAndMotif(p, trailDy = 0) {
       ${sapling(218, 580, 0.66, "#3b7a5c")}
       ${sapling(385, 608, 0.62, "#448463")}
       ${sapling(36, 598, 0.78, "#337054")}
-      ${sapling(238, 588, 0.8, "#337054")}
+      ${sapling(68, 588, 0.8, "#337054")}
       ${sapling(58, 630, 1.05, "#2f6a4e", "#397a5a")}
       ${sapling(338, 620, 1.15, "#2f6a4e", "#397a5a")}
       ${sapling(24, 664, 1.3, "#2b6248", "#357254")}
@@ -195,18 +195,6 @@ ${skyActors(p)}
     <g stroke="${p.farLit}" stroke-width="2" stroke-linecap="round" opacity="0.5">
       <path d="M90 508 h30 M228 522 h26 M330 500 h34 M52 548 h24 M406 540 h22"/>
     </g>
-    <!-- glitter path: the light source reflected on the water -->
-    <g stroke="${p.sun}" stroke-linecap="round" opacity="0.6">
-      <path d="M346 366 h12" stroke-width="3"/>
-      <path d="M340 384 h22" stroke-width="3"/>
-      <path d="M348 404 h14" stroke-width="3.5"/>
-      <path d="M336 428 h28" stroke-width="3.5"/>
-      <path d="M344 456 h18" stroke-width="4"/>
-      <path d="M334 488 h32" stroke-width="4"/>
-      <path d="M342 522 h22" stroke-width="4.5"/>
-      <path d="M330 556 h38" stroke-width="4.5"/>
-    </g>
-
     <!-- breakwater with its beacon, running in from the right -->
     <path d="M262 414 L460 406 L460 424 L262 424 Z" fill="${p.band}"/>
     <path d="M262 414 L460 406 L460 412 L262 419 Z" fill="${p.nearLit}" opacity="0.5"/>
@@ -383,7 +371,9 @@ function borealScene(p, seasonKey) {
     d += ` L460 ${base} L460 ${base + drop} L0 ${base + drop} Z`;
     return `<path d="${d}" fill="${fill}"/>`;
   };
-  const backWall = wall(512, 62, [[11,58],[9,26],[13,74],[10,38],[12,60],[8,20],[14,84],[10,44],[12,66],[9,30],[13,78],[10,40],[11,54],[8,24],[14,88],[10,48],[12,62],[9,34],[13,72],[10,42],[12,58]], p.mid);
+  // The back wall fades out toward its spire tips (gradient fill below) so
+  // distance reads as haze, not a hard sawtooth against the sky.
+  const backWall = wall(512, 62, [[11,58],[9,26],[13,74],[10,38],[12,60],[8,20],[14,84],[10,44],[12,66],[9,30],[13,78],[10,40],[11,54],[8,24],[14,88],[10,48],[12,62],[9,34],[13,72],[10,42],[12,58]], "url(#wallfade)");
   const frontWall = wall(560, 44, [[9,42],[7,18],[11,56],[8,28],[10,48],[6,14],[12,66],[9,36],[11,52],[7,22],[10,44],[8,30],[12,62],[9,38],[10,50],[7,20],[11,58],[8,26],[10,46],[9,34],[12,60],[8,24],[11,54],[15,40]], p.band);
   const aurora = p.night && seasonKey === "winter" ? `<!-- the aurora — winter night only, the rarest cover in the roster -->
     <g filter="url(#soften)" stroke-linecap="round" fill="none">
@@ -405,6 +395,10 @@ function borealScene(p, seasonKey) {
       <filter id="soften" x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur stdDeviation="6"/>
       </filter>
+      <linearGradient id="wallfade" gradientUnits="userSpaceOnUse" x1="0" y1="424" x2="0" y2="512">
+        <stop offset="0" stop-color="${p.mid}" stop-opacity="0.35"/>
+        <stop offset="1" stop-color="${p.mid}" stop-opacity="1"/>
+      </linearGradient>
     </defs>
 
     <!-- sky -->
@@ -507,15 +501,6 @@ ${skyActors(p)}
     <!-- still water -->
     <rect x="0" y="448" width="460" height="126" fill="${p.water0}"/>
     <path d="M0 520 Q 140 512 260 520 Q 380 528 460 518 L460 574 L0 574 Z" fill="${p.water1}"/>
-    <!-- the light's soft column on the mirror -->
-    <g stroke="${p.sun}" stroke-linecap="round" opacity="0.4">
-      <path d="M348 456 h10" stroke-width="3"/>
-      <path d="M342 478 h20" stroke-width="3"/>
-      <path d="M350 504 h12" stroke-width="3.5"/>
-      <path d="M340 534 h26" stroke-width="3.5"/>
-      <path d="M346 560 h16" stroke-width="4"/>
-    </g>
-
     ${cypress(0, 1)}
     ${cypress(178, 0.62)}
 
@@ -569,10 +554,12 @@ function cityscapeScene(p) {
     .map(([x, w, h]) => bldg(x, w, h, farBase, p.far)).join("");
   const bandRow = [[12, 30, 58], [52, 24, 84], [84, 34, 48], [126, 20, 100], [154, 28, 64], [190, 24, 44], [222, 32, 78], [262, 22, 54], [292, 30, 92], [330, 24, 48], [360, 28, 68], [396, 22, 40], [424, 36, 58]]
     .map(([x, w, h]) => bldg(x, w, h, bandBase, p.band)).join("");
-  const windows = p.night ? `<g fill="${p.sun}" opacity="0.7">
-      ${[[58, 404], [66, 418], [58, 432], [298, 398], [306, 412], [298, 426], [306, 440], [131, 390], [131, 408], [366, 420], [374, 434], [230, 410], [240, 424]]
+  // Windows always: office-light amber at night, a lighter shade of the
+  // silhouette by day so the towers read as buildings, not slabs.
+  const windows = `<g fill="${p.night ? p.sun : p.near}" opacity="${p.night ? 0.7 : 0.9}">
+      ${[[58, 404], [66, 418], [58, 432], [298, 398], [306, 412], [298, 426], [306, 440], [131, 390], [131, 408], [366, 420], [374, 434], [230, 410], [240, 424], [18, 430], [26, 444], [160, 424], [168, 438], [430, 430], [438, 444], [90, 440], [98, 452]]
         .map(([x, y]) => `<rect x="${x}" y="${y}" width="4" height="6"/>`).join("")}
-    </g>` : "";
+    </g>`;
   const lamp = `<g>
       <rect x="188" y="544" width="4" height="62" fill="#2b2419"/>
       <path d="M182 606 h16 l-2 6 h-12 Z" fill="#2b2419"/>
@@ -686,8 +673,12 @@ ${skyActors(p)}
     <!-- the window arch -->
     <path d="M30 570 L34 470 Q 40 428 92 420 Q 150 414 196 438 Q 212 448 210 570 Z" fill="${p.near}"/>
     <path d="M196 438 Q 212 448 210 570 L 196 570 Q 198 452 186 444 Z" fill="${p.nearLit}" opacity="0.9"/>
-    <path d="M78 570 L80 500 Q 84 466 116 462 Q 150 460 162 486 Q 168 500 166 570 Z" fill="${p.far}"/>
-    <path d="M80 560 h84 v10 h-84 Z" fill="${p.farLit}" opacity="0.6"/>
+    <!-- the window: the canyon wall and desert floor show THROUGH the arch -->
+    <path d="M78 570 L80 500 Q 84 466 116 462 Q 150 460 162 486 Q 168 500 166 570 Z" fill="${p.mid}"/>
+    <g stroke="${p.midShade}" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
+      <path d="M96 486 h52 M92 516 h60"/>
+    </g>
+    <path d="M80 546 Q 122 538 166 544 L 166 570 L 80 570 Z" fill="${p.ground0}"/>
     <g stroke="${p.nearShade}" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
       <path d="M40 520 h30 M176 516 h26"/>
     </g>
