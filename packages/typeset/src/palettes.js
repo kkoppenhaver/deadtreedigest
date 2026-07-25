@@ -17,6 +17,9 @@
 //   band                dark silhouette band (treeline, skyline, reeds)
 //   ground0/ground1     foreground field, light then deep
 //   path                the winding trail
+//   water0/water1       open water, light then deep (lakefront, swamp)
+//   canopy0/canopy1     deciduous canopy, lit/shade (the prairie oak —
+//                       bare in fall; marcescent brown in winter)
 //   tree0d/0l 1d/1l 2d/2l  the hero pine's three tiers, dark/lit facets
 //   spine, back         the wrap: spine band + back cover background
 //   night               flag: scenes swap sun/birds for moon/stars
@@ -39,6 +42,7 @@ const summerDay = {
   tree2d: "#14352a", tree2l: "#1f4d38",
   spine: "#bf4e24", back: "#14352a",
     water0: "#6d9aa8", water1: "#588594",
+    canopy0: "#4a7c4a", canopy1: "#38663c",
 };
 
 export const PALETTES = {
@@ -59,6 +63,7 @@ export const PALETTES = {
       tree2d: "#112b22", tree2l: "#193c2c",
       spine: "#2f4256", back: "#101c28",
     water0: "#2c4456", water1: "#24384a",
+    canopy0: "#274a34", canopy1: "#1e3a2a",
     },
   },
   fall: {
@@ -77,6 +82,7 @@ export const PALETTES = {
       tree2d: "#203a2e", tree2l: "#2b4a3a",
       spine: "#a63f1c", back: "#382516",
     water0: "#7d9695", water1: "#68807f",
+    canopy0: "#b56a30", canopy1: "#9a5426", // unused while the oak stands bare — defined so every palette carries every token
     },
     night: {
       night: true,
@@ -93,6 +99,7 @@ export const PALETTES = {
       tree2d: "#162b20", tree2l: "#1e3829",
       spine: "#6b3b22", back: "#201626",
     water0: "#2f3a4c", water1: "#262f3f",
+    canopy0: "#5c3a22", canopy1: "#4a2e1a",
     },
   },
   winter: {
@@ -111,6 +118,7 @@ export const PALETTES = {
       tree2d: "#18332a", tree2l: "#224438",
       spine: "#4a6478", back: "#1c2b38",
     water0: "#8aa2b5", water1: "#7590a5",
+    canopy0: "#a08258", canopy1: "#8a6f4e", // burr oaks hold their dead leaves all winter (marcescence)
     },
     night: {
       night: true,
@@ -127,6 +135,7 @@ export const PALETTES = {
       tree2d: "#0f241b", tree2l: "#163024",
       spine: "#2c3d4e", back: "#0e1722",
     water0: "#35485c", water1: "#2a3a4b",
+    canopy0: "#4a3e30", canopy1: "#3a3126",
     },
   },
   spring: {
@@ -145,6 +154,7 @@ export const PALETTES = {
       tree2d: "#14352a", tree2l: "#1f4d38",
       spine: "#7d9b52", back: "#223a28",
     water0: "#7fa89b", water1: "#6a9388",
+    canopy0: "#83ac59", canopy1: "#6f9a4a",
     },
     night: {
       night: true,
@@ -161,6 +171,7 @@ export const PALETTES = {
       tree2d: "#112b22", tree2l: "#193c2c",
       spine: "#3f5a52", back: "#13251c",
     water0: "#2e4a4a", water1: "#253c3c",
+    canopy0: "#375a3a", canopy1: "#2c4a30",
     },
   },
 };

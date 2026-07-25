@@ -57,6 +57,47 @@ function skyActors(p) {
     <g>${STARS.map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${p.stars}" opacity="${o}"/>`).join("")}</g>`;
 }
 
+// The shared foreground motif: the winding trail, the hero stump BESIDE it
+// (never in it), and ten saplings hand-scattered across the meadow — some
+// clustered, some loners, both sides of the trail — so the grove reads as
+// planted by wind, not by grid. One stump, ten saplings: the brand. Shared
+// by every scene so the series reads as one place. trailDy nudges the
+// trailhead down for scenes whose foreground crest sits lower (lakefront).
+const sapling = (x, y, s, dark, lit) =>
+  `<g transform="translate(${x},${y}) scale(${s})"><polygon points="8,0 15,17 1,17" fill="${dark}"/>${lit ? `<polygon points="8,0 15,17 8,17" fill="${lit}"/>` : ""}<rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>`;
+
+function trailAndMotif(p, trailDy = 0) {
+  return `<!-- the trail, winding down past the stump -->
+    <path d="M310 576 Q 262 592 224 606 Q 186 622 178 652 Q 172 674 184 700 L 252 700 Q 240 670 252 648 Q 268 622 304 606 Q 338 592 350 580 Z" fill="${p.path}" opacity="0.9"${trailDy ? ` transform="translate(0,${trailDy})"` : ""}/>
+
+    <!-- hero stump, lower left, beside the trail -->
+    <g>
+      <ellipse cx="132" cy="646" rx="64" ry="12" fill="#8a5a33" opacity="0.3"/>
+      <path d="M96 586 L100 636 Q 116 646 132 646 L132 582 Z" fill="#6b3f23"/>
+      <path d="M132 582 L132 646 Q 148 646 164 636 L168 586 Z" fill="#8a5a33"/>
+      <path d="M120 584 L122 644 L142 644 L144 584 Z" fill="#7a4a2a"/>
+      <ellipse cx="132" cy="584" rx="36" ry="13" fill="#d3a873"/>
+      <ellipse cx="134" cy="583" rx="26" ry="9" fill="none" stroke="#8a5a33" stroke-width="1.8" opacity="0.7"/>
+      <ellipse cx="136" cy="582" rx="16" ry="5.5" fill="none" stroke="#8a5a33" stroke-width="1.5" opacity="0.7"/>
+      <ellipse cx="138" cy="581" rx="7" ry="2.5" fill="none" stroke="#8a5a33" stroke-width="1.2" opacity="0.7"/>
+    </g>
+
+    <!-- ten saplings scattered across the meadow, far to near (brand motif —
+         constant greens in every season) -->
+    <g>
+      ${sapling(176, 576, 0.55, "#4d8d6b")}
+      ${sapling(358, 584, 0.5, "#579573")}
+      ${sapling(218, 580, 0.66, "#3b7a5c")}
+      ${sapling(385, 608, 0.62, "#448463")}
+      ${sapling(36, 598, 0.78, "#337054")}
+      ${sapling(238, 588, 0.8, "#337054")}
+      ${sapling(58, 630, 1.05, "#2f6a4e", "#397a5a")}
+      ${sapling(338, 620, 1.15, "#2f6a4e", "#397a5a")}
+      ${sapling(24, 664, 1.3, "#2b6248", "#357254")}
+      ${sapling(296, 648, 1.5, "#2b6248", "#357254")}
+    </g>`;
+}
+
 function mountainScene(p) {
   return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
@@ -94,10 +135,9 @@ ${skyActors(p)}
     <!-- pine silhouette band along its base -->
     <path d="M0 540 l14 -22 12 22 6 -10 10 18 12 -24 12 24 8 -14 10 16 14 -26 12 26 8 -12 10 14 12 -22 12 22 6 -10 10 16 14 -24 12 24 8 -14 12 18 12 -20 12 20 8 -12 10 14 14 -22 12 22 6 -8 8 10 V585 H0 Z" fill="${p.band}"/>
 
-    <!-- L4: valley floor with winding path leading to the stump -->
+    <!-- L4: valley floor -->
     <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="${p.ground0}"/>
     <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="${p.ground1}"/>
-    <path d="M300 574 Q 250 596 180 606 Q 110 616 88 648 Q 76 668 92 700 L150 700 Q 138 668 156 650 Q 186 622 250 612 Q 310 602 330 578 Z" fill="${p.path}" opacity="0.9"/>
 
     <!-- big pine, right, faceted with sun-side lighting -->
     <g>
@@ -111,32 +151,7 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    <!-- hero stump, low-poly faceted, casting a long evening shadow -->
-    <g>
-      <ellipse cx="132" cy="646" rx="64" ry="12" fill="#8a5a33" opacity="0.3"/>
-      <path d="M96 586 L100 636 Q 116 646 132 646 L132 582 Z" fill="#6b3f23"/>
-      <path d="M132 582 L132 646 Q 148 646 164 636 L168 586 Z" fill="#8a5a33"/>
-      <path d="M120 584 L122 644 L142 644 L144 584 Z" fill="#7a4a2a"/>
-      <ellipse cx="132" cy="584" rx="36" ry="13" fill="#d3a873"/>
-      <ellipse cx="134" cy="583" rx="26" ry="9" fill="none" stroke="#8a5a33" stroke-width="1.8" opacity="0.7"/>
-      <ellipse cx="136" cy="582" rx="16" ry="5.5" fill="none" stroke="#8a5a33" stroke-width="1.5" opacity="0.7"/>
-      <ellipse cx="138" cy="581" rx="7" ry="2.5" fill="none" stroke="#8a5a33" stroke-width="1.2" opacity="0.7"/>
-    </g>
-
-    <!-- saplings along the path, receding toward the ridge (brand motif —
-         constant greens in every season) -->
-    <g>
-      <g transform="translate(196,616) scale(1.35)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(232,606) scale(1.2)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(266,598) scale(1.05)"><polygon points="8,0 15,17 1,17" fill="#2f6a4e"/><polygon points="8,0 15,17 8,17" fill="#397a5a"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(296,590) scale(0.9)"><polygon points="8,0 15,17 1,17" fill="#337054"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(318,586) scale(0.78)"><polygon points="8,0 15,17 1,17" fill="#3b7a5c"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(338,582) scale(0.66)"><polygon points="8,0 15,17 1,17" fill="#448463"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(354,578) scale(0.56)"><polygon points="8,0 15,17 1,17" fill="#4d8d6b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(368,575) scale(0.47)"><polygon points="8,0 15,17 1,17" fill="#579573"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(380,572) scale(0.4)"><polygon points="8,0 15,17 1,17" fill="#619c7b"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(390,570) scale(0.34)"><polygon points="8,0 15,17 1,17" fill="#6ba383"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-    </g>
+    ${trailAndMotif(p)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
@@ -145,8 +160,8 @@ ${skyActors(p)}
 
 // Lakefront: big water, a breakwater beacon, the sun/moon glitter path on
 // the surface. Same series grammar as every locale — light source upper
-// right, stump lower left, hero pine right, saplings receding along the
-// path — so the shelf reads as one collection.
+// right, stump lower left, hero pine right, saplings scattered across the
+// foreground — so the shelf reads as one collection.
 function lakefrontScene(p) {
   return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
@@ -222,8 +237,119 @@ ${skyActors(p)}
       <path d="M204 582 l-3 -10 M210 582 l0 -12 M216 582 l3 -9"/>
       <path d="M330 586 l-3 -9 M336 586 l0 -11 M342 586 l3 -8"/>
     </g>
-    <!-- the path, winding from the stump toward the water -->
-    <path d="M300 582 Q 250 600 180 610 Q 110 620 88 650 Q 76 670 92 700 L150 700 Q 138 670 156 652 Q 186 626 250 616 Q 310 606 330 586 Z" fill="${p.path}" opacity="0.9"/>
+    <!-- big pine, right (series constant) -->
+    <g>
+      <polygon points="430,388 462,452 398,452" fill="${p.tree0d}"/>
+      <polygon points="430,388 462,452 430,452" fill="${p.tree0l}"/>
+      <polygon points="430,424 472,502 388,502" fill="${p.tree1d}"/>
+      <polygon points="430,424 472,502 430,502" fill="${p.tree1l}"/>
+      <polygon points="430,464 484,560 376,560" fill="${p.tree2d}"/>
+      <polygon points="430,464 484,560 430,560" fill="${p.tree2l}"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
+    </g>
+
+    ${trailAndMotif(p, 8)}
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
+  </svg>`;
+}
+
+// Prairie: a lone burr oak on a grass swell under the biggest sky in the
+// series — the horizon drops low and the clouds do the landscaping. Same
+// grammar as every locale: light upper right, stump lower left, hero pine
+// right, saplings scattered across the field. Garnish: the oak stands bare in
+// fall; in winter it keeps a marcescent brown canopy (burr oaks really do
+// hold their dead leaves until spring).
+function prairieScene(p, seasonKey) {
+  const bare = seasonKey === "fall";
+  const trunk = `<path d="M158 514 L164 448 L180 448 L188 514 Z" fill="#4a3524"/>
+    <path d="M173 514 L173 448 L180 448 L188 514 Z" fill="#5e442c"/>`;
+  const oak = bare
+    ? `<!-- the burr oak, bare for fall: crooked skeleton against the harvest sky -->
+    <g stroke="#4a3524" fill="none" stroke-linecap="round">
+      <path d="M172 462 L148 424 Q 128 406 116 386" stroke-width="7"/>
+      <path d="M148 424 L136 396" stroke-width="4"/>
+      <path d="M116 386 L102 372 M116 386 L122 364" stroke-width="2.5"/>
+      <path d="M136 396 L126 380 M136 396 L144 374" stroke-width="2.5"/>
+      <path d="M172 456 L176 408 Q 174 388 164 368" stroke-width="7"/>
+      <path d="M176 412 L194 382" stroke-width="4"/>
+      <path d="M164 368 L152 352 M164 368 L172 346" stroke-width="2.5"/>
+      <path d="M194 382 L188 360 M194 382 L206 366" stroke-width="2.5"/>
+      <path d="M176 460 L206 428 Q 228 412 242 392" stroke-width="6"/>
+      <path d="M206 428 L218 400" stroke-width="4"/>
+      <path d="M242 392 L254 378 M242 392 L236 370" stroke-width="2.5"/>
+      <path d="M218 400 L228 382 M218 400 L208 378" stroke-width="2.5"/>
+    </g>
+    ${trunk}`
+    : `<!-- the burr oak in leaf, low-poly clumps lit from the upper right -->
+    ${trunk}
+    <g stroke="#4a3524" stroke-linecap="round" fill="none">
+      <path d="M170 458 L146 426" stroke-width="6"/>
+      <path d="M176 456 L204 426" stroke-width="5"/>
+    </g>
+    <g>
+      <polygon points="150,384 202,384 206,416 152,418" fill="${p.canopy1}"/>
+      <polygon points="96,414 106,360 158,342 174,396 140,426" fill="${p.canopy1}"/>
+      <polygon points="158,342 174,396 140,426" fill="${p.canopy0}"/>
+      <polygon points="130,364 176,318 226,348 214,400 146,396" fill="${p.canopy1}"/>
+      <polygon points="176,318 226,348 214,400 178,398" fill="${p.canopy0}"/>
+      <polygon points="178,412 192,352 248,358 258,402 216,428" fill="${p.canopy1}"/>
+      <polygon points="206,356 248,358 258,402 216,428" fill="${p.canopy0}"/>
+    </g>`;
+  return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.sky0}"/>
+        <stop offset="0.55" stop-color="${p.sky1}"/>
+        <stop offset="1" stop-color="${p.sky2}"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+${skyActors(p)}
+    ${p.night ? "" : `<!-- big-sky clouds, flat WPA stacks, kept clear of the sun -->
+    <g fill="${p.sky0}" opacity="0.9">
+      <path d="M48 250 q8 -20 30 -20 q8 -14 28 -12 q20 -2 28 12 q18 0 16 20 Z"/>
+      <path d="M138 302 q6 -16 24 -16 q8 -10 22 -8 q16 0 20 12 q12 0 10 12 Z"/>
+    </g>`}
+
+    <!-- far rise + windbreak row, hugging a LOW horizon (the big sky) -->
+    <path d="M0 452 L90 442 L200 450 L320 440 L460 448 L460 486 L0 486 Z" fill="${p.far}"/>
+    <path d="M90 442 L200 450 L140 450 Z" fill="${p.farLit}" opacity="0.9"/>
+    <g fill="${p.band}" opacity="0.75">
+      <path d="M10 447 q7 -14 14 0 Z M27 445 q5 -10 10 0 Z M40 446 q6 -13 12 0 Z M70 446 q5 -9 10 0 Z M83 444 q7 -15 14 0 Z M118 447 q5 -10 10 0 Z"/>
+    </g>
+
+    <!-- mid swell -->
+    <path d="M0 486 Q 150 464 300 482 Q 400 492 460 484 L460 544 L0 544 Z" fill="${p.mid}"/>
+    <path d="M0 486 Q 150 464 300 482 L300 490 Q 150 474 0 494 Z" fill="${p.midLit}" opacity="0.8"/>
+
+    <!-- near swell — the oak's rise -->
+    <path d="M0 528 Q 120 504 240 516 Q 360 528 460 518 L460 604 L0 604 Z" fill="${p.near}"/>
+    <path d="M0 528 Q 120 504 240 516 L240 524 Q 120 514 0 538 Z" fill="${p.nearLit}" opacity="0.8"/>
+    <g stroke="${p.nearShade}" stroke-width="2" stroke-linecap="round" opacity="0.7">
+      <path d="M52 542 l4 -10 M60 544 l0 -11 M252 534 l4 -10 M260 536 l0 -11 M356 540 l4 -9 M364 542 l0 -10"/>
+    </g>
+
+    ${oak}
+
+    <!-- foreground field with the winding path (series constants) -->
+    <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="${p.ground0}"/>
+    <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="${p.ground1}"/>
+    <!-- tall-grass seed heads along the field crest -->
+    <g stroke="${p.band}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.85">
+      <path d="M24 584 l-3 -12 M30 584 l0 -14 M36 584 l3 -11"/>
+      <path d="M96 576 l-3 -11 M102 576 l0 -13 M108 576 l3 -10"/>
+      <path d="M248 596 l-3 -11 M254 596 l0 -13 M260 596 l3 -10"/>
+      <path d="M390 668 l-4 -14 M398 668 l0 -16 M406 668 l4 -13"/>
+    </g>
 
     <!-- big pine, right (series constant) -->
     <g>
@@ -237,39 +363,20 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    <!-- hero stump (series constant) -->
-    <g>
-      <ellipse cx="132" cy="646" rx="64" ry="12" fill="#8a5a33" opacity="0.3"/>
-      <path d="M96 586 L100 636 Q 116 646 132 646 L132 582 Z" fill="#6b3f23"/>
-      <path d="M132 582 L132 646 Q 148 646 164 636 L168 586 Z" fill="#8a5a33"/>
-      <path d="M120 584 L122 644 L142 644 L144 584 Z" fill="#7a4a2a"/>
-      <ellipse cx="132" cy="584" rx="36" ry="13" fill="#d3a873"/>
-      <ellipse cx="134" cy="583" rx="26" ry="9" fill="none" stroke="#8a5a33" stroke-width="1.8" opacity="0.7"/>
-      <ellipse cx="136" cy="582" rx="16" ry="5.5" fill="none" stroke="#8a5a33" stroke-width="1.5" opacity="0.7"/>
-      <ellipse cx="138" cy="581" rx="7" ry="2.5" fill="none" stroke="#8a5a33" stroke-width="1.2" opacity="0.7"/>
-    </g>
-
-    <!-- saplings along the path (series constant) -->
-    <g>
-      <g transform="translate(196,616) scale(1.35)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(232,606) scale(1.2)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(266,598) scale(1.05)"><polygon points="8,0 15,17 1,17" fill="#2f6a4e"/><polygon points="8,0 15,17 8,17" fill="#397a5a"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(296,590) scale(0.9)"><polygon points="8,0 15,17 1,17" fill="#337054"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(318,586) scale(0.78)"><polygon points="8,0 15,17 1,17" fill="#3b7a5c"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-      <g transform="translate(338,582) scale(0.66)"><polygon points="8,0 15,17 1,17" fill="#448463"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
-    </g>
+    ${trailAndMotif(p)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
   </svg>`;
 }
 
-export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene };
-export const LOCALE_ROSTER = ["mountain", "lakefront"]; // grows with issue #12's scene batch
+export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene };
+export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie"]; // grows with issue #12's scene batch
 
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, time = "day", locale = "mountain" }) {
-  const palette = PALETTES[season ?? "summer"]?.[time] ?? PALETTES.summer.day;
-  const scene = (SCENES[locale] ?? mountainScene)(palette);
+  const seasonKey = PALETTES[season] ? season : "summer";
+  const palette = PALETTES[seasonKey][time] ?? PALETTES.summer.day;
+  const scene = (SCENES[locale] ?? mountainScene)(palette, seasonKey);
   const mastInk = palette.night ? "#f1e6cf" : "var(--pine-deep)";
   // Chrome truncates the PDF page box to whole points (Lulu rejected job
   // 2959013: 11.5045in CSS came out as exactly 11.500in, 0.002 under Lulu's
