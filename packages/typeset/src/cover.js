@@ -673,12 +673,9 @@ ${skyActors(p)}
     <!-- the window arch -->
     <path d="M30 570 L34 470 Q 40 428 92 420 Q 150 414 196 438 Q 212 448 210 570 Z" fill="${p.near}"/>
     <path d="M196 438 Q 212 448 210 570 L 196 570 Q 198 452 186 444 Z" fill="${p.nearLit}" opacity="0.9"/>
-    <!-- the window: the canyon wall and desert floor show THROUGH the arch -->
-    <path d="M78 570 L80 500 Q 84 466 116 462 Q 150 460 162 486 Q 168 500 166 570 Z" fill="${p.mid}"/>
-    <g stroke="${p.midShade}" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
-      <path d="M96 486 h52 M92 516 h60"/>
-    </g>
-    <path d="M80 546 Q 122 538 166 544 L 166 570 L 80 570 Z" fill="${p.ground0}"/>
+    <!-- the window: one solid shadowed tone under the arch. The rock ring
+         itself is fully solid — no strata or pattern continues behind it. -->
+    <path d="M78 570 L80 500 Q 84 466 116 462 Q 150 460 162 486 Q 168 500 166 570 Z" fill="${p.midShade}"/>
     <g stroke="${p.nearShade}" stroke-width="2.5" stroke-linecap="round" opacity="0.7">
       <path d="M40 520 h30 M176 516 h26"/>
     </g>
