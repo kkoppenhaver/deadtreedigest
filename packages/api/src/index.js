@@ -206,12 +206,23 @@ async function ledgerTotals(env) {
   const sheets = Math.ceil((printed.pages || 0) / 2); // duplex: 2 pages/sheet
   const treesConsumed = Math.round((sheets / SHEETS_PER_TREE) * 1000) / 1000;
 
+  // Planting receipts, one per printed issue — the trees page shows them
+  // live. DigitalHumani request ids only; no user data.
+  const { results: plantings } = await env.DB.prepare(
+    "SELECT trees_planted AS trees, tree_request_id AS receipt, closed_at FROM issues WHERE tree_request_id IS NOT NULL ORDER BY closed_at"
+  ).all();
+
   return corsJson({
     subscribers: subscribers.n,
     issuesPrinted: printed.issues,
     sheets,
     treesConsumed,
     treesPlanted: printed.planted,
+    plantings: plantings.map((p) => ({
+      trees: p.trees,
+      receipt: p.receipt,
+      date: (p.closed_at ?? "").slice(0, 10),
+    })),
     updatedAt: new Date().toISOString(),
   });
 }

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Why it's called Dead Tree Digest: an honest note on a catchy name, recycled paper, and planting a tree for every issue so we come out net positive.">
-<title>What's with the name? — Dead Tree Digest</title>
+<meta name="description" content="Where Dead Tree Digest trees actually get planted: one tree per printed issue, planted by TIST Kenya smallholder farmers, with a receipt for every request.">
+<title>Where do the trees go? — Dead Tree Digest</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -150,6 +150,17 @@
     .lockup div { padding: 16px 8px; }
   }
 </style>
+<style>
+  /* receipts table (this page only) */
+  .receipts { border: 2.5px solid var(--ink); background: var(--paper); box-shadow: 6px 6px 0 rgba(31,77,56,0.22); margin: 26px 0 8px; font-family: 'Courier Prime', monospace; font-size: 13.5px; }
+  .receipts .r-row { display: flex; gap: 14px; padding: 12px 16px; border-bottom: 1.5px dashed var(--cream-line); align-items: baseline; flex-wrap: wrap; }
+  .receipts .r-row:last-child { border-bottom: none; }
+  .receipts .r-issue { color: var(--pine-deep); font-weight: 700; white-space: nowrap; }
+  .receipts .r-trees { color: var(--rust); white-space: nowrap; }
+  .receipts .r-id { color: #6b5f4d; letter-spacing: 0.04em; word-break: break-all; }
+  .receipts .r-date { margin-left: auto; color: #6b5f4d; white-space: nowrap; }
+  .receipts-note { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #6b5f4d; text-align: center; margin: 0 0 8px; }
+</style>
 </head>
 <body>
 
@@ -165,8 +176,8 @@
       </a>
       <nav>
         <a href="index.html#how">How it works</a>
-        <a href="index.html#trees">The trees</a>
-        <a href="name.html" class="current">The name</a>
+        <a href="trees.html" class="current">The trees</a>
+        <a href="name.html">The name</a>
         <a href="index.html#join" class="nav-cta">Get started</a>
       </nav>
     </div>
@@ -174,46 +185,42 @@
 
   <main>
     <article class="container article">
-      <div class="kicker">A note on the name</div>
-      <h1>What's with the name?</h1>
-      <p class="lede">Short version: it's a <strong>joke I couldn't stop saying</strong>, sitting on top of a promise I take seriously.</p>
+      <div class="kicker">The other side of the ledger</div>
+      <h1>Where do the trees actually go?</h1>
+      <p class="lede">Short version: <strong>Kenya, with a receipt</strong>. The longer version is below, and every number in it is checkable.</p>
 
       <div class="rule"></div>
 
-      <p>I picked Dead Tree Digest because it's easy to say and hard to forget. The initials fall into place on their own.</p>
+      <p>Every time an issue prints, one tree gets planted. That sentence is easy to put on a website, which is exactly the problem. Lots of companies say something like it, and the trail usually ends at a stock photo of a seedling. Ours ends at a receipt number. This page is the trail.</p>
 
-      <div class="lockup" aria-label="D T D, spelled out">
-        <div><div class="letter">D</div><div class="word">Dead</div></div>
-        <div><div class="letter">T</div><div class="word">Tree</div></div>
-        <div><div class="letter">D</div><div class="word">Digest</div></div>
-      </div>
-      <p class="lockup-note">Three letters that never need explaining.</p>
+      <h2>The mechanism</h2>
+      <p>When your issue comes off the press, our system makes one more call before it goes quiet: a planting request to DigitalHumani, a small reforestation API whose whole job is routing requests like ours to vetted planting organizations. A dollar goes with it. DigitalHumani logs the request, hands back a receipt ID, and passes the planting to TIST in Kenya. We store the receipt next to the issue it paid for. No year-end batch donations, no round-up theater at checkout. One issue, one tree, one receipt.</p>
 
-      <p>"Dead tree edition" is the old newsroom nickname for the printed paper, the version made of, well, a tree that used to be standing. We build a printed thing on purpose, so leaning into the phrase felt honest and a little bit funny. A name that winks at what it is beats a name you have to decode.</p>
+      <h2>Who actually plants it</h2>
+      <p>TIST is the International Small Group and Tree Planting Program, which has worked with smallholder farmers in Kenya since 1999. The farmers plant trees on their own land, own them outright, and are paid per tree <em>that is still alive</em>, verified by third parties years after planting. That last clause is why we picked them. A seedling in the ground is a photo op. A tree counted alive years later is a fact.</p>
 
-      <h2>The part I actually lose sleep over</h2>
-      <p>A catchy name is only worth keeping if the thing underneath it holds up. From the start I wanted one rule to be true: reading on paper with us should leave the world with <em>more</em> trees, not fewer. Net positive rather than break-even. And not some quiet cost we're hoping you won't notice.</p>
-
-      <p>That comes down to two decisions, and neither one is decoration.</p>
-
-      <h2>The paper</h2>
-      <p>Every issue is printed on recycled or FSC-certified stock. Recycled means the fiber has already lived a life; FSC-certified means the forest it came from is managed so it keeps being a forest. It's the same choice the good magazines make, and it's the floor, not the finish line.</p>
-
-      <h2>The trees</h2>
-      <p>For every issue that lands in your mailbox, we plant a tree in your name through <a href="trees.html">TIST Kenya</a>, verified and routed so there's a receipt behind it. Here's the shape of it: an issue uses a few dozen sheets, and a single grown tree yields somewhere around eight thousand. So the paper a copy costs is a rounding error against what one planting puts back.</p>
-
+      <h2>The math, plainly</h2>
       <div class="math">
-        <div class="big">A few dozen sheets out. <span class="ochre">Thousands back.</span></div>
-        <p>That gap is the whole point. The dead tree in the name is mostly a figure of speech; the planted ones are counted, one issue at a time.</p>
+        <div class="big">A few dozen sheets out. <span class="ochre">A whole tree back.</span></div>
+        <p>An issue runs about 25 sheets of paper. A grown tree yields roughly 8,000. Each issue consumes about a third of one percent of a tree, and we plant a whole one. Call it 300 to 1.</p>
       </div>
+      <p>We put it that way, sheets against sheets, because it's arithmetic you can check yourself. You won't find the words "carbon neutral" anywhere on this site. A planted tree is a fact you can count; carbon accounting is somebody else's homework, and we'd rather not turn it in as our own.</p>
 
-      <p>If you'd rather see the arithmetic than take my word for it, it's all on <a href="ledger.html">the ledger</a>, updated with every issue and printed on the back cover of every copy you get.</p>
+      <h2>The receipts</h2>
+      <p>Every planting request returns an ID. Here are ours, one row per printed issue, pulled live from the same database the press uses:</p>
+
+      <div class="receipts" id="receipts">
+        <div class="r-row"><span class="r-issue">№ 1</span><span class="r-trees">10 trees</span><span class="r-id">a8b89143-aad8-4029-b5ca-df497506b04e</span><span class="r-date">2026-07-17</span></div>
+      </div>
+      <p class="receipts-note">Updated with every printed issue.</p>
+
+      <p>A note on that first row: issue № 1 planted ten trees, not one. We had briefly promised a ten-to-one ratio before doing the arithmetic above and realizing a single tree per issue was already three hundred times the paper cost. So the ratio came down, the honesty went up, and subscriber № 1 got a small forest.</p>
 
       <div class="kicker-out">
         <a class="btn" href="index.html#join">Start your first issue</a>
       </div>
 
-      <p class="colophon">The dead tree is partly fiction. The new trees are not. That distinction is the only fine print here.</p>
+      <p class="colophon">Somewhere in Kenya there is a tree that exists because you didn't get around to reading something in a browser tab. We think about that often.</p>
     </article>
   </main>
 
@@ -224,6 +231,36 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    // Fill the receipt list from the live ledger endpoint; the printed rows
+    // above are the fallback (accurate as of deploy).
+    fetch("https://api.deadtreedigest.com/ledger", { headers: { Accept: "application/json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !Array.isArray(d.plantings) || d.plantings.length === 0) return;
+        var box = document.getElementById("receipts");
+        box.innerHTML = "";
+        d.plantings.forEach(function (p, i) {
+          var row = document.createElement("div");
+          row.className = "r-row";
+          var cells = [
+            ["r-issue", "№ " + (i + 1)],
+            ["r-trees", p.trees + (p.trees === 1 ? " tree" : " trees")],
+            ["r-id", p.receipt],
+            ["r-date", p.date],
+          ];
+          cells.forEach(function (c) {
+            var s = document.createElement("span");
+            s.className = c[0];
+            s.textContent = c[1];
+            row.appendChild(s);
+          });
+          box.appendChild(row);
+        });
+      })
+      .catch(function () { /* keep the printed fallback */ });
+  </script>
 
 </body>
 </html>
