@@ -21,9 +21,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 // browser terminates the playground's script block mid-source.
 const deScript = (s) => s.replace(/<\/script>/g, "<\\/script>");
 const fonts = deScript(readFileSync(resolve(here, "src/fonts.css.js"), "utf8").replace(/^export /m, ""));
+const palettes = deScript(readFileSync(resolve(here, "src/palettes.js"), "utf8").replace(/^export /gm, ""));
 const cover = deScript(
   readFileSync(resolve(here, "src/cover.js"), "utf8")
-    .replace(/^import [^\n]+\n/m, "")
+    .replace(/^import [^\n]+\n/gm, "")
     .replace(/^export /gm, "")
 );
 
@@ -44,6 +45,10 @@ const page = `<!DOCTYPE html>
   .bar input[type="range"] { width: 160px; }
   .bar .val { font-family: monospace; color: #d9a13b; min-width: 90px; }
   .stage { display: flex; justify-content: center; padding: 24px; }
+  .matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; padding: 0 24px 40px; max-width: 1400px; margin: 0 auto; }
+  .matrix .cell { text-align: center; }
+  .matrix .cell .cap { color: #cbbf9f; font: 11px monospace; margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .matrix iframe { width: 270px; height: 420px; }\n  .matrix { justify-items: center; }
   iframe { border: none; background: white; box-shadow: 0 12px 40px rgba(0,0,0,0.5); transform-origin: top center; }
 </style>
 </head>
@@ -55,12 +60,16 @@ const page = `<!DOCTYPE html>
   <label>Issue № <input type="number" id="number" value="1" min="1"></label>
   <label>Articles <input type="number" id="articles" value="16" min="1"></label>
   <label>Date <input type="text" id="date" value="July 2026"></label>
+  <label>Season <select id="season"><option>summer</option><option>fall</option><option>winter</option><option>spring</option></select></label>
+  <label>Locale <select id="locale"></select></label>
   <label><input type="checkbox" id="guides" checked> trim/spine guides</label>
 </div>
 <div class="stage"><iframe id="frame"></iframe></div>
+<div class="matrix" id="matrix"></div>
 
 <script>
 ${fonts}
+${palettes}
 ${cover}
 
 const BLEED_IN = ${0.125};
@@ -92,6 +101,8 @@ function render() {
     dateLabel: $("date").value,
     pageCount,
     articleCount: Number($("articles").value),
+    season: $("season").value,
+    locale: $("locale").value,
   });
   if ($("guides").checked) {
     html = html.replace("</body>", guidesOverlay(pageCount) + "</body>");
@@ -107,11 +118,34 @@ function render() {
   frame.srcdoc = html;
 }
 
-for (const id of ["pages", "number", "articles", "date", "guides"]) {
+for (const loc of Object.keys(SCENES)) {
+  const o = document.createElement("option"); o.textContent = loc; $("locale").appendChild(o);
+}
+for (const id of ["pages", "number", "articles", "date", "guides", "season", "locale"]) {
   $(id).addEventListener("input", render);
 }
 window.addEventListener("resize", render);
 render();
+
+// The approval matrix: every locale x every season, front cover only.
+// Each cell is the REAL template cropped to the front panel.
+function frontOnly(html) {
+  return html.replace("</body>", '<style>.back, .spine { display: none !important; } body { width: 5.625in !important; zoom: 0.5; }</style></body>');
+}
+const grid = $("matrix");
+for (const loc of Object.keys(SCENES)) {
+  for (const season of ["spring", "summer", "fall", "winter"]) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    const f = document.createElement("iframe");
+    f.srcdoc = frontOnly(coverHtml({ number: 1, dateLabel: "", pageCount: 100, articleCount: 10, season, locale: loc }));
+    const cap = document.createElement("div");
+    cap.className = "cap";
+    cap.textContent = loc + " · " + season;
+    cell.appendChild(f); cell.appendChild(cap);
+    grid.appendChild(cell);
+  }
+}
 </script>
 </body>
 </html>`;
