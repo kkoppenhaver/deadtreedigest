@@ -370,8 +370,82 @@ ${skyActors(p)}
   </svg>`;
 }
 
-export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene };
-export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie"]; // grows with issue #12's scene batch
+// Boreal: two ragged walls of spruce under low glacial hills — the forest
+// is the landscape. Same grammar as every locale. Garnish: the aurora, and
+// ONLY when a winter close lands at night — the rarest cover in the roster,
+// on purpose.
+function borealScene(p, seasonKey) {
+  // Irregular spruce silhouettes: [halfWidth, height] pairs, hand-varied so
+  // no two spires repeat in rhythm.
+  const wall = (base, drop, pairs, fill) => {
+    let x = 0, d = `M0 ${base}`;
+    for (const [w, h] of pairs) { d += ` L${x + w} ${base - h} L${x + 2 * w} ${base}`; x += 2 * w; }
+    d += ` L460 ${base} L460 ${base + drop} L0 ${base + drop} Z`;
+    return `<path d="${d}" fill="${fill}"/>`;
+  };
+  const backWall = wall(512, 62, [[11,58],[9,26],[13,74],[10,38],[12,60],[8,20],[14,84],[10,44],[12,66],[9,30],[13,78],[10,40],[11,54],[8,24],[14,88],[10,48],[12,62],[9,34],[13,72],[10,42],[12,58]], p.mid);
+  const frontWall = wall(560, 44, [[9,42],[7,18],[11,56],[8,28],[10,48],[6,14],[12,66],[9,36],[11,52],[7,22],[10,44],[8,30],[12,62],[9,38],[10,50],[7,20],[11,58],[8,26],[10,46],[9,34],[12,60],[8,24],[11,54],[15,40]], p.band);
+  const aurora = p.night && seasonKey === "winter" ? `<!-- the aurora — winter night only, the rarest cover in the roster -->
+    <g filter="url(#soften)" stroke-linecap="round" fill="none">
+      <path d="M-20 320 Q 90 240 190 262 Q 290 284 352 208 Q 400 148 480 132" stroke="#6fd8a8" stroke-width="30" opacity="0.28"/>
+      <path d="M-20 282 Q 100 216 200 234 Q 300 252 368 182 Q 412 136 480 108" stroke="#9fe8c8" stroke-width="12" opacity="0.3"/>
+      <path d="M-20 352 Q 110 286 216 300 Q 320 316 480 212" stroke="#8f9fd8" stroke-width="18" opacity="0.18"/>
+    </g>` : "";
+  return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.sky0}"/>
+        <stop offset="0.55" stop-color="${p.sky1}"/>
+        <stop offset="1" stop-color="${p.sky2}"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+      <filter id="soften" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="6"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+    ${aurora}
+${skyActors(p)}
+
+    <!-- low glacial hills, worn round -->
+    <path d="M0 420 Q 90 386 190 408 Q 290 428 370 400 Q 420 388 460 398 L460 480 L0 480 Z" fill="${p.far}"/>
+    <path d="M0 420 Q 90 386 190 408 L190 416 Q 90 396 0 428 Z" fill="${p.farLit}" opacity="0.8"/>
+
+    <!-- the spruce walls, back then front, with a breath of mist between -->
+    ${backWall}
+    <rect y="498" width="460" height="24" fill="${p.sky1}" opacity="0.22"/>
+    ${frontWall}
+
+    <!-- clearing floor -->
+    <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="${p.ground0}"/>
+    <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="${p.ground1}"/>
+
+    <!-- big pine, right (series constant) -->
+    <g>
+      <polygon points="430,388 462,452 398,452" fill="${p.tree0d}"/>
+      <polygon points="430,388 462,452 430,452" fill="${p.tree0l}"/>
+      <polygon points="430,424 472,502 388,502" fill="${p.tree1d}"/>
+      <polygon points="430,424 472,502 430,502" fill="${p.tree1l}"/>
+      <polygon points="430,464 484,560 376,560" fill="${p.tree2d}"/>
+      <polygon points="430,464 484,560 430,560" fill="${p.tree2l}"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
+    </g>
+
+    ${trailAndMotif(p)}
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
+  </svg>`;
+}
+
+export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene, boreal: borealScene };
+export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie", "boreal"]; // grows with issue #12's scene batch
 
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, time = "day", locale = "mountain" }) {
   const seasonKey = PALETTES[season] ? season : "summer";
