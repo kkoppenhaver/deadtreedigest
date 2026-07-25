@@ -4,6 +4,7 @@
 // items can be re-parsed after extractor fixes without re-saving.
 
 import { parseArticle } from "@dtd/reader";
+import { findSpot, geocode } from "@dtd/spots";
 import { verifyKey, signedFileUrl } from "./sign.js";
 
 const json = (data, status = 200) =>
@@ -38,6 +39,13 @@ export default {
     }
     if (request.method === "GET" && pathname === "/setup") {
       return setupPage(request, env);
+    }
+
+    // Find a Bench: public one-spot generator (the trees page's sibling —
+    // marketing that is also just the product's print feature, exposed).
+    if (pathname === "/spot") {
+      if (request.method === "OPTIONS") return corsPreflight();
+      if (request.method === "POST") return spotEndpoint(request, env);
     }
 
     // Billing: /subscribe bounces to Stripe Checkout (setup_key-authed, same
@@ -225,6 +233,83 @@ async function ledgerTotals(env) {
       date: (p.closed_at ?? "").slice(0, 10),
     })),
     updatedAt: new Date().toISOString(),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Find a Bench (public). Politeness plumbing for the upstream free services:
+// per-IP rate limit, and candidates cached per area so "try another" re-picks
+// from cache instead of re-querying Overpass. Both caches are isolate-local —
+// fine at this scale, swap for KV if the page ever gets real traffic.
+
+const spotRates = new Map(); // ip -> [timestamps]
+const spotPools = new Map(); // "lat,lng" (3dp) -> { pool, at }
+const geoCache = new Map(); // place -> { lat, lng, label }
+
+function spotRateLimited(ip) {
+  const now = Date.now();
+  const hits = (spotRates.get(ip) ?? []).filter((t) => now - t < 60_000);
+  hits.push(now);
+  spotRates.set(ip, hits);
+  if (spotRates.size > 500) spotRates.clear(); // crude memory cap
+  return hits.length > 6;
+}
+
+async function spotEndpoint(request, env) {
+  const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+  if (spotRateLimited(ip)) {
+    return corsJson({ error: "easy there — a few lookups a minute is plenty" }, 429);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return corsJson({ error: "body must be JSON: { place } or { lat, lng }" }, 400);
+  }
+
+  let lat = Number(body.lat);
+  let lng = Number(body.lng);
+  let label = null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    const place = String(body.place ?? "").trim().slice(0, 200);
+    if (!place) return corsJson({ error: "tell us a place, or share your location" }, 400);
+    let geo = geoCache.get(place.toLowerCase());
+    if (!geo) {
+      geo = await geocode(place).catch(() => null);
+      if (geo) geoCache.set(place.toLowerCase(), geo);
+    }
+    if (!geo) return corsJson({ error: "we couldn't find that place — try a city or neighborhood" }, 404);
+    ({ lat, lng } = geo);
+    label = geo.label;
+  }
+
+  const poolKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+  const cached = spotPools.get(poolKey);
+  const pool = cached && Date.now() - cached.at < 600_000 ? cached.pool : null;
+
+  const exclude = Array.isArray(body.exclude) ? body.exclude.slice(0, 100).map(String) : [];
+  let result;
+  try {
+    result = await findSpot({ lat, lng, exclude, apiKey: env.ANTHROPIC_API_KEY ?? null, candidates: pool });
+  } catch (err) {
+    console.error(`findSpot failed: ${err.message}`);
+    return corsJson({ error: "the map sources are busy right now — try again in a minute" }, 503);
+  }
+  if (!result) {
+    return corsJson({ error: "no benches, parks, or lookouts in range — that's genuinely impressive" }, 404);
+  }
+  spotPools.set(poolKey, { pool: result.pool, at: Date.now() });
+  if (spotPools.size > 200) spotPools.clear();
+
+  const { spot } = result;
+  return corsJson({
+    spot: { osmId: spot.osmId, kind: spot.kind, name: spot.name, lat: spot.lat, lng: spot.lng, meters: spot.meters },
+    copy: result.copy,
+    svg: result.svg,
+    source: result.source,
+    remaining: Math.max(0, result.candidateCount - 1),
+    place: label,
   });
 }
 

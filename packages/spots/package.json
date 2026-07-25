@@ -1,0 +1,10 @@
+{
+  "name": "@dtd/spots",
+  "version": "0.1.0",
+  "description": "Find a Bench: OSM candidates near a point, an LLM editorial pick, and a field-guide SVG map",
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0"
+  }
+}

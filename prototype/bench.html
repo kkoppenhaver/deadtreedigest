@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Why it's called Dead Tree Digest: an honest note on a catchy name, recycled paper, and planting a tree for every issue so we come out net positive.">
-<title>What's with the name? — Dead Tree Digest</title>
+<meta name="description" content="Tell us where you are and we will find you a bench, a lookout, or a quiet corner of a park to go read in. A small service of Dead Tree Digest.">
+<title>Find a Bench — Dead Tree Digest</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,7 +71,7 @@
     font-family: 'Fjalla One', sans-serif;
     font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase;
     color: var(--ink); text-decoration: none;
-    border-bottom: 2px solid transparent; padding: 2px 0;
+    border-bottom: 2px solid transparent; padding-bottom: 2px;
   }
   nav a:hover { border-bottom-color: var(--rust); color: var(--rust); }
   nav a.current { border-bottom-color: var(--ink); }
@@ -138,8 +138,6 @@
   .btn:hover { transform: translate(2px,2px); box-shadow: 3px 3px 0 var(--ink); background: var(--pine-deep); }
 
   .colophon { font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.02em; color: #6b5f4d; font-style: normal; border-top: 1.5px solid var(--cream-line); margin-top: 44px; padding-top: 20px; }
-  /* .article a paints links rust; the CTA needs its cream back */
-  .article a.btn { color: var(--paper); }
 
   /* ---------- footer (matches index) ---------- */
   footer { background: var(--pine-deep); color: #cbbf9f; border-top: 3px solid var(--ink); padding: 48px 0 36px; font-size: 14px; margin-top: 56px; }
@@ -151,6 +149,33 @@
     .lockup .letter { font-size: 32px; }
     .lockup div { padding: 16px 8px; }
   }
+</style>
+<style>
+  /* bench finder (this page only) */
+  .finder { display: flex; gap: 0; margin: 26px 0 10px; }
+  .finder input {
+    flex: 1; min-width: 0; font-family: 'Courier Prime', monospace; font-size: 15px;
+    padding: 13px 14px; border: 2.5px solid var(--ink); border-right: none;
+    background: #faf3e3; color: var(--ink); outline: none;
+  }
+  .finder button {
+    font-family: 'Fjalla One', sans-serif; font-size: 14px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 0 22px; border: 2.5px solid var(--ink);
+    background: var(--pine); color: var(--paper); cursor: pointer; box-shadow: 4px 4px 0 var(--ink);
+  }
+  .finder button:hover { transform: translate(1px,1px); box-shadow: 3px 3px 0 var(--ink); }
+  .geo-link { font-family: 'Courier Prime', monospace; font-size: 13px; }
+  .result { display: none; margin-top: 34px; }
+  .result.on { display: block; }
+  .spot-copy { font-size: clamp(19px, 2vw, 22px); font-style: italic; max-width: 44ch; margin-bottom: 20px; }
+  .spot-map { border: 2.5px solid var(--ink); box-shadow: 8px 10px 0 rgba(31,77,56,0.22); max-width: 360px; }
+  .spot-map svg { display: block; width: 100%; height: auto; }
+  .spot-meta { font-family: 'Courier Prime', monospace; font-size: 12.5px; letter-spacing: 0.06em; color: #6b5f4d; margin-top: 12px; }
+  .spot-meta a { color: var(--rust); }
+  .status { font-family: 'Courier Prime', monospace; font-size: 13.5px; color: #6b5f4d; margin-top: 14px; min-height: 1.4em; }
+  .status.err { color: var(--rust); }
+  /* .article a paints links rust; the CTA needs its cream back */
+  .article a.btn { color: var(--paper); }
 </style>
 </head>
 <body>
@@ -166,7 +191,7 @@
         Dead Tree Digest
       </a>
       <nav>
-        <a href="name.html" class="current">Why the name?</a>
+        <a href="name.html">Why the name?</a>
         <a href="trees.html">The trees</a>
         <a href="index.html#join" class="nav-cta">Get started</a>
       </nav>
@@ -175,29 +200,36 @@
 
   <main>
     <article class="container article">
-      <h1>What's with the name?</h1>
+      <div class="kicker">A small public service</div>
+      <h1>Find a bench</h1>
+      <p class="lede">Tell us where you are and we'll pick you <strong>one good place to sit and read</strong>. A bench, a lookout, a quiet corner. One at a time, like a magazine.</p>
 
       <div class="rule"></div>
 
-      <p>I picked Dead Tree Digest because it's easy to say, hard to forget and tells you exactly what you're getting. But it also hints at the environmental mission behind the site.</p>
+      <p>Every printed issue we mail includes a little map like the one below, pointing somewhere near the subscriber worth reading at. This page is the same machinery with the door left open. It runs on OpenStreetMap, which is to say: on years of strangers lovingly cataloguing benches.</p>
 
-      <p>A "Dead tree edition" is the old newsroom nickname for the printed paper, the version made of, well, a tree that used to be standing. We're building a printed thing on purpose here, so leaning into the phrase felt honest and a little bit funny.</p>
+      <form class="finder" id="finder">
+        <input id="place" type="text" placeholder="a neighborhood, a city, an address" aria-label="Where are you?">
+        <button type="submit">Find one</button>
+      </form>
+      <p class="geo-link"><a href="#" id="geo">or use my location</a></p>
 
-      <p>However, the flipside to the name is that it reminded me that we're using real natural resources to produce this thing we can hold in our hand. From the start I wanted to make sure this was not only an interesting project and one that gets more people reading, but one that's also environmentally responsible.</p>
-
-      <p>That led to two key decisions.</p>
-
-      <h2>The paper</h2>
-      <p>Every issue is printed on recycled or FSC-certified stock. Recycled means the fiber has already lived a life; FSC-certified means the forest it came from is managed so it keeps being a forest. It's the same choice the good magazines make, and it's where every issue you print starts.</p>
-
-      <h2>The trees</h2>
-      <p>For every issue that lands in your mailbox, we plant a tree in your name through <a href="trees.html">TIST Kenya</a>, verified and routed so there's a receipt behind it. An issue uses about fifty sheets of the paper we print on, and a single grown tree yields around sixteen thousand that size, so the paper a particular issue uses is paid back to the earth 300 times over.</p>
-
-      <p>If you want to check my math, it's all on <a href="trees.html">the trees page</a>, running totals and receipts included, and your own tree tally is printed on the back cover of every issue you get in the mail.</p>
+      <div class="result" id="result">
+        <p class="spot-copy" id="copy"></p>
+        <div class="spot-map" id="map"></div>
+        <p class="spot-meta">
+          <span id="meta"></span><br>
+          <a href="#" id="again">Try another</a> ·
+          <a href="#" id="osm" target="_blank" rel="noopener">Open in OpenStreetMap</a>
+        </p>
+      </div>
+      <p class="status" id="status"></p>
 
       <div class="kicker-out">
-        <a class="btn" href="index.html#join">Start your first issue</a>
+        <a class="btn" href="index.html#join">Get the magazine that comes with one</a>
       </div>
+
+      <p class="colophon">The bench does not know you are coming. That is part of the charm.</p>
     </article>
   </main>
 
@@ -208,6 +240,68 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    var API = "https://api.deadtreedigest.com/spot";
+    var shown = []; // osmIds already offered, so "try another" is really another
+    var last = null; // { place } or { lat, lng }
+
+    var $ = function (id) { return document.getElementById(id); };
+
+    function setStatus(msg, isErr) {
+      $("status").textContent = msg || "";
+      $("status").className = "status" + (isErr ? " err" : "");
+    }
+
+    async function lookup(params) {
+      setStatus("Consulting the bench archives…");
+      $("result").className = "result";
+      try {
+        var res = await fetch(API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(Object.assign({}, params, { exclude: shown })),
+        });
+        var data = await res.json();
+        if (!res.ok) { setStatus(data.error || "Something went sideways. Try again?", true); return; }
+        last = params;
+        shown.push(data.spot.osmId);
+        $("copy").textContent = data.copy;
+        $("map").innerHTML = data.svg;
+        var name = data.spot.name ? '"' + data.spot.name + '"' : "unnamed but real";
+        $("meta").textContent = data.spot.kind + " · " + name + " · about " + Math.max(1, Math.round(data.spot.meters / 80)) + " min on foot";
+        $("osm").href = "https://www.openstreetmap.org/?mlat=" + data.spot.lat + "&mlon=" + data.spot.lng + "#map=17/" + data.spot.lat + "/" + data.spot.lng;
+        $("again").style.display = data.remaining > 0 ? "" : "none";
+        $("result").className = "result on";
+        setStatus("");
+      } catch (e) {
+        setStatus("The map sources are napping. Try again in a minute.", true);
+      }
+    }
+
+    $("finder").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var place = $("place").value.trim();
+      if (!place) return;
+      shown = [];
+      lookup({ place: place });
+    });
+
+    $("geo").addEventListener("click", function (e) {
+      e.preventDefault();
+      if (!navigator.geolocation) { setStatus("Your browser is keeping your location to itself.", true); return; }
+      setStatus("Asking your browser nicely…");
+      navigator.geolocation.getCurrentPosition(
+        function (pos) { shown = []; lookup({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+        function () { setStatus("No location shared. A neighborhood name works just as well.", true); }
+      );
+    });
+
+    $("again").addEventListener("click", function (e) {
+      e.preventDefault();
+      if (last) lookup(last);
+    });
+  </script>
 
 </body>
 </html>
