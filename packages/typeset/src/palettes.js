@@ -38,6 +38,7 @@ const summerDay = {
   tree1d: "#193f2e", tree1l: "#26573f",
   tree2d: "#14352a", tree2l: "#1f4d38",
   spine: "#bf4e24", back: "#14352a",
+    water0: "#6d9aa8", water1: "#588594",
 };
 
 export const PALETTES = {
@@ -57,6 +58,7 @@ export const PALETTES = {
       tree1d: "#153428", tree1l: "#1f4432",
       tree2d: "#112b22", tree2l: "#193c2c",
       spine: "#2f4256", back: "#101c28",
+    water0: "#2c4456", water1: "#24384a",
     },
   },
   fall: {
@@ -74,6 +76,7 @@ export const PALETTES = {
       tree1d: "#274536", tree1l: "#325544",
       tree2d: "#203a2e", tree2l: "#2b4a3a",
       spine: "#a63f1c", back: "#382516",
+    water0: "#7d9695", water1: "#68807f",
     },
     night: {
       night: true,
@@ -89,6 +92,7 @@ export const PALETTES = {
       tree1d: "#1c3527", tree1l: "#254232",
       tree2d: "#162b20", tree2l: "#1e3829",
       spine: "#6b3b22", back: "#201626",
+    water0: "#2f3a4c", water1: "#262f3f",
     },
   },
   winter: {
@@ -106,6 +110,7 @@ export const PALETTES = {
       tree1d: "#1e3d31", tree1l: "#284d3d",
       tree2d: "#18332a", tree2l: "#224438",
       spine: "#4a6478", back: "#1c2b38",
+    water0: "#8aa2b5", water1: "#7590a5",
     },
     night: {
       night: true,
@@ -121,6 +126,7 @@ export const PALETTES = {
       tree1d: "#132c21", tree1l: "#1b382a",
       tree2d: "#0f241b", tree2l: "#163024",
       spine: "#2c3d4e", back: "#0e1722",
+    water0: "#35485c", water1: "#2a3a4b",
     },
   },
   spring: {
@@ -138,6 +144,7 @@ export const PALETTES = {
       tree1d: "#193f2e", tree1l: "#26573f",
       tree2d: "#14352a", tree2l: "#1f4d38",
       spine: "#7d9b52", back: "#223a28",
+    water0: "#7fa89b", water1: "#6a9388",
     },
     night: {
       night: true,
@@ -153,6 +160,7 @@ export const PALETTES = {
       tree1d: "#153428", tree1l: "#1f4432",
       tree2d: "#112b22", tree2l: "#193c2c",
       spine: "#3f5a52", back: "#13251c",
+    water0: "#2e4a4a", water1: "#253c3c",
     },
   },
 };

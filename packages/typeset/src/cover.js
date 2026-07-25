@@ -143,8 +143,129 @@ ${skyActors(p)}
   </svg>`;
 }
 
-export const SCENES = { mountain: mountainScene };
-export const LOCALE_ROSTER = ["mountain"]; // grows with issue #12's scene batch
+// Lakefront: big water, a breakwater beacon, the sun/moon glitter path on
+// the surface. Same series grammar as every locale — light source upper
+// right, stump lower left, hero pine right, saplings receding along the
+// path — so the shelf reads as one collection.
+function lakefrontScene(p) {
+  return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.sky0}"/>
+        <stop offset="0.55" stop-color="${p.sky1}"/>
+        <stop offset="1" stop-color="${p.sky2}"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+${skyActors(p)}
+
+    <!-- distant headland, left, hugging the horizon -->
+    <path d="M0 342 L52 330 L118 340 L168 334 L214 344 L214 356 L0 356 Z" fill="${p.far}"/>
+    <path d="M52 330 L118 340 L84 340 Z" fill="${p.farLit}" opacity="0.9"/>
+
+    <!-- the lake -->
+    <rect x="0" y="356" width="460" height="238" fill="${p.water0}"/>
+    <path d="M0 470 Q 140 462 260 470 Q 380 478 460 468 L460 594 L0 594 Z" fill="${p.water1}"/>
+    <!-- wave lines -->
+    <g stroke="${p.water1}" stroke-width="2" stroke-linecap="round" opacity="0.75">
+      <path d="M36 392 h34 M118 386 h22 M196 396 h30 M420 388 h24"/>
+      <path d="M66 424 h26 M262 428 h34 M148 440 h22 M388 434 h28"/>
+    </g>
+    <g stroke="${p.farLit}" stroke-width="2" stroke-linecap="round" opacity="0.5">
+      <path d="M90 508 h30 M228 522 h26 M330 500 h34 M52 548 h24 M406 540 h22"/>
+    </g>
+    <!-- glitter path: the light source reflected on the water -->
+    <g stroke="${p.sun}" stroke-linecap="round" opacity="0.6">
+      <path d="M346 366 h12" stroke-width="3"/>
+      <path d="M340 384 h22" stroke-width="3"/>
+      <path d="M348 404 h14" stroke-width="3.5"/>
+      <path d="M336 428 h28" stroke-width="3.5"/>
+      <path d="M344 456 h18" stroke-width="4"/>
+      <path d="M334 488 h32" stroke-width="4"/>
+      <path d="M342 522 h22" stroke-width="4.5"/>
+      <path d="M330 556 h38" stroke-width="4.5"/>
+    </g>
+
+    <!-- breakwater with its beacon, running in from the right -->
+    <path d="M262 414 L460 406 L460 424 L262 424 Z" fill="${p.band}"/>
+    <path d="M262 414 L460 406 L460 412 L262 419 Z" fill="${p.nearLit}" opacity="0.5"/>
+    <g>
+      <path d="M282 414 L288 378 L304 378 L310 414 Z" fill="#e8dcc0"/>
+      <path d="M296 414 L296 378 L304 378 L310 414 Z" fill="#d3c4a0"/>
+      <rect x="286" y="370" width="20" height="10" fill="#bf4e24"/>
+      <path d="M284 370 L296 360 L308 370 Z" fill="#a63f1c"/>
+      ${p.night ? `<circle cx="296" cy="374" r="7" fill="${p.sun}" opacity="0.55"/><circle cx="296" cy="374" r="3" fill="${p.sun}"/>` : ""}
+    </g>
+
+    ${p.night ? "" : `<!-- sails out on the water -->
+    <g>
+      <path d="M128 430 L128 400 L146 430 Z" fill="#f1e6cf"/>
+      <path d="M124 430 L112 430 L118 422 Z" fill="#e4d5b4"/>
+      <path d="M110 434 Q 128 442 150 434 L146 430 L114 430 Z" fill="${p.band}"/>
+      <path d="M212 398 L212 378 L224 398 Z" fill="#f1e6cf" opacity="0.9"/>
+      <path d="M206 401 Q 216 406 230 401 L226 398 L210 398 Z" fill="${p.band}" opacity="0.9"/>
+    </g>`}
+
+    <!-- the beach: dune grass band, then sand down to the trim -->
+    <path d="M0 584 Q 130 572 250 582 Q 370 592 460 580 L460 700 L0 700 Z" fill="${p.ground0}"/>
+    <path d="M0 648 Q 150 624 320 644 Q 410 654 460 646 L460 700 L0 700 Z" fill="${p.ground1}"/>
+    <!-- grass tufts along the bluff line -->
+    <g stroke="${p.band}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.85">
+      <path d="M24 584 l-3 -10 M30 584 l0 -12 M36 584 l3 -9"/>
+      <path d="M92 578 l-3 -9 M98 578 l0 -11 M104 578 l3 -8"/>
+      <path d="M204 582 l-3 -10 M210 582 l0 -12 M216 582 l3 -9"/>
+      <path d="M330 586 l-3 -9 M336 586 l0 -11 M342 586 l3 -8"/>
+    </g>
+    <!-- the path, winding from the stump toward the water -->
+    <path d="M300 582 Q 250 600 180 610 Q 110 620 88 650 Q 76 670 92 700 L150 700 Q 138 670 156 652 Q 186 626 250 616 Q 310 606 330 586 Z" fill="${p.path}" opacity="0.9"/>
+
+    <!-- big pine, right (series constant) -->
+    <g>
+      <polygon points="430,388 462,452 398,452" fill="${p.tree0d}"/>
+      <polygon points="430,388 462,452 430,452" fill="${p.tree0l}"/>
+      <polygon points="430,424 472,502 388,502" fill="${p.tree1d}"/>
+      <polygon points="430,424 472,502 430,502" fill="${p.tree1l}"/>
+      <polygon points="430,464 484,560 376,560" fill="${p.tree2d}"/>
+      <polygon points="430,464 484,560 430,560" fill="${p.tree2l}"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
+    </g>
+
+    <!-- hero stump (series constant) -->
+    <g>
+      <ellipse cx="132" cy="646" rx="64" ry="12" fill="#8a5a33" opacity="0.3"/>
+      <path d="M96 586 L100 636 Q 116 646 132 646 L132 582 Z" fill="#6b3f23"/>
+      <path d="M132 582 L132 646 Q 148 646 164 636 L168 586 Z" fill="#8a5a33"/>
+      <path d="M120 584 L122 644 L142 644 L144 584 Z" fill="#7a4a2a"/>
+      <ellipse cx="132" cy="584" rx="36" ry="13" fill="#d3a873"/>
+      <ellipse cx="134" cy="583" rx="26" ry="9" fill="none" stroke="#8a5a33" stroke-width="1.8" opacity="0.7"/>
+      <ellipse cx="136" cy="582" rx="16" ry="5.5" fill="none" stroke="#8a5a33" stroke-width="1.5" opacity="0.7"/>
+      <ellipse cx="138" cy="581" rx="7" ry="2.5" fill="none" stroke="#8a5a33" stroke-width="1.2" opacity="0.7"/>
+    </g>
+
+    <!-- saplings along the path (series constant) -->
+    <g>
+      <g transform="translate(196,616) scale(1.35)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(232,606) scale(1.2)"><polygon points="8,0 15,17 1,17" fill="#2b6248"/><polygon points="8,0 15,17 8,17" fill="#357254"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(266,598) scale(1.05)"><polygon points="8,0 15,17 1,17" fill="#2f6a4e"/><polygon points="8,0 15,17 8,17" fill="#397a5a"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(296,590) scale(0.9)"><polygon points="8,0 15,17 1,17" fill="#337054"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(318,586) scale(0.78)"><polygon points="8,0 15,17 1,17" fill="#3b7a5c"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+      <g transform="translate(338,582) scale(0.66)"><polygon points="8,0 15,17 1,17" fill="#448463"/><rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>
+    </g>
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
+  </svg>`;
+}
+
+export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene };
+export const LOCALE_ROSTER = ["mountain", "lakefront"]; // grows with issue #12's scene batch
 
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, time = "day", locale = "mountain" }) {
   const palette = PALETTES[season ?? "summer"]?.[time] ?? PALETTES.summer.day;
