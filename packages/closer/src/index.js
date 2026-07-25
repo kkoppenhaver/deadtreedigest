@@ -14,6 +14,7 @@
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
+import { findSpot, geocode, mapLayers, renderSpotMap } from "@dtd/spots";
 import { createPrintJob, getPrintJob } from "./lulu.js";
 import { plantTrees, TREES_PER_ISSUE } from "./trees.js";
 import { signedFileUrl } from "../../api/src/sign.js";
@@ -363,6 +364,41 @@ async function checkUser(user, env) {
   };
 }
 
+// Find a Bench, print surface: geocode the shipping address (cached on the
+// user row, cleared by the api on address change), pick a spot this user
+// hasn't been sent before. Returns null on ANY failure — the spot page is a
+// bonus; it is never a reason an issue doesn't print.
+async function issueSpot(env, user) {
+  try {
+    let lat = user.geo_lat;
+    let lng = user.geo_lng;
+    if (lat == null || lng == null) {
+      if (!hasAddress(user)) return null;
+      const geo = await geocode(
+        `${user.ship_street1}, ${user.ship_city}, ${user.ship_state} ${user.ship_postcode}`
+      );
+      if (!geo) return null;
+      ({ lat, lng } = geo);
+      await env.DB.prepare("UPDATE users SET geo_lat = ?, geo_lng = ? WHERE id = ?")
+        .bind(lat, lng, user.id)
+        .run();
+    }
+    const { results: prior } = await env.DB.prepare(
+      "SELECT osm_id FROM printed_spots WHERE user_id = ?"
+    ).bind(user.id).all();
+    const found = await findSpot({
+      lat, lng,
+      exclude: prior.map((p) => p.osm_id),
+      apiKey: env.ANTHROPIC_API_KEY ?? null,
+    });
+    if (!found) return null;
+    return { copy: found.copy, svg: found.svg, spot: found.spot };
+  } catch (err) {
+    console.error(`spot page skipped: ${err.message}`);
+    return null;
+  }
+}
+
 async function closeForUser(user, env, queued = null, { autoPrint = true } = {}) {
   queued ??= await queuedItems(user, env);
   if (queued.length === 0) return { action: "nothing-queued" };
@@ -398,9 +434,10 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
   }));
   const dateLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
+  const spot = await issueSpot(env, user);
   const interior = await renderPdf(
     env,
-    issueHtml({ number, dateLabel, articles }, { pagedJs })
+    issueHtml({ number, dateLabel, articles, spot }, { pagedJs })
   );
   const pageCount = interior.pages;
 
@@ -441,6 +478,20 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
   for (const item of picked) {
     await env.DB.prepare("UPDATE items SET issue_id = ?, status = 'assigned' WHERE id = ?")
       .bind(issueId, item.id)
+      .run();
+  }
+  // Recorded only after the successful render + issue insert (consistent
+  // with renders-before-DB-writes): this is the no-repeat exclusion list,
+  // and over years, a slow tour of everywhere near you.
+  if (spot) {
+    await env.DB.prepare(
+      `INSERT INTO printed_spots (id, user_id, issue_id, osm_id, kind, name, lat, lng, copy, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        crypto.randomUUID(), user.id, issueId, spot.spot.osmId, spot.spot.kind,
+        spot.spot.name, spot.spot.lat, spot.spot.lng, spot.copy, now
+      )
       .run();
   }
   await env.DB.prepare("UPDATE users SET last_closed_at = ? WHERE id = ?").bind(now, user.id).run();
@@ -513,9 +564,27 @@ async function rerenderIssue(user, env, number) {
     timeZone: "UTC",
   });
 
+  // A rerender keeps the issue's recorded spot (same pick, fresh map) —
+  // choosing a new one here would burn an exclusion the user never saw.
+  let spot = null;
+  const rec = await env.DB.prepare("SELECT * FROM printed_spots WHERE issue_id = ?")
+    .bind(issue.id)
+    .first();
+  if (rec) {
+    try {
+      const layers = await mapLayers({ lat: rec.lat, lng: rec.lng, spanMeters: 900 });
+      spot = {
+        copy: rec.copy,
+        svg: renderSpotMap({ spot: { lat: rec.lat, lng: rec.lng }, layers, spanMeters: 900 }),
+      };
+    } catch (err) {
+      console.error(`rerender spot skipped: ${err.message}`);
+    }
+  }
+
   const interior = await renderPdf(
     env,
-    issueHtml({ number, dateLabel, articles }, { pagedJs })
+    issueHtml({ number, dateLabel, articles, spot }, { pagedJs })
   );
   const pageCount = interior.pages;
   const past = await env.DB.prepare(

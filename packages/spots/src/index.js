@@ -13,7 +13,7 @@ import { pickSpot } from "./pick.js";
 import { renderSpotMap } from "./map.js";
 
 export { geocode } from "./geocode.js";
-export { findCandidates } from "./overpass.js";
+export { findCandidates, mapLayers } from "./overpass.js";
 export { pickSpot } from "./pick.js";
 export { renderSpotMap } from "./map.js";
 

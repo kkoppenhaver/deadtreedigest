@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "@dtd/typeset": "*"
+    "@dtd/typeset": "*",
+    "@dtd/spots": "*"
   }
 }

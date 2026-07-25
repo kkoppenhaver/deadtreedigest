@@ -79,6 +79,16 @@ const STYLES = `
      attribute and the whole content silently fails to render. */
   .toc a::after { content: "page " target-counter(attr(href url), page); font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 7.5pt; letter-spacing: 0.08em; }
 
+  /* Find a Bench: the small map page after the TOC. Block-only markup and an
+     inline SVG — both Paged.js-safe (no floats, no loose root inlines). */
+  .spot-page { page: plain; break-after: page; text-align: center; padding-top: 26pt; }
+  .spot-page .spot-kicker { font-family: 'Fjalla One', Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.18em; font-size: 8pt; color: #444; margin-bottom: 8pt; }
+  .spot-page h2 { font-family: 'Fjalla One', Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15pt; margin-bottom: 12pt; }
+  .spot-page .spot-copy { font-style: italic; font-size: 10.5pt; line-height: 1.5; max-width: 30em; margin: 0 auto 16pt; }
+  .spot-page .spot-map { width: 3.1in; margin: 0 auto; }
+  .spot-page .spot-map svg { width: 100%; height: auto; display: block; }
+  .spot-page .spot-foot { font-size: 7.5pt; color: #555; margin-top: 10pt; }
+
   /* ---------- articles ---------- */
   section.article { break-before: page; }
   .article-head { margin-bottom: 14pt; }
@@ -141,7 +151,19 @@ function articleSection(a, i) {
 }
 
 export function issueHtml(issue, { pagedJs }) {
-  const { number = 1, dateLabel = "", articles = [] } = issue;
+  const { number = 1, dateLabel = "", articles = [], spot = null } = issue;
+
+  // Find a Bench: a small map in the front pages. spot.svg is generated
+  // SVG from @dtd/spots (trusted, ours); copy is escaped like everything.
+  const spotPage = spot
+    ? `<section class="spot-page">
+  <div class="spot-kicker">Before you start</div>
+  <h2>We found you a bench</h2>
+  <p class="spot-copy">${escape(spot.copy)}</p>
+  <div class="spot-map">${spot.svg}</div>
+  <div class="spot-foot">Every issue points somewhere new. Map data © OpenStreetMap contributors.</div>
+</section>`
+    : "";
 
   const toc = articles
     .map((a, i) => {
@@ -179,6 +201,8 @@ export function issueHtml(issue, { pagedJs }) {
   <h2>In this issue</h2>
   <ol>${toc}</ol>
 </nav>
+
+${spotPage}
 
 ${articles.map(articleSection).join("\n")}
 

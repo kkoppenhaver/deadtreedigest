@@ -63,9 +63,20 @@ if (stressTarget) {
   console.log(`stress mode: ${issueArticles.length} articles, ~${Math.round(estimated)}pp estimated`);
 }
 
-// 2. Typeset.
+// 2. Typeset. --spot includes a Find a Bench page using the last map the
+// spots CLI generated (packages/spots/.out/spot.svg) — the Paged.js proof
+// that the spot page paginates cleanly.
+let spot = null;
+if (process.argv.includes("--spot")) {
+  const svgPath = resolve(dirname(fileURLToPath(import.meta.url)), "../spots/.out/spot.svg");
+  spot = {
+    copy: "A bench with a backrest under the elms at Palmer Square, eight minutes north. The squirrels are pushy but literate.",
+    svg: readFileSync(svgPath, "utf8"),
+  };
+}
+
 const html = issueHtml(
-  { number: 1, dateLabel: "July 2026", articles: issueArticles },
+  { number: 1, dateLabel: "July 2026", articles: issueArticles, spot },
   { pagedJs }
 );
 const outDir = resolve(dirname(fileURLToPath(import.meta.url)), ".out");

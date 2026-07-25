@@ -401,9 +401,12 @@ function validateAddress(a) {
 }
 
 async function persistAddress(env, userId, updated) {
+  // geo_lat/geo_lng are the cached geocode of this address (Find a Bench's
+  // print surface); a new address means a new geocode, so clear them.
   await env.DB.prepare(
     `UPDATE users SET ship_name=?, ship_street1=?, ship_street2=?, ship_city=?,
-       ship_state=?, ship_postcode=?, ship_country=?, ship_phone=? WHERE id=?`
+       ship_state=?, ship_postcode=?, ship_country=?, ship_phone=?,
+       geo_lat=NULL, geo_lng=NULL WHERE id=?`
   )
     .bind(...Object.values(updated), userId)
     .run();
