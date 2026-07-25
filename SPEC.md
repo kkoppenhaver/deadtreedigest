@@ -88,6 +88,55 @@ Product-scale notes:
 - Cost structure insight: $8.43 of every issue is fixed (shipping $5.69 + print base $1.99 + fulfillment $0.75); pages are 2.5¢ each. The lever is shipment count, not page count — e.g. a monthly 200pp edition costs $13.43/mo all-in (vs $21.86 biweekly), enabling a cheaper ~$25/mo tier at similar margins.
 - At real scale, USPS Periodicals-class mail (requires permit) is the structural shipping advantage real magazines have.
 
+## Find a Bench (scoped 2026-07-25)
+
+The digest gets you off screens; this points you somewhere to sit. Two surfaces
+sharing one core, new package `@dtd/spots` (bundled like `@dtd/reader` — no new
+worker):
+
+- **What counts as a spot**: benches and parks first (OSM maps individual
+  benches — `amenity=bench`, with `backrest` and `direction`), plus a curated
+  tag-list of overlooked places: viewpoints, piers, cemeteries, lighthouses,
+  ferry terminals. No cafes/third-places — that drifts into "places near me"
+  genericism.
+- **Sourcing — OSM + LLM editorial pass**: Overpass API query near a lat/lng
+  (default radius ~2 km / a 25-minute walk, widening to ~5 km if sparse) →
+  candidates + exclusion list to an LLM (Anthropic API, Haiku-class; new
+  worker secret) which picks ONE spot and writes one line in house voice.
+  Scales to any address, still reads hand-picked.
+- **The map**: monochrome field-guide SVG drawn from the Overpass vector
+  geometry itself — thin street lines, shaded green, water, an ✕ at the spot.
+  Crisp at print DPI (raster tiles are not), fully in our control, no tile
+  service. Small-print "© OpenStreetMap contributors" (required, and owed for
+  the data anyway).
+- **Print surface**: at close time the closer geocodes the shipping address
+  and calls the core with that user's already-printed spots excluded; the
+  typesetter places the small map on one of the first pages. Liner copy:
+  "Let's get reading! We found a bench for you..." **Never blocks a close** —
+  any failure (Overpass down, LLM error, no candidates) and the issue simply
+  prints without the page. Spot recorded in D1 only after successful render,
+  consistent with renders-before-DB-writes.
+- **No repeats**: new `printed_spots` table (user, issue, OSM id, name,
+  lat/lng, copy). It's the exclusion list at pick time, and over years it
+  becomes part of the product — a slow tour of everywhere near you.
+- **Web surface — "Find a Bench"**: public one-spot generator page in
+  `prototype/` calling new `POST /spot` on dtd-api. Geolocate or type a place,
+  get one spot with map + copy, "try another" link. A slot machine, not a
+  map view. No auth; doubles as marketing for the product's whole philosophy.
+- **Geocoding + fair use (decided)**: public Nominatim for place/address →
+  lat/lng, respecting its policy: identifying User-Agent, ≤1 req/s, results
+  cached (geocode stored on the user row — one request per address change),
+  submit-on-enter input (no autocomplete), rate limit on `/spot`. Same
+  politeness for Overpass (cache candidates per area; "try another" re-picks
+  from cache, no re-query). At current scale this is comfortably in policy;
+  if the page ever gets real traffic, swap in a paid geocoder (Geoapify /
+  LocationIQ) behind the same interface in `@dtd/spots` — a one-file change.
+- **No framework (decided)**: the site is four static pages (~1,300 lines);
+  one interactive page doesn't justify a migration. All intelligence lives
+  server-side (the closer needs it too), so the page is ~100 lines of vanilla
+  JS: input → fetch → inject SVG. Revisit (Astro) only if the site grows
+  pages, not because of this feature.
+
 ## Milestones
 
 0. **Register domains**: deadtreedigest.com (+ printed.fyi if using it for save@ email). ✅ deadtreedigest.com registered 2026-07-15 (Cloudflare Registrar); printed.fyi still open.
@@ -98,4 +147,8 @@ Product-scale notes:
 5. **Print integration**: Lulu Print API sandbox -> first real printed issue shipped to the apartment.
 6. **Email ingestion**: Email Routing + Email Worker (forward-to-save).
 7. **Ledger + trees**: tree-planting donation integration (One Tree Planted / Eden) and the auto-generated ledger page in every issue's layout.
-8. **Productization**: multi-tenant auth, billing. ~~Recommendations ("Librarian")~~ — **cut 2026-07-16**: every issue contains only content the user themselves saved. This is a copyright-posture decision, not just scope: user-initiated single copies to the saving user (Cablevision-style volition) is the defensible architecture, and a feature where WE select and distribute third-party content would forfeit it. Any future discovery feature must be licensing-based or excerpt/link-only.
+8. **Find a Bench**: `@dtd/spots` core (Overpass → LLM pick → SVG map),
+   `POST /spot` + public generator page, closer/typesetter wiring +
+   `printed_spots` migration. Both surfaces together (scoped 2026-07-25,
+   section above).
+9. **Productization**: multi-tenant auth, billing. ~~Recommendations ("Librarian")~~ — **cut 2026-07-16**: every issue contains only content the user themselves saved. This is a copyright-posture decision, not just scope: user-initiated single copies to the saving user (Cablevision-style volition) is the defensible architecture, and a feature where WE select and distribute third-party content would forfeit it. Any future discovery feature must be licensing-based or excerpt/link-only.
