@@ -329,7 +329,10 @@ function sendStatusAlert(env, user, issue, { status, message, stuckUnpaid }) {
 
 async function checkUser(user, env) {
   const queued = await queuedItems(user, env);
-  const est = queued.reduce((s, i) => s + i.estimated_pages * ESTIMATE_MARGIN, 0);
+  // Flagged items are on hold: a user said the parse is broken, so they
+  // neither fill the issue nor print until the operator reparses them.
+  const printable = queued.filter((i) => !i.needs_review);
+  const est = printable.reduce((s, i) => s + i.estimated_pages * ESTIMATE_MARGIN, 0);
   const full = est >= user.page_cap;
   const sinceClose = daysSince(user.last_closed_at);
   const eligible = sinceClose >= user.min_interval_days;
@@ -364,15 +367,18 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
   queued ??= await queuedItems(user, env);
   if (queued.length === 0) return { action: "nothing-queued" };
 
-  // Greedy pack against the cap; overflow seeds the next issue.
+  // Greedy pack against the cap; overflow seeds the next issue. Flagged
+  // items are skipped entirely — a known-broken parse never goes to print.
   const picked = [];
   let est = 0;
   for (const item of queued) {
+    if (item.needs_review) continue;
     const cost = item.estimated_pages * ESTIMATE_MARGIN;
     if (picked.length > 0 && est + cost > user.page_cap) continue;
     picked.push(item);
     est += cost;
   }
+  if (picked.length === 0) return { action: "nothing-printable" };
   const rolledOver = queued.length - picked.length;
 
   const number =

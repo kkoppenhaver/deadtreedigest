@@ -98,7 +98,7 @@ export default {
       return updateMe(request, env, user);
     }
     if (request.method === "POST" && pathname.match(/^\/items\/[\w-]+\/flag$/)) {
-      return flag(env, user, pathname.split("/")[2]);
+      return flag(env, user, pathname.split("/")[2], ctx);
     }
     if (request.method === "POST" && pathname.match(/^\/items\/[\w-]+\/reparse$/)) {
       return reparse(env, user, pathname.split("/")[2]);
@@ -431,7 +431,7 @@ async function libraryUser(request, env) {
   return env.DB.prepare("SELECT * FROM users WHERE library_key = ?").bind(key).first();
 }
 
-async function queuePage(request, env) {
+async function queuePage(request, env, ctx) {
   const user = await libraryUser(request, env);
   if (!user) return htmlResponse(libShell("<p class='err'>This link isn't valid.</p>"), 404);
   const key = user.library_key;
@@ -441,9 +441,10 @@ async function queuePage(request, env) {
     const form = await request.formData();
     const itemId = form.get("flag");
     if (itemId) {
-      await env.DB.prepare("UPDATE items SET needs_review = 1 WHERE id = ? AND user_id = ?")
+      const res = await env.DB.prepare("UPDATE items SET needs_review = 1 WHERE id = ? AND user_id = ?")
         .bind(itemId, user.id)
         .run();
+      if (res.meta.changes > 0) ctx?.waitUntil(sendFlagAlert(env, user, itemId));
     }
     const removeId = form.get("remove");
     if (removeId) {
@@ -461,7 +462,10 @@ async function queuePage(request, env) {
     "SELECT * FROM issues WHERE user_id = ? ORDER BY number DESC"
   ).bind(user.id).all();
 
-  const est = queued.reduce((t, i) => t + i.estimated_pages * 1.15, 0);
+  // Flagged items are on hold: they don't count toward the cap and the
+  // closer won't print them (mirrors checkUser/closeForUser).
+  const countable = queued.filter((i) => !i.needs_review);
+  const est = countable.reduce((t, i) => t + i.estimated_pages * 1.15, 0);
   const pct = Math.min(100, Math.round((est / user.page_cap) * 100));
 
   // A full queue prints at the next opening: min_interval_days after the
@@ -478,7 +482,7 @@ async function queuePage(request, env) {
     <div class="row">
       <div class="grow">
         <a class="t" href="/queue/item?key=${key}&id=${i.id}">${escapeHtml(i.title)}</a>
-        <div class="m">${escapeHtml([i.site_name, i.byline].filter(Boolean).join(" · "))} · ~${i.estimated_pages}pp${i.needs_review ? ' · <span class="warn">needs review</span>' : ""} · saved ${escapeHtml((i.created_at ?? "").slice(0, 10))}</div>
+        <div class="m">${escapeHtml([i.site_name, i.byline].filter(Boolean).join(" · "))} · ~${i.estimated_pages}pp${i.needs_review ? ' · <span class="warn">needs review</span>' : ""} · saved ${escapeHtml((i.created_at ?? "").slice(0, 10))} · <a href="/queue/item?key=${key}&id=${i.id}">preview</a>${i.url ? ` · <a href="${escapeHtml(i.url)}" target="_blank" rel="noopener">original</a>` : ""}</div>
       </div>
       <form method="POST" action="/queue?key=${key}"><input type="hidden" name="flag" value="${i.id}"><button ${i.needs_review ? "disabled" : ""}>${i.needs_review ? "flagged" : "flag parse"}</button></form>
       <form method="POST" action="/queue?key=${key}" onsubmit="return confirm('Remove from your next issue? It won\'t print.')"><input type="hidden" name="remove" value="${i.id}"><button>remove</button></form>
@@ -490,6 +494,7 @@ async function queuePage(request, env) {
   const pickedIds = new Set();
   let packed = 0;
   for (const item of [...queued].reverse()) {
+    if (item.needs_review) continue; // held until the parse is fixed
     const cost = item.estimated_pages * 1.15;
     if (pickedIds.size > 0 && packed + cost > user.page_cap) continue;
     pickedIds.add(item.id);
@@ -515,7 +520,7 @@ async function queuePage(request, env) {
       ? `<h2>In Issue № ${nextNumber}</h2>
     ${pickedRows}
     <h2>Rolling over to Issue № ${nextNumber + 1}</h2>
-    <p class="m">These don't fit under the ${user.page_cap}-page cap, so they lead off the next issue instead.</p>
+    <p class="m">These don't fit under the ${user.page_cap}-page cap, so they lead off the next issue instead.${queued.some((i) => i.needs_review) ? " Flagged items wait here too, until their parse is fixed." : ""}</p>
     ${rolledRows}`
       : `<h2>In the queue</h2>
     ${pickedRows || '<p class="m">Nothing yet. Go read something worth saving.</p>'}`}
@@ -967,13 +972,28 @@ async function reparse(env, user, itemId) {
   });
 }
 
-// The "this didn't parse right" button.
-async function flag(env, user, itemId) {
+// The "this didn't parse right" button. Flagging holds the item out of the
+// pack (closer skips needs_review) and tells the operator, whose reparse is
+// currently the only repair path.
+async function flag(env, user, itemId, ctx) {
   const res = await env.DB.prepare(
     "UPDATE items SET needs_review = 1 WHERE id = ? AND user_id = ?"
   )
     .bind(itemId, user.id)
     .run();
   if (res.meta.changes === 0) return json({ error: "item not found" }, 404);
+  ctx?.waitUntil(sendFlagAlert(env, user, itemId));
   return json({ ok: true, id: itemId, needsReview: true });
+}
+
+async function sendFlagAlert(env, user, itemId) {
+  const item = await env.DB.prepare("SELECT title, url, source FROM items WHERE id = ?").bind(itemId).first();
+  await sendAdminEmail(
+    env,
+    `[DTD] parse flagged: ${item?.title ?? itemId}`,
+    `${user.email} flagged "${item?.title ?? "?"}" (source: ${item?.source ?? "?"}).\n` +
+      `${item?.url ?? "(email save, no url)"}\n\n` +
+      `The item is held out of the pack until fixed. After an extractor fix:\n` +
+      `curl -s -X POST https://api.deadtreedigest.com/items/${itemId}/reparse -H "Authorization: Bearer ${user.save_token}"`
+  );
 }
