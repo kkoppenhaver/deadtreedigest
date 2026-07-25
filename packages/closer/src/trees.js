@@ -2,8 +2,9 @@
 // reforestation org directly. We plant with TIST Kenya (project pinned in
 // config) — 25 years of third-party-verified smallholder planting. One tree
 // per printed issue, attributed to the subscriber: an issue uses ~0.3% of a
-// tree (25 sheets against ~8,000/tree), so one whole tree is ~300x the
-// footprint — far past the 10x pledge — at $1 instead of $10 of COGS.
+// tree (~50 half-letter sheets against ~16,000/tree at that size), so one
+// whole tree is ~300x the footprint — far past the 10x pledge — at $1
+// instead of $10 of COGS.
 // (Decided 2026-07-17; issue № 1 shipped with 10 under the old constant.)
 
 export const TREES_PER_ISSUE = 1;

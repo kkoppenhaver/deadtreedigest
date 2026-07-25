@@ -184,9 +184,10 @@ async function library(env, user) {
   });
 }
 
-// One grown tree ≈ this many sheets of paper — the constant behind both the
-// "trees consumed" figure here and the ~300x footprint math in the closer.
-const SHEETS_PER_TREE = 8000;
+// One grown tree ≈ 8,000 letter-size sheets ≈ 16,000 sheets at our
+// half-letter trim. "sheets" below counts our trim (pages/2), so the
+// denominator matches (decided 2026-07-25: our paper size is the unit).
+const SHEETS_PER_TREE = 16000;
 
 // GET /ledger — the running math the static ledger page renders. Global
 // totals only: how many of us there are, what we've printed, what that cost
