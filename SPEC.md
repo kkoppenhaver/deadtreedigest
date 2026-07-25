@@ -150,5 +150,14 @@ worker):
 8. **Find a Bench**: `@dtd/spots` core (Overpass → LLM pick → SVG map),
    `POST /spot` + public generator page, closer/typesetter wiring +
    `printed_spots` migration. Both surfaces together (scoped 2026-07-25,
-   section above).
+   section above). ✅ **SHIPPED same day.** Web: deadtreedigest.com/bench →
+   POST /spot (per-IP rate limit, per-area candidate cache). Print: closer
+   geocodes shipping address (cached on user row, cleared on address change),
+   excludes printed_spots, typesetter places the map page after the TOC;
+   verified through a local Paged.js render. Findings: (a) public Overpass
+   mirrors tarpit Cloudflare Workers IPs — mail.ru/openstreetmap.fr instances
+   carry the traffic, 5-endpoint fallback with 25s timeouts; (b) LLM pick
+   (Haiku, structured output) ships behind ANTHROPIC_API_KEY with a
+   deterministic kind-ranked fallback, so the feature works before the key
+   is set. Rerenders reuse the issue's recorded spot with a fresh map.
 9. **Productization**: multi-tenant auth, billing. ~~Recommendations ("Librarian")~~ — **cut 2026-07-16**: every issue contains only content the user themselves saved. This is a copyright-posture decision, not just scope: user-initiated single copies to the saving user (Cablevision-style volition) is the defensible architecture, and a feature where WE select and distribute third-party content would forfeit it. Any future discovery feature must be licensing-based or excerpt/link-only.
