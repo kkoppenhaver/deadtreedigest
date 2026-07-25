@@ -64,6 +64,12 @@ export function parseArticle({ html, url = null, source = null, email: emailMeta
     .replace(/\s*[-–—|]\s*[\w.+-]+@[\w.-]+\.\w+\s*(?:[-–—|]\s*Gmail)?$/i, "")
     .replace(/\s*[-–—|]\s*Gmail$/i, "")
     .trim() || title;
+  // Sites declare their name as a <title> suffix ("Article | Site"); some
+  // extraction paths keep the suffix but eat the separator, baking the site
+  // name into the title ("… Career Advice Kalzumeus Software"). When the
+  // document's own <title> shows a separated trailing segment and our title
+  // ends with it, drop it — the kicker already names the site.
+  title = stripDeclaredSiteSuffix(title, html);
 
   // Excerpts need enough substance to earn standfirst treatment: not empty
   // punctuation, not a stray date line (< 4 words), not a copy of the lead.
@@ -99,4 +105,34 @@ export function parseArticle({ html, url = null, source = null, email: emailMeta
     estimatedPages: estimatePages(wordCount, images.length),
     needsReview: needsReview || extracted.needsReview === true,
   };
+}
+
+const decodeBasicEntities = (s) =>
+  s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&nbsp;/gi, " ");
+
+function stripDeclaredSiteSuffix(title, html) {
+  if (!title) return title;
+  const m = /<title[^>]*>([^<]*)<\/title>/i.exec(html);
+  if (!m) return title;
+  const docTitle = decodeBasicEntities(m[1]).replace(/\s+/g, " ").trim();
+  // Only strong separators split segments; bare colons stay (real titles use
+  // them: "Salary Negotiation: Make More Money…").
+  const segments = docTitle.split(/\s*\|\s*|\s*»\s*|\s+[–—-]\s+/);
+  if (segments.length < 2) return title;
+  const suffix = segments[segments.length - 1].trim();
+  if (!suffix) return title;
+  const escaped = suffix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const stripped = title.replace(new RegExp(`\\s*[|»:·–—-]*\\s*${escaped}\\s*$`, "i"), "").trim();
+  if (!stripped || stripped === title) return title;
+  // Never amputate a title down to a fragment.
+  if (stripped.split(/\s+/).length < 3 && stripped.length < 15) return title;
+  return stripped;
 }

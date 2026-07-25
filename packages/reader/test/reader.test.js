@@ -222,3 +222,46 @@ describe("page estimation", () => {
     expect(article.estimatedPages).toBeLessThan(6);
   });
 });
+
+describe("title site-suffix stripping", () => {
+  const page = (docTitle, h1) => `<html><head><title>${docTitle}</title></head><body><article><h1>${h1}</h1>${"<p>Real paragraph content long enough to count as an article body for Readability to pick up and keep. ".repeat(30)}</p></article></body></html>`;
+
+  it("strips a separator-declared site suffix the extractor baked in", () => {
+    const a = parseArticle({
+      url: "https://www.kalzumeus.com/2011/10/28/dont-call-yourself-a-programmer/",
+      html: page(
+        "Don't Call Yourself A Programmer, And Other Career Advice               |         Kalzumeus Software          ",
+        "Don't Call Yourself A Programmer, And Other Career Advice"
+      ),
+    });
+    expect(a.title).toBe("Don't Call Yourself A Programmer, And Other Career Advice");
+  });
+
+  it("leaves titles alone when the document title has no separator", () => {
+    const a = parseArticle({
+      url: "https://example.com/history",
+      html: page("The History of Kalzumeus Software", "The History of Kalzumeus Software"),
+    });
+    expect(a.title).toBe("The History of Kalzumeus Software");
+  });
+
+  it("keeps colon-bearing titles intact", () => {
+    const a = parseArticle({
+      url: "https://www.kalzumeus.com/2012/01/23/salary-negotiation/",
+      html: page(
+        "Salary Negotiation: Make More Money, Be More Valued | Kalzumeus Software",
+        "Salary Negotiation: Make More Money, Be More Valued"
+      ),
+    });
+    expect(a.title).toBe("Salary Negotiation: Make More Money, Be More Valued");
+  });
+
+  it("refuses to amputate a short title to a fragment", () => {
+    const a = parseArticle({
+      url: "https://example.com/foo",
+      html: page("Foo - a memoir", "Foo - a memoir"),
+    });
+    expect(a.title.startsWith("Foo")).toBe(true);
+    expect(a.title.length).toBeGreaterThan(3);
+  });
+});

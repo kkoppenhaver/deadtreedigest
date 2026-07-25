@@ -147,7 +147,7 @@ export function issueHtml(issue, { pagedJs }) {
     .map((a, i) => {
       const meta = [cleanSite(a.siteName), cleanByline(a.byline)].filter(Boolean).join(" · ");
       return `<li><a href="#a${i}"><span class="t">${escape(a.title)}</span></a>
-        <span class="m">${escape(meta ? `${meta} — ~${a.estimatedPages}pp` : `~${a.estimatedPages}pp`)}</span></li>`;
+        ${meta ? `<span class="m">${escape(meta)}</span>` : ""}</li>`;
     })
     .join("\n");
 
