@@ -47,7 +47,7 @@ R2 `dtd-raw` (raw captures at `raw/{user}/{item}.html`, PDFs at `issues/{user}/i
 - D1/R2 CLI defaults to LOCAL simulation — always `--remote`
 - Tests: `cd packages/reader && npx vitest run`
 - Local render: `node packages/typeset/render.mjs <url...> [--stress N]`
-- Cover playground: `node packages/typeset/cover-playground.mjs && open packages/typeset/.out/cover-playground.html`
+- Cover playground: `node packages/typeset/cover-playground.mjs && open packages/typeset/out/cover-playground.html`
 - Extension pack: `zsh packages/extension/scripts/pack.sh`
 - Ops levers (bearer SAVE_TOKEN from .env): closer `POST /check | /run (?print=1) | /rerender?issue=N | /poll-status | /email-test`; api `POST /items/:id/reparse | /items/:id/flag`
 

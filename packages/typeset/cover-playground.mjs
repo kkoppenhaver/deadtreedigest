@@ -4,7 +4,7 @@
 // knobs for the per-issue variables — issue number, page count (drives spine
 // width), article count, date — plus trim/bleed/spine guide overlays.
 //
-//   node packages/typeset/cover-playground.mjs && open packages/typeset/.out/cover-playground.html
+//   node packages/typeset/cover-playground.mjs && open packages/typeset/out/cover-playground.html
 //
 // Iterate: edit src/cover.js, re-run this, refresh the browser. The closer
 // bundles the same template, so once it looks right we deploy and every
@@ -116,7 +116,7 @@ render();
 </body>
 </html>`;
 
-mkdirSync(resolve(here, ".out"), { recursive: true });
-const out = resolve(here, ".out", "cover-playground.html");
+mkdirSync(resolve(here, "out"), { recursive: true });
+const out = resolve(here, "out", "cover-playground.html");
 writeFileSync(out, page);
 console.log(out);

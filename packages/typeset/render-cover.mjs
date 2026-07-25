@@ -9,7 +9,7 @@ import { coverHtml, spineWidthIn } from "./src/cover.js";
 const [pages = "56", articles = "5", number = "1"] = process.argv.slice(2);
 const html = coverHtml({ number: Number(number), dateLabel: "July 2026", pageCount: Number(pages), articleCount: Number(articles) });
 
-const outDir = resolve(dirname(fileURLToPath(import.meta.url)), ".out");
+const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "out");
 mkdirSync(outDir, { recursive: true });
 const htmlFile = resolve(outDir, `cover-${number}.html`);
 writeFileSync(htmlFile, html);

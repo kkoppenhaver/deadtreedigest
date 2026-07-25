@@ -64,11 +64,11 @@ if (stressTarget) {
 }
 
 // 2. Typeset. --spot includes a Find a Bench page using the last map the
-// spots CLI generated (packages/spots/.out/spot.svg) — the Paged.js proof
+// spots CLI generated (packages/spots/out/spot.svg) — the Paged.js proof
 // that the spot page paginates cleanly.
 let spot = null;
 if (process.argv.includes("--spot")) {
-  const svgPath = resolve(dirname(fileURLToPath(import.meta.url)), "../spots/.out/spot.svg");
+  const svgPath = resolve(dirname(fileURLToPath(import.meta.url)), "../spots/out/spot.svg");
   spot = {
     copy: "A bench with a backrest under the elms at Palmer Square, eight minutes north. The squirrels are pushy but literate.",
     svg: readFileSync(svgPath, "utf8"),
@@ -79,7 +79,7 @@ const html = issueHtml(
   { number: 1, dateLabel: "July 2026", articles: issueArticles, spot },
   { pagedJs }
 );
-const outDir = resolve(dirname(fileURLToPath(import.meta.url)), ".out");
+const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "out");
 mkdirSync(outDir, { recursive: true });
 const htmlFile = resolve(outDir, stressTarget ? "issue-stress.html" : "issue.html");
 writeFileSync(htmlFile, html);
