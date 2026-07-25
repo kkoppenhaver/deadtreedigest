@@ -17,6 +17,7 @@ import { issueHtml, coverHtml } from "@dtd/typeset";
 import {
   findSpot, geocode, reverseGeocode, mapLayers, renderSpotMap,
   directionsQr, footRoute, formatDirections, computeFrame,
+  routeLandmarks, annotateDirections,
 } from "@dtd/spots";
 import { createPrintJob, getPrintJob } from "./lulu.js";
 import { plantTrees, TREES_PER_ISSUE } from "./trees.js";
@@ -591,7 +592,15 @@ async function rerenderIssue(user, env, number) {
       if (home) {
         try {
           route = await footRoute(home, recSpot);
-          if (route) directions = formatDirections(route, rec.name ?? "Your spot");
+          if (route) {
+            directions = formatDirections(route, rec.name ?? "Your spot");
+            if (env.ANTHROPIC_API_KEY && directions.length) {
+              const landmarks = await routeLandmarks(route.geometry).catch(() => []);
+              if (landmarks.length) {
+                directions = await annotateDirections({ directions, landmarks, apiKey: env.ANTHROPIC_API_KEY });
+              }
+            }
+          }
         } catch (err) {
           console.error(`rerender routing skipped: ${err.message}`);
         }

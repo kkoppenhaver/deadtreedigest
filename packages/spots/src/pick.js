@@ -74,6 +74,68 @@ async function llmPick(candidates, apiKey) {
   return { spot, copy: String(parsed.copy).slice(0, 200), source: "llm" };
 }
 
+// Wayfinding color: Haiku attaches landmark parentheticals to the steps
+// whose leg passes them. The numbered directions stay mechanical (a wrong
+// turn strands someone; a missing parenthetical is just plainer) — the
+// model only decorates, and every annotation is validated against the
+// provided landmark names before it touches the page.
+const ANNOTATE_SCHEMA = {
+  type: "object",
+  properties: {
+    annotations: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          step: { type: "integer", description: "1-based index of the direction line" },
+          landmark: { type: "string", description: "Exact landmark name from the list" },
+          phrase: { type: "string", description: "Short parenthetical, e.g. 'past St. Mary of the Lake'" },
+        },
+        required: ["step", "landmark", "phrase"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["annotations"],
+  additionalProperties: false,
+};
+
+const ANNOTATE_SYSTEM = `You add wayfinding color to numbered walking directions. You are given the directions (each with its distance) and a list of landmarks with how many meters into the walk each one sits. Attach a short parenthetical to the step whose leg passes a landmark — "past Holy Trinity Church", "just after the library", "across from Graeser Park".
+
+Rules: use ONLY the provided landmark names, verbatim — keep their capitalization exactly as given ("past Uptown Branch Library", not "past uptown branch library"). Match landmarks to steps by comparing meters-into-the-walk against the cumulative step distances. At most 3 annotations, each under 50 characters, starting with a lowercase connective (past/just after/across from), no punctuation inside. When a landmark's meters-into-the-walk clearly falls within one step's leg, annotate that step — aim for one to three annotations whenever landmarks are provided. Skip only the genuinely ambiguous ones.`;
+
+export async function annotateDirections({ directions, landmarks, apiKey }) {
+  if (!apiKey || !directions.length || !landmarks.length) return directions;
+  try {
+    const client = new Anthropic({ apiKey });
+    const list = directions.map((d, i) => `${i + 1}. ${d}`).join("\n");
+    const lm = landmarks
+      .map((l) => `- ${l.name} (${l.kind}, about ${l.metersAlong} m into the walk)`)
+      .join("\n");
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 400,
+      system: ANNOTATE_SYSTEM,
+      output_config: { format: { type: "json_schema", schema: ANNOTATE_SCHEMA } },
+      messages: [{ role: "user", content: `Directions:\n${list}\n\nLandmarks along the way:\n${lm}` }],
+    });
+    if (response.stop_reason === "refusal") return directions;
+    const { annotations } = JSON.parse(response.content.find((b) => b.type === "text").text);
+    const out = [...directions];
+    for (const a of annotations ?? []) {
+      const i = (a.step ?? 0) - 1;
+      if (i < 0 || i >= out.length || out[i].includes("(")) continue;
+      const named = landmarks.some((l) => String(a.phrase).toLowerCase().includes(l.name.toLowerCase()));
+      if (!named) continue; // hallucinated landmark: drop silently
+      out[i] = `${out[i]} (${String(a.phrase).replace(/[()]/g, "").slice(0, 60)})`;
+    }
+    return out;
+  } catch (err) {
+    console.error(`direction annotation skipped: ${err.message}`);
+    return directions;
+  }
+}
+
 // No LLM available: prefer character by kind, then named over anonymous,
 // then backrest, then distance. Copy comes from per-kind templates.
 const KIND_RANK = { viewpoint: 0, pier: 1, lighthouse: 2, "ferry terminal": 3, cemetery: 4, park: 5, bench: 6 };

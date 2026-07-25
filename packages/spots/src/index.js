@@ -11,16 +11,16 @@
 // callers that must not fail (the closer) wrap it. Routing and reverse
 // geocoding failures degrade silently (spot-centered map, no directions).
 
-import { findCandidates, mapLayers } from "./overpass.js";
-import { pickSpot } from "./pick.js";
+import { findCandidates, mapLayers, routeLandmarks } from "./overpass.js";
+import { pickSpot, annotateDirections } from "./pick.js";
 import { renderSpotMap, computeFrame } from "./map.js";
 import { reverseGeocode } from "./geocode.js";
 import { footRoute, formatDirections } from "./route.js";
 import QRCode from "qrcode-svg";
 
 export { geocode, reverseGeocode } from "./geocode.js";
-export { findCandidates, mapLayers } from "./overpass.js";
-export { pickSpot } from "./pick.js";
+export { findCandidates, mapLayers, routeLandmarks } from "./overpass.js";
+export { pickSpot, annotateDirections } from "./pick.js";
 export { renderSpotMap, computeFrame } from "./map.js";
 export { footRoute, formatDirections } from "./route.js";
 
@@ -69,6 +69,16 @@ export async function findSpot({ lat, lng, home = null, exclude = [], apiKey = n
         // The fallback copy guesses the walk from straight-line distance;
         // once we have a real route, correct it to the routed minutes.
         pick.copy = pick.copy.replace(/about a \d+ minute walk/, `about a ${route.minutes} minute walk`);
+        // Wayfinding color: landmarks along the corridor become validated
+        // parentheticals on the steps that pass them.
+        if (apiKey && directions.length) {
+          try {
+            const landmarks = await routeLandmarks(route.geometry);
+            if (landmarks.length) directions = await annotateDirections({ directions, landmarks, apiKey });
+          } catch (err) {
+            console.error(`landmarks skipped: ${err.message}`);
+          }
+        }
       }
     } catch (err) {
       console.error(`routing skipped: ${err.message}`);

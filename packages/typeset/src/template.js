@@ -90,7 +90,7 @@ const STYLES = `
   .spot-page .spot-directions { max-width: 26em; margin: 9pt auto 0; text-align: left; font-size: 8.75pt; line-height: 1.5; padding-left: 1.6em; }
   .spot-page .spot-directions li { margin-bottom: 1.5pt; }
   .spot-page .spot-foot { font-size: 7.5pt; color: #555; margin-top: 7pt; }
-  .spot-page .spot-qr { margin-top: 6pt; }
+  .spot-page .spot-qr { margin-top: 18pt; }
   .spot-page .spot-qr svg { width: 0.45in; height: 0.45in; display: inline-block; }
   .spot-page .spot-qr-cap { font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 6pt; letter-spacing: 0.14em; text-transform: uppercase; color: #777; margin-top: 3pt; }
 
@@ -168,7 +168,7 @@ export function issueHtml(issue, { pagedJs }) {
   <div class="spot-map">${spot.svg}</div>
   ${spot.directions?.length ? `<ol class="spot-directions">${spot.directions.map((d) => `<li>${escape(d)}</li>`).join("")}</ol>` : ""}
   <div class="spot-foot">Every issue points somewhere new. Map data © OpenStreetMap contributors.</div>
-  ${spot.qr ? `<div class="spot-qr">${spot.qr}<div class="spot-qr-cap">for the lost</div></div>` : ""}
+  ${spot.qr ? `<div class="spot-qr">${spot.qr}<div class="spot-qr-cap">A live map</div></div>` : ""}
 </section>`
     : "";
 

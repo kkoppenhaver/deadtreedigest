@@ -128,6 +128,58 @@ out geom 900;`;
   return layers;
 }
 
+// Named landmarks within sight of the route — the raw material for the
+// wayfinding parentheticals ("past St. Mary of the Lake"). Corridor query
+// along a downsampled route polyline; returns each with how many meters
+// into the walk it sits, so the annotator can match it to the right step.
+export async function routeLandmarks(geometry, { radius = 80 } = {}) {
+  if (!geometry?.length) return [];
+  const stride = Math.max(1, Math.floor(geometry.length / 18));
+  const pts = geometry.filter((_, i) => i % stride === 0 || i === geometry.length - 1);
+  const around = `(around:${radius},${pts.map((p) => `${p[0].toFixed(5)},${p[1].toFixed(5)}`).join(",")})`;
+  const q = `[out:json][timeout:15];
+(
+  node["amenity"~"^(place_of_worship|school|library|theatre|cinema|fountain)$"]["name"]${around};
+  way["amenity"~"^(place_of_worship|school|library)$"]["name"]${around};
+  node["historic"]["name"]${around};
+  node["tourism"~"^(artwork|museum|attraction)$"]["name"]${around};
+  node["railway"="station"]["name"]${around};
+);
+out center tags 30;`;
+
+  const data = await query(q);
+  const cum = [0];
+  for (let i = 1; i < geometry.length; i++) {
+    cum.push(cum[i - 1] + haversine(geometry[i - 1][0], geometry[i - 1][1], geometry[i][0], geometry[i][1]));
+  }
+  const seen = new Set();
+  const out = [];
+  for (const el of data.elements ?? []) {
+    const name = el.tags?.name;
+    if (!name || seen.has(name)) continue;
+    const elat = el.lat ?? el.center?.lat;
+    const elng = el.lon ?? el.center?.lon;
+    if (elat == null || elng == null) continue;
+    seen.add(name);
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < geometry.length; i++) {
+      const d = haversine(geometry[i][0], geometry[i][1], elat, elng);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    const kind =
+      el.tags.amenity ??
+      el.tags.tourism ??
+      (el.tags.railway ? "station" : el.tags.historic ? "landmark" : "landmark");
+    out.push({ name, kind, metersAlong: Math.round(cum[best]) });
+  }
+  out.sort((a, b) => a.metersAlong - b.metersAlong);
+  return out.slice(0, 12);
+}
+
 const isClosed = (pts) =>
   pts.length > 2 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1];
 
