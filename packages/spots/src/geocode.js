@@ -6,6 +6,25 @@
 
 const UA = "DeadTreeDigest/1.0 (press@mail.deadtreedigest.com)";
 
+// lat/lng -> a short human street reference for the map label ("Kedzie Blvd
+// & Palmer St" territory). Same fair-use rules; called once per pick.
+export async function reverseGeocode(lat, lng) {
+  const url =
+    `https://nominatim.openstreetmap.org/reverse?format=json&zoom=17&lat=${lat}&lon=${lng}`;
+  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
+  if (!res.ok) throw new Error(`reverse geocode failed (${res.status})`);
+  const hit = await res.json();
+  const a = hit?.address ?? {};
+  const road = a.road ?? a.pedestrian ?? a.footway ?? a.cycleway ?? null;
+  const locality = a.neighbourhood ?? a.suburb ?? a.city_district ?? a.town ?? a.city ?? null;
+  const street = road ? (a.house_number ? `${a.house_number} ${road}` : road) : null;
+  return {
+    street,
+    locality,
+    short: [street, locality].filter(Boolean).join(", ") || hit?.display_name?.split(",").slice(0, 2).join(",") || null,
+  };
+}
+
 export async function geocode(place) {
   const url =
     "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +

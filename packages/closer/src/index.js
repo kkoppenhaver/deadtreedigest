@@ -14,7 +14,7 @@
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
-import { findSpot, geocode, mapLayers, renderSpotMap } from "@dtd/spots";
+import { findSpot, geocode, reverseGeocode, mapLayers, renderSpotMap } from "@dtd/spots";
 import { createPrintJob, getPrintJob } from "./lulu.js";
 import { plantTrees, TREES_PER_ISSUE } from "./trees.js";
 import { signedFileUrl } from "../../api/src/sign.js";
@@ -573,9 +573,15 @@ async function rerenderIssue(user, env, number) {
   if (rec) {
     try {
       const layers = await mapLayers({ lat: rec.lat, lng: rec.lng, spanMeters: 900 });
+      const addr = await reverseGeocode(rec.lat, rec.lng).catch(() => null);
       spot = {
         copy: rec.copy,
-        svg: renderSpotMap({ spot: { lat: rec.lat, lng: rec.lng }, layers, spanMeters: 900 }),
+        svg: renderSpotMap({
+          spot: { lat: rec.lat, lng: rec.lng },
+          layers,
+          spanMeters: 900,
+          label: { title: rec.name ?? `a ${rec.kind ?? "spot"}`, sub: addr?.short ?? null },
+        }),
       };
     } catch (err) {
       console.error(`rerender spot skipped: ${err.message}`);

@@ -304,7 +304,7 @@ async function spotEndpoint(request, env) {
 
   const { spot } = result;
   return corsJson({
-    spot: { osmId: spot.osmId, kind: spot.kind, name: spot.name, lat: spot.lat, lng: spot.lng, meters: spot.meters },
+    spot: { osmId: spot.osmId, kind: spot.kind, name: spot.name, address: spot.address ?? null, lat: spot.lat, lng: spot.lng, meters: spot.meters },
     copy: result.copy,
     svg: result.svg,
     source: result.source,

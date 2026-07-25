@@ -269,7 +269,7 @@
         $("copy").textContent = data.copy;
         $("map").innerHTML = data.svg;
         var name = data.spot.name ? '"' + data.spot.name + '"' : "unnamed but real";
-        $("meta").textContent = data.spot.kind + " · " + name + " · about " + Math.max(1, Math.round(data.spot.meters / 80)) + " min on foot";
+        $("meta").textContent = data.spot.kind + " · " + name + (data.spot.address ? " · " + data.spot.address : "") + " · about " + Math.max(1, Math.round(data.spot.meters / 80)) + " min on foot";
         $("osm").href = "https://www.openstreetmap.org/?mlat=" + data.spot.lat + "&mlon=" + data.spot.lng + "#map=17/" + data.spot.lat + "/" + data.spot.lng;
         $("again").style.display = data.remaining > 0 ? "" : "none";
         $("result").className = "result on";

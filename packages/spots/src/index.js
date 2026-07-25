@@ -11,8 +11,9 @@
 import { findCandidates, mapLayers } from "./overpass.js";
 import { pickSpot } from "./pick.js";
 import { renderSpotMap } from "./map.js";
+import { reverseGeocode } from "./geocode.js";
 
-export { geocode } from "./geocode.js";
+export { geocode, reverseGeocode } from "./geocode.js";
 export { findCandidates, mapLayers } from "./overpass.js";
 export { pickSpot } from "./pick.js";
 export { renderSpotMap } from "./map.js";
@@ -29,8 +30,21 @@ export async function findSpot({ lat, lng, exclude = [], apiKey = null, candidat
   const pick = await pickSpot({ candidates: eligible, apiKey });
   if (!pick) return null;
 
+  // The map needs identifying information — a name is not enough to find an
+  // unnamed bench, so reverse-geocode a street reference for the label chip.
+  const addr = await reverseGeocode(pick.spot.lat, pick.spot.lng).catch(() => null);
+  pick.spot.address = addr?.short ?? null;
+
   const layers = await mapLayers({ lat: pick.spot.lat, lng: pick.spot.lng, spanMeters: 900 });
-  const svg = renderSpotMap({ spot: pick.spot, layers, spanMeters: 900 });
+  const svg = renderSpotMap({
+    spot: pick.spot,
+    layers,
+    spanMeters: 900,
+    label: {
+      title: pick.spot.name ?? `a ${pick.spot.kind}`,
+      sub: addr?.short ?? null,
+    },
+  });
 
   return {
     spot: pick.spot,

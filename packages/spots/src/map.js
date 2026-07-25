@@ -12,14 +12,17 @@ const RUST = "#bf4e24";
 
 const WIDTHS = { major: 2.6, mid: 1.8, minor: 1.1, path: 0.7 };
 
-// Deterministic wobble: same map in, same sketch out (rerenders must not
-// shift the linework). Amplitude ~1px reads as hand-drawn at print size.
-const wob = (x, y, salt) => {
-  const h = Math.sin(x * 127.1 + y * 311.7 + salt * 74.7) * 43758.5453;
-  return (h - Math.floor(h)) * 2 - 1;
-};
+const esc = (s) =>
+  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function renderSpotMap({ spot, layers, spanMeters = 900, size = 320 }) {
+// Deterministic wobble: same map in, same sketch out (rerenders must not
+// shift the linework). LOW-frequency and coherent — neighboring points drift
+// together, so long streets take slow gentle bends like a steady hand
+// copying a map, instead of per-vertex scribble.
+const wob = (x, y, salt) =>
+  (Math.sin((x + salt * 31.7) / 55) + Math.sin((y - salt * 17.3) / 63)) / 2;
+
+export function renderSpotMap({ spot, layers, spanMeters = 900, size = 320, label = null }) {
   const lat0 = spot.lat;
   const lng0 = spot.lng;
   const metersPerPx = spanMeters / size;
@@ -28,14 +31,14 @@ export function renderSpotMap({ spot, layers, spanMeters = 900, size = 320 }) {
   const px = ([lat, lng], salt = 0) => {
     const x = size / 2 + (lng - lng0) * kx;
     const y = size / 2 - (lat - lat0) * ky;
-    return [(x + wob(x, y, salt) * 1.1).toFixed(1), (y + wob(y, x, salt + 1) * 1.1).toFixed(1)];
+    return [(x + wob(x, y, salt) * 1.4).toFixed(1), (y + wob(y, x, salt + 1) * 1.4).toFixed(1)];
   };
   const path = (pts, salt = 0) =>
     pts.map((p, i) => (i === 0 ? "M" : "L") + px(p, salt).join(",")).join("");
 
   const green = (layers.green ?? [])
     .filter((g) => g.closed)
-    .map((g, i) => `<path d="${path(g.pts, i)}Z" fill="${GREEN}" stroke="${INK}" stroke-width="0.7" stroke-dasharray="4,3" opacity="0.9"/>`)
+    .map((g, i) => `<path d="${path(g.pts, i)}Z" fill="${GREEN}" stroke="none"/>`)
     .join("");
   const water = (layers.water ?? [])
     .map((w, i) =>
@@ -68,6 +71,24 @@ export function renderSpotMap({ spot, layers, spanMeters = 900, size = 320 }) {
       <text x="0" y="-15" font-family="Courier, monospace" font-size="9.5" font-weight="bold" fill="${INK}" stroke="none" text-anchor="middle">N</text>
     </g>`;
 
+  // Identity chip: who this spot is and where to find it, hanging off the
+  // pin. Courier on a paper chip, like a taped-on field note.
+  let labelChip = "";
+  if (label?.title) {
+    const lines = [label.title, label.sub].filter(Boolean).map((s) => String(s).slice(0, 42));
+    const wch = Math.max(...lines.map((l) => l.length));
+    const w = Math.min(wch * 6.1 + 20, size - 24);
+    const h = lines.length === 2 ? 34 : 22;
+    const lx = Math.max(10, Math.min(size - w - 10, c - w / 2));
+    const ly = c + 14;
+    labelChip = `
+    <g font-family="Courier, monospace" fill="${INK}">
+      <rect x="${lx.toFixed(0)}" y="${ly}" width="${w.toFixed(0)}" height="${h}" rx="5" fill="${PAPER}" stroke="${INK}" stroke-width="1.6"/>
+      <text x="${(lx + w / 2).toFixed(0)}" y="${ly + 14}" font-size="10" font-weight="bold" text-anchor="middle">${esc(lines[0])}</text>
+      ${lines[1] ? `<text x="${(lx + w / 2).toFixed(0)}" y="${ly + 27}" font-size="9" text-anchor="middle" opacity="0.8">${esc(lines[1])}</text>` : ""}
+    </g>`;
+  }
+
   const scaleMeters = Math.round(spanMeters / 4 / 50) * 50 || 100;
   const scalePx = (scaleMeters / spanMeters) * size;
   const scale = `
@@ -98,7 +119,7 @@ export function renderSpotMap({ spot, layers, spanMeters = 900, size = 320 }) {
     <rect x="0" y="0" width="${size}" height="${size}" rx="12" fill="${PAPER}"/>
     <g clip-path="url(#card)">
       ${dots.join("")}
-      ${green}${water}${streets}${pin}${compass}${scale}
+      ${green}${water}${streets}${pin}${labelChip}${compass}${scale}
     </g>
     <rect x="0" y="0" width="${size}" height="${size}" rx="12" fill="none" stroke="${INK}" stroke-width="3"/>
   </g>
