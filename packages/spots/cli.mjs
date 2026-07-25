@@ -7,7 +7,7 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { findSpot, geocode } from "./src/index.js";
+import { findSpot, geocode, directionsQr } from "./src/index.js";
 
 const arg = process.argv[2];
 if (!arg) {
@@ -32,7 +32,9 @@ if (m) {
 }
 
 const t0 = Date.now();
-const result = await findSpot({ lat, lng, apiKey: process.env.ANTHROPIC_API_KEY ?? null });
+// --home makes it a journey map: framed from your door, with turn-by-turn.
+const home = process.argv.includes("--home") ? { lat, lng } : null;
+const result = await findSpot({ lat, lng, home, apiKey: process.env.ANTHROPIC_API_KEY ?? null });
 if (!result) {
   console.log("no spots found nearby");
   process.exit(0);
@@ -44,7 +46,19 @@ console.log(
     `${result.spot.meters}m away · picked by ${result.source} from ${result.candidateCount} candidates · ${Date.now() - t0}ms`
 );
 
+if (result.directions.length) console.log("\n" + result.directions.map((d, i) => `  ${i + 1}. ${d}`).join("\n"));
+
 const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "out");
 mkdirSync(outDir, { recursive: true });
 writeFileSync(resolve(outDir, "spot.svg"), result.svg);
-console.log(`map: packages/spots/out/spot.svg`);
+// The full bundle render.mjs --spot consumes for print previews.
+writeFileSync(
+  resolve(outDir, "spot.json"),
+  JSON.stringify({
+    copy: result.copy,
+    svg: result.svg,
+    directions: result.directions,
+    qr: directionsQr(result.spot.lat, result.spot.lng),
+  }, null, 2)
+);
+console.log(`map: packages/spots/out/spot.svg (+ spot.json for render.mjs --spot)`);

@@ -291,7 +291,13 @@ async function spotEndpoint(request, env) {
   const exclude = Array.isArray(body.exclude) ? body.exclude.slice(0, 100).map(String) : [];
   let result;
   try {
-    result = await findSpot({ lat, lng, exclude, apiKey: env.ANTHROPIC_API_KEY ?? null, candidates: pool });
+    result = await findSpot({
+      lat, lng,
+      home: { lat, lng }, // where they searched from = the journey's start
+      exclude,
+      apiKey: env.ANTHROPIC_API_KEY ?? null,
+      candidates: pool,
+    });
   } catch (err) {
     console.error(`findSpot failed: ${err.message}`);
     return corsJson({ error: "the map sources are busy right now — try again in a minute" }, 503);
@@ -307,6 +313,8 @@ async function spotEndpoint(request, env) {
     spot: { osmId: spot.osmId, kind: spot.kind, name: spot.name, address: spot.address ?? null, lat: spot.lat, lng: spot.lng, meters: spot.meters },
     copy: result.copy,
     svg: result.svg,
+    directions: result.directions,
+    walk: result.route,
     source: result.source,
     remaining: Math.max(0, result.candidateCount - 1),
     place: label,

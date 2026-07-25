@@ -68,11 +68,15 @@ if (stressTarget) {
 // that the spot page paginates cleanly.
 let spot = null;
 if (process.argv.includes("--spot")) {
-  const svgPath = resolve(dirname(fileURLToPath(import.meta.url)), "../spots/out/spot.svg");
-  spot = {
-    copy: "A bench with a backrest under the elms at Palmer Square, eight minutes north. The squirrels are pushy but literate.",
-    svg: readFileSync(svgPath, "utf8"),
-  };
+  const spotDir = resolve(dirname(fileURLToPath(import.meta.url)), "../spots/out");
+  try {
+    spot = JSON.parse(readFileSync(resolve(spotDir, "spot.json"), "utf8"));
+  } catch {
+    spot = {
+      copy: "A bench with a backrest under the elms at Palmer Square, eight minutes north. The squirrels are pushy but literate.",
+      svg: readFileSync(resolve(spotDir, "spot.svg"), "utf8"),
+    };
+  }
 }
 
 const html = issueHtml(

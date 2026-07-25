@@ -81,13 +81,18 @@ const STYLES = `
 
   /* Find a Bench: the small map page after the TOC. Block-only markup and an
      inline SVG — both Paged.js-safe (no floats, no loose root inlines). */
-  .spot-page { page: plain; break-after: page; text-align: center; padding-top: 26pt; }
+  .spot-page { page: plain; break-after: page; text-align: center; padding-top: 12pt; }
   .spot-page .spot-kicker { font-family: 'Fjalla One', Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.18em; font-size: 8pt; color: #444; margin-bottom: 8pt; }
   .spot-page h2 { font-family: 'Fjalla One', Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15pt; margin-bottom: 12pt; }
-  .spot-page .spot-copy { font-style: italic; font-size: 10.5pt; line-height: 1.5; max-width: 30em; margin: 0 auto 16pt; }
-  .spot-page .spot-map { width: 3.1in; margin: 0 auto; }
+  .spot-page .spot-copy { font-style: italic; font-size: 10.5pt; line-height: 1.5; max-width: 30em; margin: 0 auto 14pt; }
+  .spot-page .spot-map { width: 2.7in; margin: 0 auto; }
   .spot-page .spot-map svg { width: 100%; height: auto; display: block; }
-  .spot-page .spot-foot { font-size: 7.5pt; color: #555; margin-top: 10pt; }
+  .spot-page .spot-directions { max-width: 26em; margin: 9pt auto 0; text-align: left; font-size: 8.75pt; line-height: 1.5; padding-left: 1.6em; }
+  .spot-page .spot-directions li { margin-bottom: 1.5pt; }
+  .spot-page .spot-foot { font-size: 7.5pt; color: #555; margin-top: 7pt; }
+  .spot-page .spot-qr { margin-top: 6pt; }
+  .spot-page .spot-qr svg { width: 0.45in; height: 0.45in; display: inline-block; }
+  .spot-page .spot-qr-cap { font-family: 'Fjalla One', Helvetica, sans-serif; font-size: 6pt; letter-spacing: 0.14em; text-transform: uppercase; color: #777; margin-top: 3pt; }
 
   /* ---------- articles ---------- */
   section.article { break-before: page; }
@@ -161,7 +166,9 @@ export function issueHtml(issue, { pagedJs }) {
   <h2>We found you a bench</h2>
   <p class="spot-copy">${escape(spot.copy)}</p>
   <div class="spot-map">${spot.svg}</div>
+  ${spot.directions?.length ? `<ol class="spot-directions">${spot.directions.map((d) => `<li>${escape(d)}</li>`).join("")}</ol>` : ""}
   <div class="spot-foot">Every issue points somewhere new. Map data © OpenStreetMap contributors.</div>
+  ${spot.qr ? `<div class="spot-qr">${spot.qr}<div class="spot-qr-cap">for the lost</div></div>` : ""}
 </section>`
     : "";
 

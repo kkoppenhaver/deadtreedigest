@@ -96,15 +96,21 @@ export async function mapLayers({ lat, lng, spanMeters = 900 }) {
   const dLat = spanMeters / 2 / 111_320;
   const dLng = spanMeters / 2 / (111_320 * Math.cos((lat * Math.PI) / 180));
   const bbox = `(${lat - dLat},${lng - dLng},${lat + dLat},${lng + dLng})`;
+  // Journey frames span kilometers — at that scale footpaths are noise and
+  // the payload balloons, so trim the highway classes fetched.
+  const hw =
+    spanMeters > 1600
+      ? `way["highway"~"^(motorway|trunk|primary|secondary|tertiary|residential|unclassified|living_street)"]`
+      : `way["highway"]`;
   const q = `[out:json][timeout:15];
 (
-  way["highway"]${bbox};
+  ${hw}${bbox};
   way["natural"="water"]${bbox};
   way["waterway"]${bbox};
   way["leisure"~"^(park|garden)$"]${bbox};
   way["landuse"~"^(grass|forest|cemetery|recreation_ground)$"]${bbox};
 );
-out geom 600;`;
+out geom 900;`;
 
   const data = await query(q);
   const layers = { streets: [], water: [], green: [] };
@@ -116,7 +122,7 @@ out geom 600;`;
     else if (t.leisure || t.landuse) layers.green.push({ pts, closed: isClosed(pts) });
     else if (t.highway) {
       const cls = streetClass(t.highway);
-      if (cls) layers.streets.push({ pts, cls });
+      if (cls) layers.streets.push({ pts, cls, name: t.name ?? null });
     }
   }
   return layers;

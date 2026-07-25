@@ -14,7 +14,10 @@
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
 import { issueHtml, coverHtml } from "@dtd/typeset";
-import { findSpot, geocode, reverseGeocode, mapLayers, renderSpotMap } from "@dtd/spots";
+import {
+  findSpot, geocode, reverseGeocode, mapLayers, renderSpotMap,
+  directionsQr, footRoute, formatDirections, computeFrame,
+} from "@dtd/spots";
 import { createPrintJob, getPrintJob } from "./lulu.js";
 import { plantTrees, TREES_PER_ISSUE } from "./trees.js";
 import { signedFileUrl } from "../../api/src/sign.js";
@@ -388,11 +391,18 @@ async function issueSpot(env, user) {
     ).bind(user.id).all();
     const found = await findSpot({
       lat, lng,
+      home: { lat, lng }, // journey framing + turn-by-turn from the front door
       exclude: prior.map((p) => p.osm_id),
       apiKey: env.ANTHROPIC_API_KEY ?? null,
     });
     if (!found) return null;
-    return { copy: found.copy, svg: found.svg, spot: found.spot };
+    return {
+      copy: found.copy,
+      svg: found.svg,
+      directions: found.directions,
+      qr: directionsQr(found.spot.lat, found.spot.lng),
+      spot: found.spot,
+    };
   } catch (err) {
     console.error(`spot page skipped: ${err.message}`);
     return null;
@@ -572,16 +582,35 @@ async function rerenderIssue(user, env, number) {
     .first();
   if (rec) {
     try {
-      const layers = await mapLayers({ lat: rec.lat, lng: rec.lng, spanMeters: 900 });
+      const recSpot = { lat: rec.lat, lng: rec.lng };
+      const home = user.geo_lat != null && user.geo_lng != null
+        ? { lat: user.geo_lat, lng: user.geo_lng }
+        : null;
+      let route = null;
+      let directions = [];
+      if (home) {
+        try {
+          route = await footRoute(home, recSpot);
+          if (route) directions = formatDirections(route, rec.name ?? "Your spot");
+        } catch (err) {
+          console.error(`rerender routing skipped: ${err.message}`);
+        }
+      }
+      const frame = computeFrame({ spot: recSpot, home: route ? home : null, route });
+      const layers = await mapLayers({ lat: frame.lat, lng: frame.lng, spanMeters: frame.spanMeters });
       const addr = await reverseGeocode(rec.lat, rec.lng).catch(() => null);
       spot = {
         copy: rec.copy,
         svg: renderSpotMap({
-          spot: { lat: rec.lat, lng: rec.lng },
+          spot: recSpot,
           layers,
-          spanMeters: 900,
+          frame,
+          home: route ? home : null,
+          route,
           label: { title: rec.name ?? `a ${rec.kind ?? "spot"}`, sub: addr?.short ?? null },
         }),
+        directions,
+        qr: directionsQr(rec.lat, rec.lng),
       };
     } catch (err) {
       console.error(`rerender spot skipped: ${err.message}`);
