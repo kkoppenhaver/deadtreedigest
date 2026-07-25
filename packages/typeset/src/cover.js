@@ -444,8 +444,122 @@ ${skyActors(p)}
   </svg>`;
 }
 
-export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene, boreal: borealScene };
-export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie", "boreal"]; // grows with issue #12's scene batch
+// Swamp: bald cypress standing in still water, Spanish moss, lily pads.
+// The canopy tokens do the seasonal work for free — bald cypress really
+// does turn rust in fall. Garnish: fireflies, and ONLY on a summer night
+// close. Moss hangs in farLit so it goes hazy-light by day, muted by night.
+function swampScene(p, seasonKey) {
+  const fireflies = p.night && seasonKey === "summer" ? `<!-- fireflies — summer night only -->
+    <g fill="#ffe27a">
+      ${[[70, 520], [150, 560], [210, 500], [250, 590], [310, 545], [180, 620], [340, 610], [120, 640], [390, 570]]
+        .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5.5" opacity="0.18"/><circle cx="${x}" cy="${y}" r="1.8" opacity="0.95"/>`).join("")}
+    </g>` : "";
+  const cypress = (tx, s) => `<g transform="translate(${tx},0) scale(${s})" transform-origin="110 540">
+      <!-- branches, then the flat-topped canopy over them -->
+      <g stroke="#4a3524" stroke-linecap="round" fill="none">
+        <path d="M106 442 L74 420" stroke-width="5"/>
+        <path d="M114 438 L148 416" stroke-width="4.5"/>
+        <path d="M108 430 L110 404" stroke-width="5"/>
+      </g>
+      <polygon points="54,424 70,388 118,378 128,414 96,432" fill="${p.canopy1}"/>
+      <polygon points="118,378 128,414 96,432" fill="${p.canopy0}"/>
+      <polygon points="88,392 128,364 172,382 160,418 116,414" fill="${p.canopy1}"/>
+      <polygon points="128,364 172,382 160,418 130,414" fill="${p.canopy0}"/>
+      <!-- spanish moss, hanging in the haze color -->
+      <g stroke="${p.farLit}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.85">
+        <path d="M84 420 q3 14 -1 26"/>
+        <path d="M122 414 q3 12 0 24"/>
+        <path d="M150 420 q3 14 -2 24"/>
+        <path d="M64 424 q2 10 -1 18"/>
+      </g>
+      <!-- flared buttress trunk, standing in the water -->
+      <path d="M103 404 C101 460 98 500 88 540 L112 540 Q108 470 111 404 Z" fill="#4a3524"/>
+      <path d="M111 404 C112 470 112 500 124 540 L112 540 Q108 470 111 404 Z" fill="#5e442c"/>
+      <path d="M80 542 Q96 522 100 504 L114 504 Q120 524 134 542 Q108 550 80 542 Z" fill="#4a3524"/>
+      <!-- cypress knees -->
+      <path d="M64 544 l4 -9 4 9 Z M140 546 l4 -8 4 8 Z" fill="#5e442c"/>
+      <!-- still-water reflection -->
+      <g stroke="#3a3128" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.22">
+        <path d="M102 550 q4 8 -2 16"/>
+        <path d="M104 570 q3 6 -1 12" stroke-width="4"/>
+      </g>
+    </g>`;
+  return `<svg class="scene" viewBox="0 0 460 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="${p.sky0}"/>
+        <stop offset="0.55" stop-color="${p.sky1}"/>
+        <stop offset="1" stop-color="${p.sky2}"/>
+      </linearGradient>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="n"/>
+        <feColorMatrix in="n" values="0 0 0 0 0.4  0 0 0 0 0.35  0 0 0 0 0.25  0 0 0 0.05 0"/>
+      </filter>
+    </defs>
+
+    <!-- sky -->
+    <rect width="460" height="700" fill="url(#sky)"/>
+${skyActors(p)}
+
+    <!-- far swamp-forest canopy, rounded bumps emerging from the water -->
+    <path d="M0 436 q18 -26 36 0 q6 -18 24 -12 q14 -22 30 -4 q10 -16 26 -8 q16 -20 32 -2 q8 -14 22 -8 q18 -22 34 -2 q10 -16 26 -6 q16 -18 32 0 q8 -12 22 -8 q18 -20 34 -2 q12 -14 26 -6 q16 -16 32 0 q10 -12 24 -6 q14 -14 30 0 L460 436 L460 466 L0 466 Z" fill="${p.far}"/>
+
+    <!-- still water -->
+    <rect x="0" y="448" width="460" height="126" fill="${p.water0}"/>
+    <path d="M0 520 Q 140 512 260 520 Q 380 528 460 518 L460 574 L0 574 Z" fill="${p.water1}"/>
+    <!-- the light's soft column on the mirror -->
+    <g stroke="${p.sun}" stroke-linecap="round" opacity="0.4">
+      <path d="M348 456 h10" stroke-width="3"/>
+      <path d="M342 478 h20" stroke-width="3"/>
+      <path d="M350 504 h12" stroke-width="3.5"/>
+      <path d="M340 534 h26" stroke-width="3.5"/>
+      <path d="M346 560 h16" stroke-width="4"/>
+    </g>
+
+    ${cypress(0, 1)}
+    ${cypress(178, 0.62)}
+
+    <!-- lily pads near the bank -->
+    <g fill="${p.tree0l}" opacity="0.85">
+      <ellipse cx="206" cy="562" rx="11" ry="3.4"/>
+      <ellipse cx="238" cy="568" rx="8" ry="2.8"/>
+      <ellipse cx="178" cy="570" rx="9" ry="3"/>
+      <ellipse cx="330" cy="566" rx="10" ry="3.2"/>
+    </g>
+    <circle cx="238" cy="565" r="2.2" fill="#e8dcc0" opacity="0.9"/>
+
+    <!-- the bank -->
+    <path d="M0 574 Q 120 552 250 572 Q 370 590 460 570 L460 700 L0 700 Z" fill="${p.ground0}"/>
+    <path d="M0 636 Q 150 610 320 634 Q 410 646 460 636 L460 700 L0 700 Z" fill="${p.ground1}"/>
+    <!-- reeds at the waterline -->
+    <g stroke="${p.band}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.85">
+      <path d="M40 580 l-2 -16 M46 580 l1 -19 M52 580 l3 -14"/>
+      <path d="M282 584 l-2 -15 M288 584 l1 -18 M294 584 l3 -13"/>
+      <path d="M400 660 l-3 -17 M408 660 l0 -20 M416 660 l3 -15"/>
+    </g>
+
+    <!-- big pine, right (series constant) -->
+    <g>
+      <polygon points="430,388 462,452 398,452" fill="${p.tree0d}"/>
+      <polygon points="430,388 462,452 430,452" fill="${p.tree0l}"/>
+      <polygon points="430,424 472,502 388,502" fill="${p.tree1d}"/>
+      <polygon points="430,424 472,502 430,502" fill="${p.tree1l}"/>
+      <polygon points="430,464 484,560 376,560" fill="${p.tree2d}"/>
+      <polygon points="430,464 484,560 430,560" fill="${p.tree2l}"/>
+      <polygon points="424,560 436,560 438,592 422,592" fill="#5b3a25"/>
+      <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
+    </g>
+
+    ${trailAndMotif(p)}
+    ${fireflies}
+
+    <!-- film grain -->
+    <rect width="460" height="700" filter="url(#grain)"/>
+  </svg>`;
+}
+
+export const SCENES = { mountain: mountainScene, lakefront: lakefrontScene, prairie: prairieScene, boreal: borealScene, swamp: swampScene };
+export const LOCALE_ROSTER = ["mountain", "lakefront", "prairie", "boreal", "swamp"]; // grows with issue #12's scene batch
 
 export function coverHtml({ number, dateLabel = "", pageCount, articleCount, treesPlanted = 1, treesTotal = null, season = null, time = "day", locale = "mountain" }) {
   const seasonKey = PALETTES[season] ? season : "summer";
