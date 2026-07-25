@@ -31,7 +31,31 @@ cover.
   lands a winter night close (rare on purpose), fireflies in summer-night
   swamp, bare prairie oak in fall, snowline on the canyon in winter.
 
-## Current state
+## Update 2026-07-25: all 7 scenes built, closer wired (NOT deployed)
+
+- Roster complete: mountain, lakefront, prairie, boreal, swamp, cityscape,
+  canyon (rotation order in `LOCALE_ROSTER`). 56-cover matrix renders.
+- All four garnishes in: prairie oak bare in fall (marcescent brown canopy
+  in winter — burr oaks hold dead leaves), boreal aurora winter-night only,
+  swamp fireflies summer-night only, canyon snowline all winter.
+- Foreground rework (Keanan feedback 2026-07-25): trail winds PAST the
+  stump, ten saplings hand-scattered (not a line), shared `trailAndMotif()`
+  helper — this changed every scene incl. canonical mountain layout.
+- Scene fns take `(palette, seasonKey)`. New tokens: `canopy0/1` in all 8
+  palettes (deciduous: prairie oak + swamp cypress).
+- Closer wiring (step 3) is CODED but NOT DEPLOYED: closeForUser computes
+  season/time/locale at the close moment and stores that same moment as
+  closed_at; rerenderIssue derives from issue.closed_at. issueSpot syncs
+  geocoded geo_lng onto the in-memory user so a first close uses it.
+- Rerender fidelity check: issue 1 closed 2026-07-17T06:30Z, geo_lng null →
+  rerender = summer/day/mountain = exactly what printed. CAVEAT: once
+  geo_lng gets set (first successful geocode), a rerender of issue 1 would
+  compute hour 06:30−6 = 00:30 → NIGHT. If that ever matters, snapshot
+  season/time/locale onto the issues row (small migration) instead.
+- Still open: Keanan reviews full matrix → deploy closer → step 4 Lulu
+  validation pass (/rerender a real issue) → close #12.
+
+## Current state (as of session start, superseded above)
 
 - `src/palettes.js` — 8 palettes (4 seasons × day/night) with full token
   docs at the top. Summer day = the EXACT hexes Issue № 1 shipped with

@@ -6,7 +6,8 @@
 // B&W interior per spec: everything is ink-on-paper monochrome; images are
 // forced grayscale.
 
-export { coverHtml, spineWidthIn } from "./cover.js";
+export { coverHtml, spineWidthIn, LOCALE_ROSTER } from "./cover.js";
+export { seasonFor, timeFor } from "./palettes.js";
 import { FONTS_CSS } from "./fonts.css.js";
 
 const escape = (s) =>

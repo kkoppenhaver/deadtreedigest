@@ -13,7 +13,7 @@
 //     while nobody saves).
 //   - POST /run (bearer save_token): force-close whatever is queued. Test lever.
 
-import { issueHtml, coverHtml } from "@dtd/typeset";
+import { issueHtml, coverHtml, seasonFor, timeFor, LOCALE_ROSTER } from "@dtd/typeset";
 import {
   findSpot, geocode, reverseGeocode, mapLayers, renderSpotMap,
   directionsQr, footRoute, formatDirections, computeFrame,
@@ -383,6 +383,10 @@ async function issueSpot(env, user) {
       );
       if (!geo) return null;
       ({ lat, lng } = geo);
+      // Sync the in-memory row too: the cover's day/night computation reads
+      // user.geo_lng right after this call.
+      user.geo_lat = lat;
+      user.geo_lng = lng;
       await env.DB.prepare("UPDATE users SET geo_lat = ?, geo_lng = ? WHERE id = ?")
         .bind(lat, lng, user.id)
         .run();
@@ -443,9 +447,18 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
     contentHtml: i.content_html,
     estimatedPages: i.estimated_pages,
   }));
-  const dateLabel = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const closedAt = new Date();
+  const dateLabel = closedAt.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   const spot = await issueSpot(env, user);
+  // The close moment decides the cover (issue #12): season from the date,
+  // day/night from the LOCAL close hour (longitude approximation — geocoded
+  // by issueSpot above when this is the user's first close), scene from the
+  // issue number. closed_at stores this same moment, so /rerender always
+  // reproduces the exact cover that printed.
+  const season = seasonFor(closedAt);
+  const time = timeFor(closedAt, user.geo_lng ?? null);
+  const locale = LOCALE_ROSTER[(number - 1) % LOCALE_ROSTER.length];
   const interior = await renderPdf(
     env,
     issueHtml({ number, dateLabel, articles, spot }, { pagedJs })
@@ -463,6 +476,7 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
         coverHtml({
           number, dateLabel, pageCount, articleCount: picked.length,
           treesTotal: (past?.t ?? 0) + TREES_PER_ISSUE,
+          season, time, locale,
         })
       );
     } catch (err) {
@@ -480,7 +494,7 @@ async function closeForUser(user, env, queued = null, { autoPrint = true } = {})
 
   const issueId = crypto.randomUUID();
   const approveKey = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
-  const now = new Date().toISOString();
+  const now = closedAt.toISOString(); // the same moment the cover was computed from
   await env.DB.prepare(
     "INSERT INTO issues (id, user_id, number, status, page_count, pdf_key, cover_key, approve_key, closed_at) VALUES (?, ?, ?, 'rendered', ?, ?, ?, ?, ?)"
   )
@@ -634,11 +648,18 @@ async function rerenderIssue(user, env, number) {
   const past = await env.DB.prepare(
     "SELECT COALESCE(SUM(trees_planted), 0) AS t FROM issues WHERE user_id = ?"
   ).bind(user.id).first();
+  // Reproduce the printed cover: derive from the issue's recorded closed_at,
+  // never from now() — a rerender must not shuffle season, edition, or scene.
+  const closedAt = new Date(issue.closed_at ?? Date.now());
+  const season = seasonFor(closedAt);
+  const time = timeFor(closedAt, user.geo_lng ?? null);
+  const locale = LOCALE_ROSTER[(number - 1) % LOCALE_ROSTER.length];
   const cover = await renderPdf(
     env,
     coverHtml({
       number, dateLabel, pageCount, articleCount: items.length,
       treesTotal: Math.max(past?.t ?? 0, TREES_PER_ISSUE),
+      season, time, locale,
     })
   );
 
