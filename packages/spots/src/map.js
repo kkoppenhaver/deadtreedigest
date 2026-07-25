@@ -71,23 +71,32 @@ export function renderSpotMap({ spot, layers, spanMeters = 900, size = 320, labe
       <text x="0" y="-15" font-family="Courier, monospace" font-size="9.5" font-weight="bold" fill="${INK}" stroke="none" text-anchor="middle">N</text>
     </g>`;
 
-  // Identity chip: who this spot is and where to find it, hanging off the
-  // pin. Courier on a paper chip, like a taped-on field note.
-  let labelChip = "";
-  if (label?.title) {
-    const lines = [label.title, label.sub].filter(Boolean).map((s) => String(s).slice(0, 42));
-    const wch = Math.max(...lines.map((l) => l.length));
-    const w = Math.min(wch * 6.1 + 20, size - 24);
-    const h = lines.length === 2 ? 34 : 22;
-    const lx = Math.max(10, Math.min(size - w - 10, c - w / 2));
-    const ly = c + 14;
-    labelChip = `
+  // Identity chip: who this spot is, where to find it, and the exact
+  // coordinates — national-park trailhead-sign style, and paste-able into
+  // any maps app. Courier on a paper chip, like a taped-on field note.
+  const coords =
+    `${Math.abs(lat0).toFixed(5)}° ${lat0 >= 0 ? "N" : "S"}, ` +
+    `${Math.abs(lng0).toFixed(5)}° ${lng0 >= 0 ? "E" : "W"}`;
+  const lines = [
+    ...(label?.title ? [{ t: label.title, size: 10, bold: true }] : []),
+    ...(label?.sub ? [{ t: label.sub, size: 9, dim: true }] : []),
+    { t: coords, size: 9, dim: true },
+  ].map((l) => ({ ...l, t: String(l.t).slice(0, 42) }));
+  const wch = Math.max(...lines.map((l) => l.t.length));
+  const w = Math.min(wch * 6.1 + 20, size - 24);
+  const h = 10 + lines.length * 13;
+  const lx = Math.max(10, Math.min(size - w - 10, c - w / 2));
+  const ly = c + 14;
+  const labelChip = `
     <g font-family="Courier, monospace" fill="${INK}">
       <rect x="${lx.toFixed(0)}" y="${ly}" width="${w.toFixed(0)}" height="${h}" rx="5" fill="${PAPER}" stroke="${INK}" stroke-width="1.6"/>
-      <text x="${(lx + w / 2).toFixed(0)}" y="${ly + 14}" font-size="10" font-weight="bold" text-anchor="middle">${esc(lines[0])}</text>
-      ${lines[1] ? `<text x="${(lx + w / 2).toFixed(0)}" y="${ly + 27}" font-size="9" text-anchor="middle" opacity="0.8">${esc(lines[1])}</text>` : ""}
+      ${lines
+        .map(
+          (l, i) =>
+            `<text x="${(lx + w / 2).toFixed(0)}" y="${ly + 15 + i * 13}" font-size="${l.size}"${l.bold ? ' font-weight="bold"' : ""}${l.dim ? ' opacity="0.8"' : ""} text-anchor="middle">${esc(l.t)}</text>`
+        )
+        .join("")}
     </g>`;
-  }
 
   const scaleMeters = Math.round(spanMeters / 4 / 50) * 50 || 100;
   const scalePx = (scaleMeters / spanMeters) * size;
