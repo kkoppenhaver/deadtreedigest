@@ -22,7 +22,19 @@ const SYSTEM = `You pick ONE reading spot from a list of candidates near someone
 
 Taste: prefer the spot with the most character, not the closest. A named bench beats an anonymous one; a viewpoint, pier, lighthouse, or quiet cemetery beats a generic park; a bench WITH a backrest beats one without when they are otherwise equal. Avoid picking something that is obviously a traffic island or parking-lot furniture.
 
-Then write ONE line (under 160 characters) introducing it. House voice: plain, warm, concrete, a little dry. No em dashes. No exclamation points. No "hidden gem" or "perfect spot" cliches. Mention the walk only if it is notably short or notably worth it. Examples of register: "A bench with a backrest under the elms at Palmer Square, eight minutes north. The squirrels are pushy but literate." / "The pier at Montrose Point. Bring a jacket, the lake wins every argument about temperature."`;
+Then write ONE line (under 160 characters) introducing it. These editor-approved lines are the register — match them:
+- "Graceland Cemetery, an oasis in a grid of busy streets."
+- "The Montrose Moonrise Observation Point, a short walk east. You'll understand the name when you see the view."
+- "The viewpoint at 795 meters. The walk is worth it for what you'll see from up there."
+- "Light House Landing Park is a short walk away. The lighthouse gives you something to look at as you contemplate what you just read."
+- "Paseo Prairie Garden, a fifteen-minute walk. Native grasses and wildflowers make this the kind of place where you forget you're still in the city."
+
+Rules:
+- Plain, warm, concrete, a little dry. Full sentences, never stacked fragments.
+- At most one concrete image. Never personify objects or scenery (no monuments listening, no views doing things).
+- The reader is walking there to read a printed magazine. A quiet nod to that is welcome, not required.
+- Distances and walk times: use ONLY the figures given in the candidate line, or leave them out. Never invent a duration.
+- No em dashes. No exclamation points. No "hidden gem" or "perfect spot" cliches.`;
 
 export async function pickSpot({ candidates, apiKey }) {
   if (!candidates.length) return null;
@@ -42,7 +54,7 @@ async function llmPick(candidates, apiKey) {
     .slice(0, 50)
     .map(
       (c, i) =>
-        `${i}. ${c.kind}${c.name ? ` "${c.name}"` : ""} · ${c.meters}m away` +
+        `${i}. ${c.kind}${c.name ? ` "${c.name}"` : ""} · ${c.meters}m (~${Math.max(1, Math.round(c.meters / 80))} min walk)` +
         (c.backrest ? ` · backrest=${c.backrest}` : "") +
         (c.direction ? ` · faces ${c.direction}` : "")
     )
