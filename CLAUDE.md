@@ -36,6 +36,16 @@ R2 `dtd-raw` (raw captures at `raw/{user}/{item}.html`, PDFs at `issues/{user}/i
   ADMIN_EMAIL once. Daily cron 17:00 UTC:
   same check, pending-print retry, owed-trees retry, Lulu status polling
   (bad states alert admin; SHIPPED recorded silently).
+- **Free first issue (trial)**: `/subscribe` puts first-timers in an
+  open-ended Stripe Checkout trial (730-day hold, card required, US-only).
+  First SHIPPED issue → closer pokes api `POST /trial/shipped` (closer→api
+  service binding, save_token auth, daily-sweep backstop) → trial_end pinned
+  to ship+7d + the ONE legally required notice email (cancel = `/billing`
+  portal bounce, annual $490 = `/annual`). Webhook reads real sub status at
+  checkout, records trial_started_at / trial_converts_at /
+  trial_converted_at (the model's s and c), dedupes trials by card
+  fingerprint (repeat → admin alert). Needs STRIPE_PRICE_ID_ANNUAL secret +
+  customer-portal config in the Stripe dashboard.
 - **Auth**: no logins. Bearer save_token for clients; scoped magic-link keys
   in URLs for browser pages (setup_key, address_key, library_key,
   approve_key). Email is the interface.

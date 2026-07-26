@@ -54,6 +54,12 @@ export default {
     if (request.method === "GET" && pathname === "/subscribe") {
       return subscribePage(request, env);
     }
+    if (request.method === "GET" && pathname === "/annual") {
+      return annualPage(request, env);
+    }
+    if (request.method === "GET" && pathname === "/billing") {
+      return billingPage(request, env);
+    }
     if (request.method === "POST" && pathname === "/stripe/webhook") {
       return stripeWebhook(request, env);
     }
@@ -104,6 +110,9 @@ export default {
     }
     if (request.method === "PATCH" && pathname === "/me") {
       return updateMe(request, env, user);
+    }
+    if (request.method === "POST" && pathname === "/trial/shipped") {
+      return trialShipped(env, user);
     }
     if (request.method === "POST" && pathname.match(/^\/items\/[\w-]+\/flag$/)) {
       return flag(env, user, pathname.split("/")[2], ctx);
@@ -803,9 +812,27 @@ async function stripePost(env, path, params) {
   return body;
 }
 
+async function stripeGet(env, path) {
+  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
+    headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error?.message ?? `stripe ${path} failed (${res.status})`);
+  return body;
+}
+
+// The free first issue (decided 2026-07-26): the trial is earned, not timed —
+// nothing bills until the first issue ships. Stripe can't express "until the
+// queue fills", so the trial opens at its 730-day maximum and the closer pins
+// trial_end to ship + TRIAL_NOTICE_DAYS when the first issue goes out.
+const TRIAL_HOLD_DAYS = 730;
+const TRIAL_NOTICE_DAYS = 7;
+
 // GET /subscribe?key=<setup_key> — create a Checkout session and bounce.
-// Checkout collects the shipping address (US + CA) and phone, so for a
-// paying user this replaces the /address step too.
+// Checkout collects the shipping address (US-only at launch, decided
+// 2026-07-26) and phone, so for a paying user this replaces the /address
+// step too. First-timers get the free-first-issue trial, card up front;
+// anyone who has held a subscription or trial before pays from day one.
 async function subscribePage(request, env) {
   const key = new URL(request.url).searchParams.get("key");
   const user = key
@@ -819,6 +846,7 @@ async function subscribePage(request, env) {
     return htmlResponse(setupShell(`<p>You're already active — the press prints when your queue fills. <a href="/setup?key=${user.setup_key}">Back to setup</a></p>`));
   }
 
+  const trialEligible = !user.stripe_subscription_id && !user.trial_started_at;
   const origin = new URL(request.url).origin;
   const session = await stripePost(env, "checkout/sessions", {
     mode: "subscription",
@@ -828,12 +856,131 @@ async function subscribePage(request, env) {
     ...(user.stripe_customer_id
       ? { customer: user.stripe_customer_id }
       : { customer_email: user.email }),
+    ...(trialEligible && {
+      "subscription_data[trial_period_days]": String(TRIAL_HOLD_DAYS),
+      "subscription_data[trial_settings][end_behavior][missing_payment_method]": "cancel",
+      payment_method_collection: "always",
+    }),
     allow_promotion_codes: "true",
     "shipping_address_collection[allowed_countries][0]": "US",
-    "shipping_address_collection[allowed_countries][1]": "CA",
     "phone_number_collection[enabled]": "true",
     success_url: `${origin}/setup?key=${user.setup_key}`,
     cancel_url: `${origin}/setup?key=${user.setup_key}`,
+  });
+  return Response.redirect(session.url, 303);
+}
+
+// POST /trial/shipped (bearer save_token) — the closer's hook when a
+// trialing user's first issue goes SHIPPED. Pins the open-ended trial to
+// ship + 7 days and sends the one legally required email (FTC negative-option
+// rule + card-network physical-goods trial rules). Idempotent: the closer's
+// sweep re-calls until both the Stripe update and the email stick.
+async function trialShipped(env, user) {
+  if (user.subscription_status !== "trialing" || !user.stripe_subscription_id) {
+    return json({ action: "not-trialing" });
+  }
+  let convertsAt = user.trial_converts_at;
+  if (!convertsAt) {
+    const end = Math.floor(Date.now() / 1000) + TRIAL_NOTICE_DAYS * 86_400;
+    await stripePost(env, `subscriptions/${user.stripe_subscription_id}`, {
+      trial_end: String(end),
+      proration_behavior: "none",
+    });
+    convertsAt = new Date(end * 1000).toISOString();
+    await env.DB.prepare("UPDATE users SET trial_converts_at = ? WHERE id = ?")
+      .bind(convertsAt, user.id).run();
+  }
+  let emailed = false;
+  if (!user.trial_notice_sent_at) {
+    emailed = await sendTrialNoticeEmail(env, user);
+    if (emailed) {
+      await env.DB.prepare("UPDATE users SET trial_notice_sent_at = ? WHERE id = ?")
+        .bind(new Date().toISOString(), user.id).run();
+    }
+  }
+  return json({ action: "trial-pinned", convertsAt, emailed });
+}
+
+async function sendTrialNoticeEmail(env, user) {
+  const billingUrl = `${env.API_URL}/billing?key=${user.setup_key}`;
+  const annualUrl = `${env.API_URL}/annual?key=${user.setup_key}`;
+  const text =
+    `Your first issue is in the mail.\n\n` +
+    `And here is the part we say plainly, once: in ${TRIAL_NOTICE_DAYS} days your subscription starts, $49 a month, printing, shipping, and the tree all included. If you'd rather it didn't, cancel before then and the magazine is still yours:\n\n${billingUrl}\n\n` +
+    `Prefer a year? $490 covers twelve months, two of them free:\n\n${annualUrl}\n\n` +
+    `After this, we go quiet. No tracking numbers, no reminders. Issues simply arrive.\n\n— Dead Tree Digest`;
+  const html = `
+    <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
+      <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px;">Your first issue is in the mail</h2>
+      <p>And here is the part we say plainly, once: in ${TRIAL_NOTICE_DAYS} days your subscription starts, $49 a month, printing, shipping, and the tree all included.</p>
+      <p>If you'd rather it didn't, <a href="${billingUrl}" style="color:#bf4e24;">cancel before then</a> and the magazine is still <em>yours</em>.</p>
+      <p style="font-size:13px;color:#6b5f4d;">Prefer a year? <a href="${annualUrl}" style="color:#bf4e24;">$490 covers twelve months</a>, two of them free.</p>
+      <p>After this, we go quiet. No tracking numbers, no reminders. Issues simply arrive.</p>
+      <p style="font-style: italic; color: #4a4032;">— Dead Tree Digest</p>
+    </div>`;
+  try {
+    await env.EMAIL.send({
+      to: user.email,
+      from: { email: env.FROM_EMAIL, name: env.FROM_NAME },
+      subject: "Your first issue is in the mail",
+      text,
+      html,
+    });
+    return true;
+  } catch (err) {
+    console.error(`trial notice email failed: ${err.message}`);
+    return false;
+  }
+}
+
+// GET /annual?key=<setup_key> — switch the subscription to the annual price
+// ($490/yr, two months free). Linked from the trial notice; for a trialing
+// user the year starts when the trial ends, for a monthly subscriber at the
+// next renewal. No proration either way.
+async function annualPage(request, env) {
+  const key = new URL(request.url).searchParams.get("key");
+  const user = key
+    ? await env.DB.prepare("SELECT * FROM users WHERE setup_key = ?").bind(key).first()
+    : null;
+  if (!user) return htmlResponse(setupShell("<p class='err'>This link isn't valid.</p>"), 404);
+  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_PRICE_ID_ANNUAL) {
+    return htmlResponse(setupShell("<p class='err'>The annual plan isn't switched on yet.</p>"), 503);
+  }
+  if (!user.stripe_subscription_id || !["trialing", "active"].includes(user.subscription_status)) {
+    return htmlResponse(setupShell(`<p class='err'>There's no subscription to switch. <a href="/subscribe?key=${user.setup_key}">Start one</a> first.</p>`), 400);
+  }
+  const sub = await stripeGet(env, `subscriptions/${user.stripe_subscription_id}`);
+  const item = sub.items?.data?.[0];
+  if (!item) return htmlResponse(setupShell("<p class='err'>We couldn't read your subscription. Try again in a minute.</p>"), 500);
+  if (item.price?.id === env.STRIPE_PRICE_ID_ANNUAL) {
+    return htmlResponse(setupShell("<p>You're already on the annual plan. Nothing more to do here.</p>"));
+  }
+  await stripePost(env, `subscriptions/${user.stripe_subscription_id}`, {
+    "items[0][id]": item.id,
+    "items[0][price]": env.STRIPE_PRICE_ID_ANNUAL,
+    proration_behavior: "none",
+  });
+  return htmlResponse(setupShell(
+    user.subscription_status === "trialing"
+      ? "<p>Done. When your trial ends, the year starts: $490, twelve months of issues, two of them free.</p>"
+      : "<p>Done. At your next renewal the year starts: $490, twelve months of issues, two of them free.</p>"
+  ));
+}
+
+// GET /billing?key=<setup_key> — bounce to the Stripe customer portal
+// (cancel, card, invoices). This is the cancel link in the trial notice.
+async function billingPage(request, env) {
+  const key = new URL(request.url).searchParams.get("key");
+  const user = key
+    ? await env.DB.prepare("SELECT * FROM users WHERE setup_key = ?").bind(key).first()
+    : null;
+  if (!user) return htmlResponse(setupShell("<p class='err'>This link isn't valid.</p>"), 404);
+  if (!user.stripe_customer_id) {
+    return htmlResponse(setupShell("<p class='err'>No billing on file for this account.</p>"), 400);
+  }
+  const session = await stripePost(env, "billing_portal/sessions", {
+    customer: user.stripe_customer_id,
+    return_url: `${env.API_URL}/setup?key=${user.setup_key}`,
   });
   return Response.redirect(session.url, 303);
 }
@@ -900,9 +1047,40 @@ async function stripeWebhook(request, env) {
       return json({ received: true });
     }
 
+    // Trial checkouts land as 'trialing' (free first issue), direct
+    // subscriptions as 'active' — read the truth from the subscription
+    // instead of assuming, and grab the card fingerprint while we're there.
+    let status = "active";
+    let fingerprint = null;
+    try {
+      const sub = await stripeGet(env, `subscriptions/${obj.subscription}?expand[]=default_payment_method`);
+      status = sub.status;
+      fingerprint = sub.default_payment_method?.card?.fingerprint ?? null;
+    } catch (err) {
+      console.error(`subscription lookup failed: ${err.message}`);
+    }
+
+    const now = new Date().toISOString();
     await env.DB.prepare(
-      "UPDATE users SET stripe_customer_id = ?, stripe_subscription_id = ?, subscription_status = 'active' WHERE id = ?"
-    ).bind(obj.customer, obj.subscription, user.id).run();
+      `UPDATE users SET stripe_customer_id = ?, stripe_subscription_id = ?, subscription_status = ?,
+         card_fingerprint = COALESCE(?, card_fingerprint),
+         trial_started_at = CASE WHEN ? = 'trialing' AND trial_started_at IS NULL THEN ? ELSE trial_started_at END
+       WHERE id = ?`
+    ).bind(obj.customer, obj.subscription, status, fingerprint, status, now, user.id).run();
+
+    // One free issue per card (decided 2026-07-26): a repeat fingerprint on a
+    // fresh trial gets flagged to the operator, not auto-blocked — at this
+    // scale a human look beats a hostile surprise charge.
+    if (fingerprint && status === "trialing") {
+      const dupe = await env.DB.prepare(
+        "SELECT email FROM users WHERE card_fingerprint = ? AND trial_started_at IS NOT NULL AND id != ?"
+      ).bind(fingerprint, user.id).first();
+      if (dupe) {
+        await sendAdminEmail(env, `[DTD] trial card reuse: ${user.email}`,
+          `New trial for ${user.email} uses the same card as existing trial account ${dupe.email}.\n` +
+          `One free issue per card is the rule — review, and cancel one unless it's a household quirk.`);
+      }
+    }
 
     // Checkout collected shipping + phone; persist it if it validates. A
     // rejected address isn't fatal (the address magic-link flow still
@@ -922,18 +1100,43 @@ async function stripeWebhook(request, env) {
       else await sendAdminEmail(env, `[DTD] subscriber address needs a look: ${user.email}`, `Checkout address didn't validate (${result.error}). The user can fix it at the /address magic link.`);
     }
 
-    await sendAdminEmail(env, `[DTD] new subscriber: ${user.email}`, `Subscription ${obj.subscription} is live. Press armed.`);
+    await sendAdminEmail(
+      env,
+      `[DTD] new ${status === "trialing" ? "trial" : "subscriber"}: ${user.email}`,
+      status === "trialing"
+        ? `Trial subscription ${obj.subscription} is live — free first issue, billing starts 7 days after it ships. Press armed.`
+        : `Subscription ${obj.subscription} is live. Press armed.`
+    );
     return json({ received: true });
   }
 
   if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
     const status = event.type === "customer.subscription.deleted" ? "canceled" : obj.status;
     const printing = PRINTING_STATUSES.includes(status);
+    // previous_attributes only carries changed fields; the stored status is
+    // the fallback for spotting trial transitions (deleted events especially).
+    const before = await env.DB.prepare(
+      "SELECT subscription_status FROM users WHERE stripe_subscription_id = ?"
+    ).bind(obj.id).first();
+    const wasTrialing =
+      event.data?.previous_attributes?.status === "trialing" ||
+      before?.subscription_status === "trialing";
     const { meta } = await env.DB.prepare(
       "UPDATE users SET subscription_status = ? WHERE stripe_subscription_id = ?"
     ).bind(status, obj.id).run();
-    if (meta.changes > 0 && (!printing || status === "past_due")) {
-      await sendAdminEmail(env, `[DTD] subscription ${status}: ${obj.id}`, `Press is ${printing ? "still armed (dunning)" : "disarmed"}. Customer ${obj.customer}.`);
+    if (meta.changes > 0) {
+      // The acquisition model's c, measured: trials that convert vs trials
+      // that end any other way.
+      if (wasTrialing && status === "active") {
+        await env.DB.prepare(
+          "UPDATE users SET trial_converted_at = ? WHERE stripe_subscription_id = ?"
+        ).bind(new Date().toISOString(), obj.id).run();
+        await sendAdminEmail(env, `[DTD] trial converted: ${obj.id}`, `Trial subscription ${obj.id} is now paying. Customer ${obj.customer}.`);
+      } else if (wasTrialing && !printing) {
+        await sendAdminEmail(env, `[DTD] trial ended unconverted: ${obj.id}`, `Trial subscription ${obj.id} went ${status} without converting. Customer ${obj.customer}.`);
+      } else if (!printing || status === "past_due") {
+        await sendAdminEmail(env, `[DTD] subscription ${status}: ${obj.id}`, `Press is ${printing ? "still armed (dunning)" : "disarmed"}. Customer ${obj.customer}.`);
+      }
     }
     return json({ received: true });
   }
@@ -988,7 +1191,9 @@ async function setupPage(request, env) {
         <strong>Start your subscription</strong>
         <p>${canPrint(user)
           ? "✓ You're active — the press prints when your queue fills."
-          : `$49 a month: printing, shipping, and the tree we plant, all included. <a href="${apiBase}/subscribe?key=${user.setup_key}">Subscribe</a> — there's a box for a code if you have one. Just finished? Give it a minute and reload.`}</p>
+          : user.stripe_subscription_id || user.trial_started_at
+            ? `$49 a month: printing, shipping, and the tree we plant, all included. <a href="${apiBase}/subscribe?key=${user.setup_key}">Subscribe</a> — there's a box for a code if you have one. Just finished? Give it a minute and reload.`
+            : `Your first issue is on us. Card up front, then $49 a month starting a week after that issue ships: printing, shipping, and the tree, all included. Cancel before then and the magazine is still <em>yours</em>. <a href="${apiBase}/subscribe?key=${user.setup_key}">Start your free issue</a> (there's a box for a code if you have one). Just finished? Give it a minute and reload.`}</p>
       </div>
     </div>
     <div class="step">
