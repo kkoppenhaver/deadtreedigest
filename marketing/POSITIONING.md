@@ -59,6 +59,28 @@ trees. The math is printed inside." The ledger page is a signature product
 detail, not a pitch. BANNED: the "apologize" framing ("we planted ten to
 apologize") — retired 2026-07-16 across all materials.
 
+## The offer (decided 2026-07-26)
+
+**First issue free.** The trial is the product experience itself: card up
+front, nothing bills until the first issue ships, $49/mo starts a week
+after, cancel before then and the magazine is still yours. Annual: $490,
+two months free, offered at the conversion moment (the trial notice
+email). US mailboxes only at launch.
+
+Offer copy principles:
+- "Your first issue is on us" is the offer line. We never say "trial" or
+  "free trial" in customer copy; the word belongs to software, and this
+  is a magazine.
+- The price is always stated plainly next to the free issue, never
+  hidden: "then $49 a month, printing, shipping, and the tree included."
+- "Cancel before then and the magazine is still *yours*" does the
+  trust-building. Say it wherever the card is mentioned; the kept
+  magazine is the proof the offer is sincere.
+- The one notice email is part of the voice: dry, plain, said once.
+  "After this, we go quiet. Issues simply arrive." No countdown, no
+  second reminder.
+- US-only is stated as a fact in small print, not an apology.
+
 ## The name
 
 Two-track (decided 2026-07-16): **Dead Tree Digest stays the working brand**

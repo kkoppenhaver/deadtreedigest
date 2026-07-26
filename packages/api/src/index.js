@@ -769,13 +769,13 @@ const saveAddress = (user) =>
 async function sendWelcomeEmail(env, user, setupUrl) {
   const text =
     `Welcome to Dead Tree Digest.\n\n` +
-    `Your first issue starts building the moment you save your first article. Two minutes of setup:\n\n` +
+    `Your first issue is on us, and it starts building the moment you save your first article. Two minutes of setup:\n\n` +
     `${setupUrl}\n\n` +
     `That link installs your press credentials: the browser extension for saving, and where your issues should ship.\n\n— Dead Tree Digest`;
   const html = `
     <div style="font-family: Georgia, serif; color: #2b2419; max-width: 34em;">
       <h2 style="font-family: Helvetica, sans-serif; text-transform: uppercase; letter-spacing: 0.1em; font-size: 15px; margin-bottom: 20px;">🌲 Welcome to Dead Tree Digest</h2>
-      <p style="margin: 0 0 26px;">Your first issue starts building the moment you save your first article. Setup takes about two minutes.</p>
+      <p style="margin: 0 0 26px;">Your first issue is on us, and it starts building the moment you save your first article. Setup takes about two minutes.</p>
       <p style="margin: 30px 0;"><a href="${setupUrl}" style="background:#1f4d38;color:#f1e6cf;padding:12px 22px;text-decoration:none;font-family:Helvetica,sans-serif;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;border:2px solid #2b2419;">Set up my press credentials</a></p>
       <p style="font-size:13px;color:#6b5f4d;font-style:italic;margin: 0 0 30px;">The link connects your saving extension and tells us where issues should ship. After that, you just read the internet like normal — and anything you'd rather forward, send to <strong>${saveAddress(user)}</strong>.</p>
       <p style="font-style: italic; color: #4a4032; margin: 0;">— Dead Tree Digest</p>
