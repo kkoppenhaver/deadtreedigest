@@ -1,4 +1,15 @@
-# Cover system — working doc (issue #12)
+# Cover system — working doc (issue #12, CLOSED 2026-07-27)
+
+## SHIPPED 2026-07-27
+
+Full matrix Keanan-approved (final notes: solid arch window, simplified
+rowboat, no birch snag). dtd-closer DEPLOYED with the season/time/locale
+wiring — the next close prints a computed cover. Step-4 validation:
+production /rerender of issue 1 is (correctly) refused — "already at the
+printer" — so the page box was verified with local Chrome instead: three
+new-style covers (100pp + 84pp) all emit MediaBox at/just over the integer-
+point width, safely above Lulu's minimum, 630pt tall exactly. Issue № 2
+(~2026-07-31) wears lakefront summer, day/night per close hour.
 
 Session handoff, 2026-07-26. Everything decided + built so far, and exactly
 what's left. Read alongside the plan of record + amendments on GH issue #12.
