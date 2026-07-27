@@ -31,6 +31,20 @@ cover.
   lands a winter night close (rare on purpose), fireflies in summer-night
   swamp, bare prairie oak in fall, snowline on the canyon in winter.
 
+## Update 2026-07-26: Option B foregrounds (Keanan-approved)
+
+The identical bottom half is gone. What stays constant in every scene: the
+stump (STUMP_MOTIF, same spot), the S-curve path shape (TRAIL_D — only the
+paving changes), the hero pine, and three witness saplings (witnessSaplings
+helper, same triangle, per-scene anchor). Mountain keeps the original
+ten-sapling meadow. Per-locale casts: lakefront boardwalk + driftwood + red
+rowboat; prairie mown two-track + split-rail fence + coneflowers; boreal
+needle trail + birch snag + mossy erratics + blueberries; swamp raised
+boardwalk on pilings + cattails + heron; cityscape paved path + park bench
+(the one from the copy) + pigeons + day/night windows; canyon dry wash +
+trail sign + prickly pear. Arch opening is one solid midShade tone (review
+note: rock ring must read solid).
+
 ## Update 2026-07-25: all 7 scenes built, closer wired (NOT deployed)
 
 - Roster complete: mountain, lakefront, prairie, boreal, swamp, cityscape,

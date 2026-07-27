@@ -66,11 +66,9 @@ function skyActors(p) {
 const sapling = (x, y, s, dark, lit) =>
   `<g transform="translate(${x},${y}) scale(${s})"><polygon points="8,0 15,17 1,17" fill="${dark}"/>${lit ? `<polygon points="8,0 15,17 8,17" fill="${lit}"/>` : ""}<rect x="6.8" y="17" width="2.6" height="6" fill="#5b3a25"/></g>`;
 
-function trailAndMotif(p, trailDy = 0) {
-  return `<!-- the trail, winding down past the stump -->
-    <path d="M310 576 Q 262 592 224 606 Q 186 622 178 652 Q 172 674 184 700 L 252 700 Q 240 670 252 648 Q 268 622 304 606 Q 338 592 350 580 Z" fill="${p.path}" opacity="0.9"${trailDy ? ` transform="translate(0,${trailDy})"` : ""}/>
-
-    <!-- hero stump, lower left, beside the trail -->
+// The hero stump, lower left — the brand itself, identical in every scene.
+// Fixed browns only, no palette dependence.
+const STUMP_MOTIF = `<!-- hero stump, lower left (the brand) -->
     <g>
       <ellipse cx="132" cy="646" rx="64" ry="12" fill="#8a5a33" opacity="0.3"/>
       <path d="M96 586 L100 636 Q 116 646 132 646 L132 582 Z" fill="#6b3f23"/>
@@ -80,7 +78,41 @@ function trailAndMotif(p, trailDy = 0) {
       <ellipse cx="134" cy="583" rx="26" ry="9" fill="none" stroke="#8a5a33" stroke-width="1.8" opacity="0.7"/>
       <ellipse cx="136" cy="582" rx="16" ry="5.5" fill="none" stroke="#8a5a33" stroke-width="1.5" opacity="0.7"/>
       <ellipse cx="138" cy="581" rx="7" ry="2.5" fill="none" stroke="#8a5a33" stroke-width="1.2" opacity="0.7"/>
-    </g>
+    </g>`;
+
+// Option B (foreground variation, prototyping on cityscape): every locale
+// keeps the stump, the S-curve path shape, and these same three witness
+// saplings — a fixed little triangle — while the rest of the foreground
+// cast goes local.
+const witnessSaplings = (tx, ty) => `<g transform="translate(${tx},${ty})">
+      ${sapling(0, 6, 1.15, "#2b6248", "#357254")}
+      ${sapling(38, -4, 0.85, "#337054")}
+      ${sapling(14, 40, 0.6, "#448463")}
+    </g>`;
+
+// Every locale walks the same S-curve — only the paving changes.
+const TRAIL_D = "M310 576 Q 262 592 224 606 Q 186 622 178 652 Q 172 674 184 700 L 252 700 Q 240 670 252 648 Q 268 622 304 606 Q 338 592 350 580 Z";
+
+// Boardwalk paving for the water locales: the trail shape in weathered
+// planking. dy nudges it down for scenes whose crest sits lower.
+const boardwalk = (fill, line, dy = 0) => `<g${dy ? ` transform="translate(0,${dy})"` : ""}>
+      <path d="${TRAIL_D}" fill="${fill}"/>
+      <g stroke="${line}" stroke-width="1.8" opacity="0.7">
+        <path d="M304 584 L342 582"/>
+        <path d="M272 598 L316 594"/>
+        <path d="M238 612 L282 608"/>
+        <path d="M206 628 L252 626"/>
+        <path d="M188 648 L240 646"/>
+        <path d="M180 668 L232 668"/>
+        <path d="M188 690 L240 690"/>
+      </g>
+    </g>`;
+
+function trailAndMotif(p, trailDy = 0) {
+  return `<!-- the trail, winding down past the stump -->
+    <path d="${TRAIL_D}" fill="${p.path}" opacity="0.9"${trailDy ? ` transform="translate(0,${trailDy})"` : ""}/>
+
+    ${STUMP_MOTIF}
 
     <!-- ten saplings scattered across the meadow, far to near (brand motif —
          constant greens in every season) -->
@@ -237,7 +269,26 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    ${trailAndMotif(p, 8)}
+    ${boardwalk("#a58a63", "#7a6548", 8)}
+
+    ${STUMP_MOTIF}
+
+    <!-- driftwood, thrown up past the wrack line -->
+    <g transform="translate(282,656) rotate(-8)">
+      <rect width="52" height="9" rx="4.5" fill="#b9a58a"/>
+      <rect width="52" height="4" rx="2" fill="#cbb894" opacity="0.8"/>
+      <circle cx="52" cy="4.5" r="4.5" fill="#9c876c"/>
+    </g>
+    <!-- the rowboat, pulled up for the season -->
+    <g>
+      <ellipse cx="54" cy="614" rx="30" ry="5" fill="#2b2419" opacity="0.12"/>
+      <path d="M30 606 Q 52 616 78 606 L 70 596 Q 52 602 38 596 Z" fill="#bf4e24"/>
+      <path d="M38 596 Q 52 602 70 596 L 68 599 Q 52 605 40 599 Z" fill="#8a3a1a"/>
+      <path d="M48 601 L 60 601" stroke="#e8dcc0" stroke-width="2"/>
+    </g>
+
+    <!-- witness saplings: the same three, every locale -->
+    ${witnessSaplings(356, 600)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
@@ -351,7 +402,32 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    ${trailAndMotif(p)}
+    <!-- the two-track, mown into the grass -->
+    <path d="${TRAIL_D}" fill="${p.path}" opacity="0.55"/>
+
+    ${STUMP_MOTIF}
+
+    <!-- split-rail fence, running off the left edge -->
+    <g stroke="#6b4a2e" stroke-width="4" stroke-linecap="round">
+      <path d="M16 596 v26 M52 586 v24 M84 578 v22"/>
+    </g>
+    <g stroke="#7a5a3a" stroke-width="3" stroke-linecap="round" fill="none">
+      <path d="M16 602 L52 592 L84 584"/>
+      <path d="M16 612 L52 602 L84 594"/>
+    </g>
+    <!-- coneflowers by the fence -->
+    <g stroke="#4a6b3f" stroke-width="1.8" fill="none" stroke-linecap="round">
+      <path d="M28 650 l0 -11 M42 638 l0 -10 M60 652 l0 -11 M74 642 l0 -9"/>
+    </g>
+    <g fill="#bf4e24">
+      <circle cx="28" cy="636" r="3"/><circle cx="42" cy="625" r="2.7"/><circle cx="60" cy="638" r="3"/><circle cx="74" cy="630" r="2.6"/>
+    </g>
+    <g fill="#d9a13b">
+      <circle cx="28" cy="636" r="1.2"/><circle cx="42" cy="625" r="1.1"/><circle cx="60" cy="638" r="1.2"/><circle cx="74" cy="630" r="1.1"/>
+    </g>
+
+    <!-- witness saplings: the same three, every locale -->
+    ${witnessSaplings(352, 598)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
@@ -431,7 +507,38 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    ${trailAndMotif(p)}
+    <!-- needle-strewn trail -->
+    <path d="${TRAIL_D}" fill="${p.path}" opacity="0.9"/>
+    <g stroke="#8a5a33" stroke-width="1.5" opacity="0.5" stroke-linecap="round">
+      <path d="M298 592 l6 2 M266 606 l6 2 M234 618 l5 3 M204 640 l6 2 M196 664 l5 2 M212 686 l6 2"/>
+    </g>
+
+    ${STUMP_MOTIF}
+
+    <!-- birch snag, white against the dark wall -->
+    <g>
+      <path d="M42 604 L44 512 L40 498 L48 506 L52 508 L54 604 Z" fill="#e8e0d0"/>
+      <g stroke="#3a3a34" stroke-width="2" opacity="0.8">
+        <path d="M44 528 h8 M43 548 h6 M45 568 h8 M44 588 h6"/>
+      </g>
+    </g>
+    <!-- mossy glacial erratics -->
+    <g>
+      <path d="M284 650 q-4 -16 10 -22 q14 -6 26 2 q10 8 2 20 Z" fill="#8a8f94"/>
+      <path d="M286 632 q12 -8 24 -3" stroke="#4a6b3f" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.9"/>
+      <path d="M56 674 q-3 -10 6 -14 q9 -4 16 2 q6 5 1 12 Z" fill="#8a8f94"/>
+      <path d="M58 662 q8 -5 15 -2" stroke="#4a6b3f" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.9"/>
+    </g>
+    <!-- blueberry shrubs -->
+    <g fill="#2c4a3a">
+      <path d="M96 674 q8 -10 16 0 Z M240 682 q7 -9 14 0 Z M322 670 q8 -10 16 0 Z"/>
+    </g>
+    <g fill="#5a6f9a">
+      <circle cx="101" cy="670" r="1.2"/><circle cx="107" cy="672" r="1.1"/><circle cx="246" cy="678" r="1.1"/><circle cx="330" cy="666" r="1.2"/>
+    </g>
+
+    <!-- witness saplings: the same three, every locale -->
+    ${witnessSaplings(352, 594)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
@@ -535,7 +642,39 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    ${trailAndMotif(p)}
+    ${boardwalk("#8f7a58", "#6b5940")}
+    <!-- pilings holding the boardwalk out of the muck -->
+    <g fill="#6b5940">
+      <rect x="176" y="676" width="4" height="12"/>
+      <rect x="196" y="694" width="4" height="6"/>
+      <rect x="244" y="652" width="4" height="12"/>
+      <rect x="236" y="676" width="4" height="10"/>
+    </g>
+
+    ${STUMP_MOTIF}
+
+    <!-- cattails by the pads -->
+    <g stroke="#4a6b3f" stroke-width="2" fill="none" stroke-linecap="round">
+      <path d="M302 588 l0 -20 M312 590 l0 -19 M322 588 l0 -17"/>
+    </g>
+    <g fill="#6b4a2e">
+      <ellipse cx="302" cy="565" rx="2.2" ry="6"/>
+      <ellipse cx="312" cy="568" rx="2" ry="5.5"/>
+      <ellipse cx="322" cy="568" rx="1.9" ry="5"/>
+    </g>
+    <!-- a heron, working the shallows -->
+    <g>
+      <ellipse cx="355" cy="552" rx="9" ry="6" fill="#8a99a5"/>
+      <path d="M347 549 l-7 -5" stroke="#8a99a5" stroke-width="3" stroke-linecap="round"/>
+      <path d="M362 549 q3 -14 6 -21" stroke="#8a99a5" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="369" cy="526" r="3.2" fill="#8a99a5"/>
+      <path d="M372 525 l9 2 -9 2 Z" fill="#d9a13b"/>
+      <path d="M353 558 l0 12 M359 558 l0 12" stroke="#5a6570" stroke-width="1.8"/>
+      <path d="M346 572 h22" stroke="#5a6570" stroke-width="1.5" opacity="0.3"/>
+    </g>
+
+    <!-- witness saplings: the same three, every locale -->
+    ${witnessSaplings(24, 612)}
     ${fireflies}
 
     <!-- film grain -->
@@ -617,7 +756,36 @@ ${skyActors(p)}
     </g>
 
     ${lamp}
-    ${trailAndMotif(p)}
+    <!-- paved park path — the same S-curve every trail in the series walks,
+         poured in asphalt with edge stones -->
+    <path d="M310 576 Q 262 592 224 606 Q 186 622 178 652 Q 172 674 184 700 L 252 700 Q 240 670 252 648 Q 268 622 304 606 Q 338 592 350 580 Z" fill="${p.path}" opacity="0.95"/>
+    <g stroke="${p.band}" stroke-width="2.5" fill="none" opacity="0.45" stroke-linecap="round">
+      <path d="M310 576 Q 262 592 224 606 Q 186 622 178 652 Q 172 674 184 700"/>
+      <path d="M350 580 Q 338 592 304 606 Q 268 622 252 648 Q 240 670 252 700"/>
+    </g>
+
+    ${STUMP_MOTIF}
+
+    <!-- the park bench — the one from the copy — facing the path -->
+    <ellipse cx="359" cy="636" rx="36" ry="6" fill="#2b2419" opacity="0.15"/>
+    <g transform="translate(330,596)">
+      <rect x="2" y="0" width="3" height="26" fill="#2b2419"/>
+      <rect x="52" y="0" width="3" height="26" fill="#2b2419"/>
+      <rect x="0" y="2" width="58" height="4.5" fill="#8a5a33"/>
+      <rect x="0" y="9" width="58" height="4.5" fill="#7a4a2a"/>
+      <rect x="0" y="18" width="58" height="5.5" fill="#8a5a33"/>
+      <rect x="0" y="23.5" width="58" height="2.5" fill="#6b3f23"/>
+      <rect x="4" y="26" width="3" height="12" fill="#2b2419"/>
+      <rect x="51" y="26" width="3" height="12" fill="#2b2419"/>
+    </g>
+    <!-- pigeons working the lawn by the bench -->
+    <g fill="#566068" opacity="0.9">
+      <ellipse cx="318" cy="644" rx="3.2" ry="2.3"/><circle cx="321.5" cy="641.8" r="1.5"/>
+      <ellipse cx="334" cy="650" rx="2.8" ry="2"/><circle cx="331" cy="648" r="1.3"/>
+    </g>
+
+    <!-- witness saplings: the same three, every locale -->
+    ${witnessSaplings(30, 600)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
@@ -713,7 +881,38 @@ ${skyActors(p)}
       <polygon points="430,560 436,560 438,592 430,592" fill="#6d472c"/>
     </g>
 
-    ${trailAndMotif(p)}
+    <!-- the dry wash — gravel where water used to walk -->
+    <path d="${TRAIL_D}" fill="${p.path}" opacity="0.95"/>
+    <g fill="${p.nearShade}" opacity="0.55">
+      <circle cx="316" cy="586" r="1.6"/><circle cx="298" cy="594" r="1.4"/><circle cx="270" cy="602" r="1.6"/>
+      <circle cx="240" cy="616" r="1.5"/><circle cx="210" cy="634" r="1.6"/><circle cx="196" cy="656" r="1.4"/>
+      <circle cx="206" cy="680" r="1.6"/><circle cx="232" cy="650" r="1.3"/><circle cx="288" cy="590" r="1.2"/>
+    </g>
+
+    ${STUMP_MOTIF}
+
+    <!-- weathered trail sign -->
+    <g>
+      <rect x="384" y="600" width="5" height="28" fill="#6b4a2e"/>
+      <g transform="rotate(-4 386 600)">
+        <rect x="371" y="590" width="31" height="11" rx="2" fill="#7a5a3a"/>
+        <rect x="374" y="593" width="25" height="2" fill="#d3a873" opacity="0.7"/>
+        <rect x="374" y="597" width="18" height="2" fill="#d3a873" opacity="0.7"/>
+      </g>
+    </g>
+    <!-- prickly pear, blooming anyway -->
+    <g>
+      <ellipse cx="300" cy="646" rx="8" ry="6.5" fill="#4a7a52"/>
+      <ellipse cx="310" cy="637" rx="6" ry="5" fill="#548a5c"/>
+      <ellipse cx="291" cy="636" rx="5" ry="4.5" fill="#548a5c"/>
+      <circle cx="311" cy="629" r="2.6" fill="#bf4e24"/>
+      <g fill="#d8e0c8">
+        <circle cx="297" cy="644" r="0.9"/><circle cx="303" cy="648" r="0.9"/><circle cx="309" cy="638" r="0.8"/><circle cx="292" cy="635" r="0.8"/>
+      </g>
+    </g>
+
+    <!-- witness saplings: the same three, every locale -->
+    ${witnessSaplings(36, 600)}
 
     <!-- film grain -->
     <rect width="460" height="700" filter="url(#grain)"/>
