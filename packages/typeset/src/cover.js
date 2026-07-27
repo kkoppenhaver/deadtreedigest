@@ -279,14 +279,12 @@ ${skyActors(p)}
       <rect width="52" height="4" rx="2" fill="#cbb894" opacity="0.8"/>
       <circle cx="52" cy="4.5" r="4.5" fill="#9c876c"/>
     </g>
-    <!-- the rowboat, pulled up for the season: side profile, bow to the
-         right, oar leaning on the gunwale so it reads as a boat at 100% -->
-    <g transform="translate(10,584)">
-      <ellipse cx="42" cy="34" rx="34" ry="5" fill="#2b2419" opacity="0.12"/>
-      <path d="M6 16 L60 16 Q 70 10 74 2 Q 74 14 66 22 Q 54 30 32 30 Q 14 28 6 16 Z" fill="#bf4e24"/>
-      <path d="M6 16 L60 16 Q 70 10 74 2 Q 68 12 60 16 Q 46 20 26 19 Q 12 18 6 16 Z" fill="#8a3a1a"/>
-      <path d="M24 16 L14 -2" stroke="#8a5a33" stroke-width="2.5" stroke-linecap="round"/>
-      <ellipse cx="13" cy="-6" rx="3" ry="5.5" transform="rotate(25 13 -6)" fill="#8a5a33"/>
+    <!-- the rowboat, pulled up for the season: one clean hull, flat
+         gunwale, shaded lip — nothing fancier -->
+    <g transform="translate(14,592)">
+      <ellipse cx="34" cy="26" rx="30" ry="4.5" fill="#2b2419" opacity="0.12"/>
+      <path d="M0 6 L68 6 Q 62 22 34 22 Q 6 22 0 6 Z" fill="#bf4e24"/>
+      <path d="M0 6 L68 6 Q 66 11 60 13 Q 34 16 8 13 Q 2 11 0 6 Z" fill="#8a3a1a"/>
     </g>
 
     <!-- witness saplings: the same three, every locale -->
