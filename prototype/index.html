@@ -210,19 +210,6 @@
     margin-top: 4px;
   }
 
-  /* badge stamp overlapping the poster */
-  .badge {
-    position: absolute;
-    top: -46px;
-    left: -52px;
-    width: 150px;
-    height: 150px;
-    animation: spin 40s linear infinite;
-    filter: drop-shadow(3px 4px 0 rgba(43,36,25,0.3));
-    z-index: 2;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
   /* ---------- section scaffolding ---------- */
   section { padding: 88px 0; }
   .section-head { text-align: center; margin-bottom: 60px; }
@@ -343,7 +330,6 @@
     .trees-grid { grid-template-columns: 1fr; gap: 40px; }
     .hero { grid-template-columns: 1fr; gap: 72px; padding-top: 48px; }
     .poster-wrap { max-width: 440px; margin: 0 auto; }
-    .badge { left: -20px; }
     .trail { grid-template-columns: 1fr 1fr; row-gap: 40px; }
     .ledger-grid { grid-template-columns: 1fr; }
   }
@@ -391,20 +377,6 @@
         </div>
 
         <div class="poster-wrap">
-          <!-- rotating ranger badge -->
-          <svg class="badge" viewBox="0 0 150 150" aria-hidden="true">
-            <circle cx="75" cy="75" r="72" fill="#d9a13b" stroke="#2b2419" stroke-width="3"/>
-            <circle cx="75" cy="75" r="54" fill="#1f4d38" stroke="#2b2419" stroke-width="2"/>
-            <defs><path id="circ" d="M 75,75 m -62,0 a 62,62 0 1,1 124,0 a 62,62 0 1,1 -124,0"/></defs>
-            <text font-family="Fjalla One, sans-serif" font-size="12.5" letter-spacing="2.5" fill="#2b2419">
-              <textPath href="#circ" startOffset="2%">DEAD TREE DIGEST ★ EST. 2026 ★ A TREE PER ISSUE ★ READ RESPONSIBLY ★</textPath>
-            </text>
-            <polygon points="75,44 89,66 61,66" fill="#f1e6cf"/>
-            <polygon points="75,56 93,80 57,80" fill="#d9a13b"/>
-            <rect x="72" y="80" width="6" height="8" fill="#bf4e24"/>
-            <text x="75" y="103" text-anchor="middle" font-family="Fjalla One, sans-serif" font-size="11" letter-spacing="1.5" fill="#f1e6cf">1:1</text>
-          </svg>
-
           <!-- WPA-style poster -->
           <div class="poster">
             <div class="poster-inner">
