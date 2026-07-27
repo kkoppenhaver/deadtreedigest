@@ -515,13 +515,6 @@ ${skyActors(p)}
 
     ${STUMP_MOTIF}
 
-    <!-- birch snag, white against the dark wall -->
-    <g>
-      <path d="M42 604 L44 512 L40 498 L48 506 L52 508 L54 604 Z" fill="#e8e0d0"/>
-      <g stroke="#3a3a34" stroke-width="2" opacity="0.8">
-        <path d="M44 528 h8 M43 548 h6 M45 568 h8 M44 588 h6"/>
-      </g>
-    </g>
     <!-- mossy glacial erratics -->
     <g>
       <path d="M284 650 q-4 -16 10 -22 q14 -6 26 2 q10 8 2 20 Z" fill="#8a8f94"/>
