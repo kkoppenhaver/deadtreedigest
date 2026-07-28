@@ -55,10 +55,91 @@ biweekly model — the margin floor is a config guarantee, not a hope.
 = **$15.81 COGS** → supports ~$25–29/mo at similar margins. Just per-user
 `page_cap` + `min_interval_days` rows; no new code path.
 
+## Acquisition model (decided 2026-07-26)
+
+Free first issue as the trial: card required at signup, subscription
+auto-starts at ship + 7 days. US-only at launch — trial AND paid; Canada
+waits for confirmed tax/customs economics. All priors below hold only
+until the first two cohorts replace them with data.
+
+### Why this trial is structurally cheap
+
+The trial is earned, not timed: nothing prints until ~100 saved pages, so
+a signup that never fills a queue costs ~$0. Dormant trials linger free
+forever (they cost nothing and the door stays open); activation is
+measured as shipped-within-90-days so the funnel numbers stay readable.
+The program's only real cost is the shipped free issue (~$13.50), paid
+only for users who demonstrably used the product. Sample cost per paid
+subscriber = **$13.50 / c** — independent of activation. Tourists must
+save 100 pages of articles with a card on file to extract one $13
+magazine; one trial per Stripe card fingerprint closes the loop.
+
+### Priors
+
+| Prior | Value |
+|---|---|
+| c — ship→paid conversion | 50% planning / 25% stress |
+| s — signup→ship (90-day window) | measure from cohort № 1 |
+| Churn | 12%/mo (novelty-decay prior) |
+| Billing anchor | ship + 7 days |
+| Refund policy | instant, no questions (№ 1 arrived in 7d — some charges land at arrival) |
+
+### The math
+
+- LTV at 12% churn: 33.52 × 8.3 = **~$279** → CAC ceiling at 3:1 = **~$93**.
+- Trial-only CAC = 13.50/c: **$27 plan / $54 stress**. Both clear the
+  ceiling; payback 0.8 / 1.6 months.
+- Self-funding line: **c = 40%** (13.50 = 0.40 × 33.52). Above it, the
+  trial is cash-positive within each subscriber's first paid month.
+- Per 100 organic trial starts at s = 55%: 55 issues ship ($743 COGS).
+  Plan → ~28 paid, $939/mo contribution, ~10:1 LTV:CAC. Stress → ~14
+  paid, CAC $53, still ~5:1.
+
+### Channels vs the $93 ceiling
+
+- **Organic first** (Pocket-refugee content, launch, the read-it-later
+  comparison space): CAC ≈ trial-only. Cheapest cohorts, and the source
+  of the c and churn data everything else is gated on.
+- **Referral gift issue**: $13.50/attempt; converts ≥1-in-5 → ≤$67.50.
+- **Newsletter sponsorships**: gated. Example $500 slot → 40 trial
+  starts at s = 60%: plan $69/sub (clears), stress $137 (fails). Pilot
+  only after observed c ≥ ~37%.
+- **Paid social**: off the table under this prior (realistic CAC
+  $150–500 vs the $93 ceiling). Revisit only if churn data beats 12%.
+
+### Annual plan
+
+$490/yr (2 months free), offered at trial conversion. Contribution ≈
+490 − 161 (12 issues) − 17.94 (Stripe 3.6% + $0.30) = **~$311/yr** —
+more than a monthly subscriber's entire expected LTV ($279) under the
+12% prior, with instant CAC payback. Under pessimistic churn, every
+annual taker strictly beats a monthly one; push it at conversion.
+
+### Mechanics
+
+- Stripe Checkout in trial mode at signup. `canPrint` already admits
+  `trialing`, so the closer prints trial issues with no new code path.
+- On first-issue ship the closer sets `trial_end = now + 7d` and sends
+  the ONE legally required email (FTC negative-option rule +
+  card-network physical-goods trial rules): "Your first issue is in the
+  mail. $49/mo begins in 7 days unless you cancel — one click."
+  Full-surprise resumes permanently from issue № 2.
+- Idle months (billed, nothing shipped, ~$2.06 cost): bill normally.
+  Instrument "billed months with zero issues" as the churn leading
+  indicator; revisit auto-pause only if the data says it bites.
+
+### Instrument from trial № 1
+
+Four numbers replace every prior above: `s` (90-day), `c`, idle-month
+churn, and cohort monthly churn.
+
 ## Known unknowns
 
 - Canadian sales tax / customs handling on Lulu print jobs — resolves at the
   first real CA job (operator-gated, so it's reviewable before payment).
+  Launch is US-only (2026-07-26), so the CA rows above are future-tier math.
+- The acquisition model's c (ship→paid) and 12%/mo churn are priors, not
+  data — the first two trial cohorts replace them.
 - Page estimator runs ~15% under actual; the closer's 1.15 margin compensates.
   COGS math here uses *rendered* page counts, so it's unaffected.
 - At real scale: POD has near-zero volume discount; margins move via pricing,

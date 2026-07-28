@@ -238,7 +238,34 @@ async function sweep(env) {
     }
   }
 
+  // Backstop for the trial hook: a trialing user with a shipped issue but an
+  // unpinned trial or unsent notice gets re-poked until the api call sticks
+  // (mirrors the owed-trees pattern — a transient failure must never leave a
+  // free trial running forever after its issue shipped).
+  const { results: owedNotices } = await env.DB.prepare(
+    `SELECT DISTINCT u.* FROM users u JOIN issues i ON i.user_id = u.id
+     WHERE u.subscription_status = 'trialing' AND i.status = 'shipped'
+       AND (u.trial_converts_at IS NULL OR u.trial_notice_sent_at IS NULL)`
+  ).all();
+  for (const user of owedNotices) await notifyTrialShipped(env, user);
+
   await pollPrintJobs(env, users);
+}
+
+// The api owns Stripe; the closer only knows an issue shipped. Service
+// binding (same-account workers.dev fetches are blocked), authed with the
+// user's own save_token. Failures just log — the sweep backstop retries.
+async function notifyTrialShipped(env, user) {
+  try {
+    const res = await env.API.fetch("https://api/trial/shipped", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${user.save_token}` },
+    });
+    if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 200)}`);
+    console.log(`trial pinned for ${user.id} (first issue shipped)`);
+  } catch (err) {
+    console.error(`trial-shipped notify failed for ${user.id}: ${err.message}`);
+  }
 }
 
 // Lulu jobs fail asynchronously (file validation, payment, production) —
@@ -275,6 +302,10 @@ async function pollPrintJobs(env, users) {
           .bind(now, issue.id)
           .run();
         console.log(`issue ${issue.number} shipped (job ${issue.lulu_job_id})`);
+        // Free first issue (decided 2026-07-26): a trialing user's first
+        // shipment starts their billing clock — the api pins the Stripe
+        // trial to ship + 7 days and sends the one required notice.
+        if (user?.subscription_status === "trialing") await notifyTrialShipped(env, user);
         continue;
       }
 

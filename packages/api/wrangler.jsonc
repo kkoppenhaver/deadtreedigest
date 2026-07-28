@@ -19,7 +19,8 @@
   "vars": {
     "FROM_EMAIL": "press@mail.deadtreedigest.com",
     "FROM_NAME": "Dead Tree Digest",
-    "ADMIN_EMAIL": "k.koppenhaver@gmail.com"
+    "ADMIN_EMAIL": "k.koppenhaver@gmail.com",
+    "API_URL": "https://api.deadtreedigest.com"
   },
   "observability": { "enabled": true }
 }
